@@ -1,0 +1,2 @@
+Pillow==10.0.1
+steamship==2.17.29
