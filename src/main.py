@@ -55,9 +55,9 @@ class AdventureGame():
         print(f"\n*****\nYour current inventory is: \n{self.user_settings.inventory}\n******")
 
         quest.description = input(f"What mission should {self.user_settings.name} go on? ")
-        quest.chat_history = quest.create_chat_history(self.user_settings)
+        quest.chat_history = quest.create_chat_history(self.client, self.user_settings)
 
-        return Quest(description=quest)
+        return quest
 
 
     def embark_on_quest(self, quest: Quest):
@@ -111,15 +111,6 @@ class AdventureGame():
         return quest
 
 
-    def game_loop(self):
-        self.collect_user_settings()
-
-        while True:
-            # Start a single mission
-            quest = self.collect_quest_settings()
-            self.embark_on_quest(quest)
-
-
     def generate_image_block(self, text: str) -> Block:
         return self.image_generator.generate(text=text[:1000], make_output_public=True, append_output_to_file=True).wait().blocks[0]
 
@@ -136,15 +127,20 @@ class AdventureGame():
         accepted = False
         while not accepted:
             # Note on the second time through it would be better to let them edit the previous description, but there's no easy way to do this in python CLI
-            character_description = input(f"Describe {self.user_settings.name}'s appearance: ")
-            new_pic_block = self.generate_image_block(character_description)
+            self.user_settings.description = input(f"Describe {self.user_settings.name}'s appearance: ")
+            new_pic_block = self.generate_image_block(self.user_settings.description)
             self.show_image(new_pic_block)
             response = input(f"Does {self.user_settings.name} look like that (y/n)? ")
             accepted = response.lower() == 'y'
 
+    def game_loop(self):
+        """The main game loop."""
+        self.collect_user_settings()
 
-
-
+        while True:
+            # Start a single mission
+            quest = self.collect_quest_settings()
+            self.embark_on_quest(quest)
 
 if __name__ == '__main__':
     AdventureGame().game_loop()

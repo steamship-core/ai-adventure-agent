@@ -1,3 +1,3 @@
-from .user_settings import CharacterSettings
-from .server_settings import GameSettings
+from .user_settings import UserSettings
+from .server_settings import ServerSettings
 from .quest_settings import Quest

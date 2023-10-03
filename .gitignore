@@ -1,3 +1,10 @@
 venv
+.venv
 .idea
 images
+build
+__pycache__
+*.pyc
+.log
+logs/
+**/.DS_Store

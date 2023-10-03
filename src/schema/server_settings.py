@@ -1,5 +1,10 @@
 from pydantic import BaseModel, Field
 from steamship import Steamship, PluginInstance
+from typing import List
+from steamship.agents.schema import ChatHistory
+from pydantic import BaseModel, Field
+from schema import UserSettings
+import uuid
 
 class ServerSettings(BaseModel):
   """Server Settings for the AI Adventure Game set by the Game Host.
@@ -27,7 +32,7 @@ class ServerSettings(BaseModel):
       return client.use_plugin(
           plugin_handle,
           config={
-              "model": self.default_llm,
+              "model": self.default_llm_model,
               "max_tokens": self.default_llm_max_tokens,
               "temperature": self.default_llm_temperature
           }
@@ -36,7 +41,7 @@ class ServerSettings(BaseModel):
 
   def get_image_generator(self, client: Steamship) -> PluginInstance:
     """Return a plugin instance for the image generator."""
-    if self.default_llm_model in ['dall-e']:
+    if self.default_image_model in ['dall-e']:
       plugin_handle = 'dall-e'
 
     return client.use_plugin(plugin_handle)
@@ -44,7 +49,7 @@ class ServerSettings(BaseModel):
 
   def get_voice_generator(self, client: Steamship) -> PluginInstance:
     """Return a plugin instance for the voice generator."""
-    if self.default_llm_model in ['elevenlabs']:
+    if self.default_voice_model in ['elevenlabs']:
       plugin_handle = 'elevenlabs'
 
     return client.use_plugin(plugin_handle)
