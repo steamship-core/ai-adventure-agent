@@ -1,0 +1,25 @@
+Rank up your title.
+Each rank gets you a new location.
+Quests happen in the location.
+
+Gold and the trader are a core mechanic.
+
+---
+
+Can we evolve the game while keeping the data model the same.
+
+Energy. How many quests you can go on in a day. What are the limitations.
+If we let them go on one quest, what is the average cost of a single quest.
+
+---
+
+You can play up to a certain credit amount.
+Can play behind the scenes. After that it's essentially a monthly subscription. 
+Or you top off an energy jar with money and that translates literally to credits.
+
+- Having an Energy Jar that maps to dollars and credits.
+- When you buy a monthly plan, like $3.99 a month, you get a bigger energy jar.
+- It tops off every single month.
+
+---
+

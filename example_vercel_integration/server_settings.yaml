@@ -1,0 +1,6 @@
+# Each time you run `npm run game:update-settings`, these settings will be written to your Game Server.
+#
+# This will immediately have an effect on the gameplay of your game, so be careful!
+
+max_user_rank: 100
+starting_user_rank: 1

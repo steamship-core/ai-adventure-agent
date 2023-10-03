@@ -1,0 +1,76 @@
+  Notes from Max:
+
+  - Too much choice can be overwhelming; too much to do can slow people down.
+  - In a lot of open-world games, there is choice but it's constrained.
+  - If we were mapping into known game mechanics, the flow would be something like:
+    - I'm <LOCATION>. Here's what I see.
+    - You tell the LLM what you want to do / where you want to go to.
+  
+  - Or there's the super-llm driven approach of needing to go in a quest.
+
+  - Is the grounding of the story the LOCATION or the QUEST?
+    - PROGRESSION is the mechanic.
+    - When you start the game, you should start in a LOCATION.
+    - As you play, every few levels, you move to a new location.
+      - E.g. you can occasionally move.
+      - scene settings
+
+  
+  - "Rank" - Every quest you do gets you some form of experience, and that levels your character up.
+  - "Wanderer Level 1" - When you finish your first quest, that's all it takes you to get to level 2.
+    - Note: "Wanderer" is just a label for "Level 1" here.
+    - You might say to get to level 2 you need 
+  - Once you've hit the threshold to get to the next level, we give you a big celebration.
+
+  - There needs to be some kind of event the UI can know about.
+  - Upon leveling up, you can move to a new location.
+  - The quests take place in the location.
+
+
+  So game flow is:
+
+  while true:
+    rank += 1
+    celebrate rank
+    pick new locations
+    go on quests within that location
+
+  Items are a must have.
+  - In the simplest form, they're something you find on a quest, and something you can use in any quest.
+  - Items can have modifiers. When you find a shoe it can be one of four flavors: COMMON, RARE, ULTRA-RARE, MYTHICAL.
+    - Those modifiers are used as flavoring for when the user decides to use the shoe.
+    - When the user says "I throw my shoe at the monster" then the prompt would know that it was a "MYTHICAL SHOE".
+    - The key thing about the modifier is primarily about the rarity.
+  
+  - More complex version of items plays into Max's second form of progression. Really complete games have two forms of progression.
+  - To round our ours, we could have skills or perks.
+    - A perk tree progresses like this: as you progress, you have points that let you unlock a tree of perks.
+  - In our game: skills are tied to things that get fed into the model, or tied into game mechanics outside the model
+  - Outside the model:
+    - A perk could be: extra energy, or extra health, or extra damage.
+    - Drop rates: how much stuff you find.
+    - Drop rarities: how rare the stuff you find is.
+    - Item thing: inventory space when on a quest
+  - Things that could happen inside the LLM prompt:
+    - Strength. Extra Power.
+    - Spells. Mind reading. Teleportation.
+    - Stealth.
+
+  - The thing with the skill tree: the more you have, the better. It gives you a sense of choice, but there is a limited amount of points to spend and a shit ton of skills.
+
+  - Every single quest, you can find items.
+    - You also have the ability to find "tomes of knowledge"
+    - You use tomes of knowledge to unlock skills. They are essentially skill points. On every quest you have a chance to get skill points.
+  
+  - In all good games, there are more than one currency.
+    - Boring games have one
+    - Good games have two
+    - The third is pay to play and super powerful.
+
+  - Max's idea:
+    - Gold: Baseline currency. Super boring. You use that gold to talk to the trader. The trader is the NPC in game that you can trade with. E.g. a sword of flames. Or you could sell stuff to him.
+    - Tomes: There might be a trade for gold<>tomes.  
+    
+  - A lot of games will let you have a big huge inventory when you're not traveling, but when you go on a quest, you have to pick what you want to take with you.
+
+  
