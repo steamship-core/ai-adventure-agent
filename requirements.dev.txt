@@ -1,0 +1,2 @@
+ngrok~=0.8.1
+termcolor~=2.3.0
