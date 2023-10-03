@@ -1,9 +1,10 @@
 import logging
 from typing import Optional
 
-from resumable_data_context import KeyValueStore
 from steamship import Steamship
 from steamship.data.tags.tag_constants import TagValueKey
+
+from kv_store import KeyValueStore
 
 
 class GameAgent:
