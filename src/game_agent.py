@@ -13,7 +13,6 @@ class GameAgent:
     enables a subclass author to write a game with a natural programming style.
 
     QUESTION: Will the game need to break the agent into multiple agents?
-
     """
 
     id: str

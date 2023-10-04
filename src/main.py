@@ -89,7 +89,7 @@ class AdventureGame(GameAgent):
 
         # First part of the mission
         quest.chat_history.append_system_message(
-            "Describe the first few things they do in a few sentences."
+            f"Describe the first few things {self.user_settings.name} does in a few sentences."
         )
         first_part = self.llm.generate(quest.chat_history.file.id).wait().blocks[0].text
         print(first_part)
@@ -165,7 +165,6 @@ class AdventureGame(GameAgent):
         os.makedirs("images", exist_ok=True)
         filename = f"images/image-{self.image_counter}.jpg"
         urllib.request.urlretrieve(block.raw_data_url, filename)
-
         image = Image.open(filename)
         image.show()
 

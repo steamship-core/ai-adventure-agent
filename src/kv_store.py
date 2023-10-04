@@ -1,4 +1,4 @@
-"""A simple key-value store implemented atop Files and Tags."""
+"""An extended version of Steamship's key-value store so that we can add extra utility functions as necessary."""
 
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
