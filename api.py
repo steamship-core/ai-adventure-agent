@@ -1,8 +1,6 @@
 from typing import List, Type
 
 from pydantic import Field
-from steamship import Block
-from steamship.agents.functional import FunctionsBasedAgent
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.mixins.transports.slack import (
     SlackTransport,
@@ -13,11 +11,11 @@ from steamship.agents.mixins.transports.telegram import (
     TelegramTransport,
     TelegramTransportConfig,
 )
-from steamship.agents.schema import Agent, AgentContext, EmitFunc, Metadata, Tool
+from steamship.agents.schema import Agent, AgentContext, Tool
 from steamship.agents.service.agent_service import AgentService
-from steamship.agents.tools.image_generation.stable_diffusion import StableDiffusionTool
-from steamship.agents.tools.speech_generation import GenerateSpeechTool
 from steamship.invocable import Config
+
+from game_agent import GameAgent
 
 SYSTEM_PROMPT = """You are Picard, captain of the Starship Enterprise.
 
@@ -92,14 +90,14 @@ class BasicAgentServiceWithPersonalityAndVoice(AgentService):
         # they can be stateful -- using Key-Valued storage and conversation history.
         #
         # See https://docs.steamship.com for a full list of supported Tools.
-        self.tools = [StableDiffusionTool()]
+        self.tools = []
 
         # Agent Setup
         # ---------------------
 
         # This agent's planner is responsible for making decisions about what to do for a given input.
-        agent = FunctionsBasedAgent(
-            tools=self.tools,
+        agent = GameAgent(
+            tools=[],
             llm=ChatOpenAI(self.client, model_name="gpt-4"),
         )
 
@@ -141,25 +139,24 @@ class BasicAgentServiceWithPersonalityAndVoice(AgentService):
 
     def run_agent(self, agent: Agent, context: AgentContext):
         """Override run-agent to patch in audio generation as a finishing step for text output."""
+        # speech = GenerateSpeechTool()
+        # speech.generator_plugin_config = {"voice_id": self.config.eleven_labs_voice_id}
 
-        speech = GenerateSpeechTool()
-        speech.generator_plugin_config = {"voice_id": self.config.eleven_labs_voice_id}
+        # def to_speech_if_text(block: Block):
+        #     nonlocal speech
+        #     if not block.is_text():
+        #         return block
 
-        def to_speech_if_text(block: Block):
-            nonlocal speech
-            if not block.is_text():
-                return block
+        #     output_blocks = speech.run([block], context)
+        #     return output_blocks[0]
 
-            output_blocks = speech.run([block], context)
-            return output_blocks[0]
+        # # Note: EmitFunc is Callable[[List[Block], Metadata], None]
+        # def wrap_emit(emit_func: EmitFunc):
+        #     def wrapper(blocks: List[Block], metadata: Metadata):
+        #         blocks = [to_speech_if_text(block) for block in blocks]
+        #         return emit_func(blocks, metadata)
 
-        # Note: EmitFunc is Callable[[List[Block], Metadata], None]
-        def wrap_emit(emit_func: EmitFunc):
-            def wrapper(blocks: List[Block], metadata: Metadata):
-                blocks = [to_speech_if_text(block) for block in blocks]
-                return emit_func(blocks, metadata)
+        #     return wrapper
 
-            return wrapper
-
-        context.emit_funcs = [wrap_emit(emit_func) for emit_func in context.emit_funcs]
+        # context.emit_funcs = [wrap_emit(emit_func) for emit_func in context.emit_funcs]
         super().run_agent(agent, context)
