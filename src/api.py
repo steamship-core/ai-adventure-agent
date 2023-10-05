@@ -99,6 +99,7 @@ class BasicAgentServiceWithPersonalityAndVoice(AgentService):
         agent = GameAgent(
             tools=[],
             llm=ChatOpenAI(self.client, model_name="gpt-4"),
+            client=self.client,
         )
 
         # Here is where we override the agent's prompt to set its personality. It is very important that
