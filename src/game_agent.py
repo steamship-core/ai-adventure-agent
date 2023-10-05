@@ -4,8 +4,8 @@ from steamship import PluginInstance, Steamship
 from steamship.agents.schema import Action, Agent, AgentContext
 
 from character_creation_agent import CharacterCreationAgent
+from mixins import ServerSettings, UserSettings
 from quest_agent import QuestAgent
-from schema import ServerSettings, UserSettings
 
 
 class GameAgent(Agent):

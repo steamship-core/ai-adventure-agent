@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
 from steamship import PluginInstance, Steamship, SteamshipError
 from steamship.agents.schema.agent import AgentContext
+from steamship.invocable import get, post
+from steamship.invocable.package_mixin import PackageMixin
 
 from context_utils import (
     with_background_image_generator,
@@ -134,3 +136,24 @@ class ServerSettings(BaseModel):
         context = with_server_settings(self, context)
 
         return context
+
+
+class ServerSettingsMixin(PackageMixin):
+    """Provides endpoints for User Settings."""
+
+    client: Steamship
+
+    def __init__(self, client: Steamship):
+        self.client = client
+
+    @post("/server_settings")
+    def post_user_settings(self, **kwargs) -> dict:
+        """Set the user settings."""
+        # TODO: Save the user settings
+        return {}
+
+    @get("/server_settings")
+    def get_user_settings(self, **kwargs) -> dict:
+        """Get the user settings."""
+        # TODO: Load the user settings
+        return {}

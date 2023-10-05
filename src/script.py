@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional, Union
 
 from steamship import Block, MimeTypes, Tag, Task
@@ -89,7 +90,7 @@ class Script(ChatHistory):
             streaming=True,
         )
         task.wait()
-        print("Generated image", task.output)
+        self.emit_blocks(task.output.blocks, context)
         return task
 
     def generate_background_music(self, prompt: str, context: AgentContext) -> Block:
@@ -102,7 +103,7 @@ class Script(ChatHistory):
             streaming=True,
         )
         task.wait()
-        print("Generated background music", task.output)
+        self.emit_blocks(task.output.blocks, context)
         return task
 
     def generate_narration(
@@ -117,7 +118,7 @@ class Script(ChatHistory):
             streaming=True,
         )
         task.wait()
-        print("Generated narration", task.output)
+        self.emit_blocks(task.output.blocks, context)
         return task
 
     def generate_story(self, prompt: str, context: AgentContext) -> Block:
@@ -132,8 +133,16 @@ class Script(ChatHistory):
         self.append_system_message(prompt)
         generated_text = generator.generate(self.file.id).wait().blocks[0].text
         block = self.append_assistant_message(generated_text, tags=BASE_TAGS)
-        print("Generated story", block)
+        self.emit_blocks([block], context)
         return block
+
+    def emit_blocks(self, blocks: List[Block], context: AgentContext):
+        # TODO: Can we have a web collector emit func?
+        for func in context.emit_funcs:
+            logging.info(
+                f"Emitting via function '{func.__name__}' for context: {context.id}"
+            )
+            func(blocks, context.metadata)
 
 
 # Character Action
