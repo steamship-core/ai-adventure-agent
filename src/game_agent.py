@@ -39,12 +39,14 @@ class GameAgent(Agent):
         context = self.server_settings.add_to_agent_context(context)
 
         if not self.user_settings or not self.user_settings.is_character_completed():
+            print("Character")
             sub_agent = CharacterCreationAgent(
                 tools=[],
                 llm=self.llm,
             )
         else:
             # The character is completed! Go on a quest!
+            print("Quest")
             sub_agent = QuestAgent(
                 tools=[],
                 llm=self.llm,

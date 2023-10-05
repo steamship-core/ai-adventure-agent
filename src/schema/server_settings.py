@@ -111,22 +111,24 @@ class ServerSettings(BaseModel):
         return client.use_plugin(plugin_handle)
 
     def add_to_agent_context(self, context: AgentContext) -> AgentContext:
-        context = with_story_generator(self.get_story_generator(self.client), context)
+        context = with_story_generator(
+            self.get_story_generator(context.client), context
+        )
 
         context = with_narration_generator(
-            self.get_narration_generator(self.client), context
+            self.get_narration_generator(context.client), context
         )
 
         context = with_background_music_generator(
-            self.get_background_music_generator(self.client), context
+            self.get_background_music_generator(context.client), context
         )
 
         context = with_profile_image_generator(
-            self.get_profile_image_generator(self.client), context
+            self.get_profile_image_generator(context.client), context
         )
 
         context = with_background_image_generator(
-            self.get_background_image_generator(self.client), context
+            self.get_background_image_generator(context.client), context
         )
 
         context = with_server_settings(self, context)

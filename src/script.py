@@ -89,7 +89,7 @@ class Script(ChatHistory):
             streaming=True,
         )
         task.wait()
-        print(task.output)
+        print("Generated image", task.output)
         return task
 
     def generate_background_music(self, prompt: str, context: AgentContext) -> Block:
@@ -102,7 +102,7 @@ class Script(ChatHistory):
             streaming=True,
         )
         task.wait()
-        print(task.output)
+        print("Generated background music", task.output)
         return task
 
     def generate_narration(
@@ -117,12 +117,10 @@ class Script(ChatHistory):
             streaming=True,
         )
         task.wait()
-        print(task.output)
+        print("Generated narration", task.output)
         return task
 
-    def generate_story(
-        self, prompt: str, context: AgentContext
-    ) -> Task[GenerateResponse]:
+    def generate_story(self, prompt: str, context: AgentContext) -> Block:
         BASE_TAGS = [
             Tag(
                 kind="request-id",
@@ -134,7 +132,8 @@ class Script(ChatHistory):
         self.append_system_message(prompt)
         generated_text = generator.generate(self.file.id).wait().blocks[0].text
         block = self.append_assistant_message(generated_text, tags=BASE_TAGS)
-        self.add_narration(block, self, context)
+        print("Generated story", block)
+        return block
 
 
 # Character Action
