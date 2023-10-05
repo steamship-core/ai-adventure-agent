@@ -16,6 +16,7 @@ from steamship.agents.service.agent_service import AgentService
 from steamship.invocable import Config
 
 from game_agent import GameAgent
+from mixins import ServerSettingsMixin, UserSettingsMixin
 
 SYSTEM_PROMPT = """."""
 
@@ -30,7 +31,13 @@ class BasicAgentServiceWithPersonalityAndVoice(AgentService):
 
     """
 
-    USED_MIXIN_CLASSES = [SteamshipWidgetTransport, TelegramTransport, SlackTransport]
+    USED_MIXIN_CLASSES = [
+        SteamshipWidgetTransport,
+        TelegramTransport,
+        SlackTransport,
+        UserSettingsMixin,
+        ServerSettingsMixin,
+    ]
     """USED_MIXIN_CLASSES tells Steamship what additional HTTP endpoints to register on your AgentService."""
 
     class BasicAgentServiceConfig(Config):
@@ -92,6 +99,12 @@ class BasicAgentServiceWithPersonalityAndVoice(AgentService):
                 agent_service=self,
             )
         )
+
+        # API for getting and setting server settings
+        self.add_mixin(ServerSettingsMixin(client=self.client))
+
+        # API for getting and setting user settings
+        self.add_mixin(UserSettingsMixin(client=self.client))
 
         # Support Slack
         self.add_mixin(
