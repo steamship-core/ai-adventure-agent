@@ -30,7 +30,7 @@ class ServerSettings(BaseModel):
     default_llm_max_tokens: int = Field(256, description="")
 
     # Narration Generation Settings
-    default_narration_model: str = Field("elevenlabs-test", description="")
+    default_narration_model: str = Field("elevenlabs", description="")
 
     # Narration Generation Settings
     default_background_music_model: str = Field("music-generator", description="")

@@ -20,7 +20,7 @@ class QuestAgent(Agent):
             script = Script(context.chat_history)
 
             script.generate_story(
-                f"Like the narrator of a movie, explain that {self.user_settings.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
+                f"Like the narrator of a movie, explain that {self.user_settings.player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
                 context,
             )
 
@@ -30,12 +30,12 @@ class QuestAgent(Agent):
             #
             # script.generate_background_image("A picture of a forest", context)
             #
-            # story_part_1 = script.generate_story(
-            #     f"{self.user_settings.name} it about to go on a mission. Describe the first few things they do in a few sentences",
-            #     context,
-            # )
-            #
-            # script.generate_narration(story_part_1, context)
+            story_part_1 = script.generate_story(
+                f"{self.user_settings.player.name} it about to go on a mission. Describe the first few things they do in a few sentences",
+                context,
+            )
+
+            script.generate_narration(story_part_1, context)
             #
             # story_part_2 = script.generate_story(
             #     f"How does this mission end? {self.user_settings.name} should not yet achieve their overall goal of {self.user_settings.motivation}",

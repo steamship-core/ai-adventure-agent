@@ -4,46 +4,72 @@ from pydantic import BaseModel, Field
 from steamship import Steamship
 from steamship.invocable import get, post
 from steamship.invocable.package_mixin import PackageMixin
+from steamship.utils.kv_store import KeyValueStore
+
+# An instnace is a game instance.
+from schema.characters import HumanCharacter, NpcCharacter
+from schema.quest_settings import Quest
+
+
+class Camp(BaseModel):
+    name: Optional[str]
+    npcs: List[NpcCharacter]
+    human_players: List[HumanCharacter]
+    chat_file_id: Optional[str]
+
+    """Todo: NPCs and Trader, images, etc."""
 
 
 class UserSettings(BaseModel):
-    """Settings for a user of the game."""
+    """Settings for a user of the game.
 
-    name: Optional[str] = Field(
-        "Leroy Jenkins", description="The name of the character."
+    Max Notes:
+
+    - "Theme": E.g. Fantasy, Midevil
+    - User Character - how to fetch.
+    - Background images - how to fetch.
+    - Campsite Images
+
+    TODO: Identity
+
+    """
+
+    player: HumanCharacter = Field(
+        HumanCharacter(), description="The player of the game."
     )
-    description: Optional[str] = Field(
-        "A Programmer", description="The description of the character."
-    )
-    background: Optional[str] = Field(
-        "From a small town", description="The background of the character."
-    )
-    inventory: Optional[str] = Field(
-        "A keyboard", description="The inventory of the character."
-    )
-    motivation: Optional[str] = Field(
-        "Wnats to be Bill Gates", description="The motivation of the character."
-    )
+
     tone: Optional[str] = Field(
         "Silly", description="The tone of the story being told."
     )
-    mission_summaries: List[str] = Field(
+    theme: Optional[str] = Field(
+        "Fantasy", description="The genre of the story being told."
+    )
+
+    # NOTE: The fields below are not intended to be settable BY the user themselves.
+    quests: List[Quest] = Field(
         [], description="The missions that the character has been on."
     )
 
-    def is_character_completed(self) -> bool:
-        """Return True if the character is completed."""
-        return (
-            self.name is not None
-            and self.background is not None
-            and self.inventory is not None
-            and self.motivation is not None
-            and self.tone is not None
-        )
+    camp: Optional[Camp] = Field()
 
-        # TODO: return self.name and self.background and self.inventory and self.motivation and self.tone
-        # Such that we interrupt and ask about these if they're not there.
-        # Could we have some sort of BaseMode.set_with_question("field", "question") class?
+    def save(self, context_id: str, client: Steamship) -> dict:
+        """Save UserSettings to the KeyValue store."""
+        key = f"UserSettings-{context_id}"
+        value = self.dict()
+        kv = KeyValueStore(client, key)
+        kv.set(key, value)
+        return value
+
+    @staticmethod
+    def load(context_id: str, client: Steamship) -> "UserSettings":
+        """Save UserSettings to the KeyValue store."""
+        key = f"UserSettings-{context_id}"
+        kv = KeyValueStore(client, key)
+        try:
+            value = kv.get(key)
+            return UserSettings.parse_obj(value)
+        except BaseException:
+            return UserSettings()
 
 
 class UserSettingsMixin(PackageMixin):
@@ -55,13 +81,12 @@ class UserSettingsMixin(PackageMixin):
         self.client = client
 
     @post("/user_settings")
-    def post_user_settings(self, **kwargs) -> dict:
+    def post_user_settings(self, context_id: str, **kwargs) -> dict:
         """Set the user settings."""
-        # TODO: Save the user settings
-        return {}
+        user_settings = UserSettings.parse_obj(kwargs)
+        return user_settings.save(context_id, self.client)
 
     @get("/user_settings")
-    def get_user_settings(self, **kwargs) -> dict:
+    def get_user_settings(self, context_id: str) -> dict:
         """Get the user settings."""
-        # TODO: Load the user settings
-        return {}
+        return UserSettings.load(context_id=context_id, client=self.client).dict()
