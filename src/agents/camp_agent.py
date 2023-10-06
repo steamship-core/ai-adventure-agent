@@ -8,7 +8,7 @@ from schema.quest_settings import Quest
 from script import Script
 
 
-class QuestAgent(Agent):
+class CampAgent(Agent):
     """
     DESIGN GOALS:
     This implements the "going on a quest" and only that.

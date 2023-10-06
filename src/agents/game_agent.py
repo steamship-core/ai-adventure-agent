@@ -1,27 +1,38 @@
 from typing import Optional
 
-from steamship import PluginInstance, Steamship
+from steamship import Steamship
 from steamship.agents.schema import Action, Agent, AgentContext
 
+from agents.camp_agent import CampAgent
 from agents.character_creation_agent import CharacterCreationAgent
 from agents.quest_agent import QuestAgent
 from mixins.server_settings import ServerSettings
 from mixins.user_settings import UserSettings
+from schema.quest_settings import Quest
 
 
 class GameAgent(Agent):
-    """
-    GOAL: Implement an agent that streams back things.
+    """Agent responsible for the overall Game.
+
+    It operates like a state machine:
+
+    - Deferring to the CHARACTER CREATION AGENT if a character is not yet created.
+    - Defaulting to the CAMP AGENT if not on a quest.
+    - Deferring to the QUEST AGENT if out on a quest.
+
+    The basic flow of the game is as follows:
+
+    - Player arrives at camp.
+    - Player uses energy to go out on a fun quest
+    - Player finds new items and gains a new rank
+    - Player returns to camp
+
+    While at camp, the player can chat with his camp-mates.
     """
 
     client: Steamship
-
     server_settings: Optional[ServerSettings]
     user_settings: Optional[UserSettings]
-
-    llm: Optional[PluginInstance]
-    image_generator: Optional[PluginInstance]
-    voice_generator: Optional[PluginInstance]
 
     PROMPT = ""
 
@@ -30,28 +41,38 @@ class GameAgent(Agent):
 
         # Init Settings Objects
         self.server_settings = ServerSettings()
-        self.user_settings = UserSettings()
-
-    def record_action_run(self, action: Action, context: AgentContext):
-        pass
+        self.user_settings = UserSettings.load("player", self.client)
 
     def next_action(self, context: AgentContext) -> Action:
+        """Select the next action to perform, which might involve deferring to another Agent."""
         # Add the server settings & generators to the context
         context = self.server_settings.add_to_agent_context(context)
 
-        if not self.user_settings or not self.user_settings.is_character_completed():
-            sub_agent = CharacterCreationAgent(
-                tools=[],
-                llm=self.llm,
-            )
-        else:
-            # The character is completed! Go on a quest!
-            sub_agent = QuestAgent(
-                tools=[],
-                llm=self.llm,
-                user_settings=self.user_settings,
-            )
+        # HACK until sync w/ Max - always be on a quest
+        self.user_settings.current_quest = "Foo"
 
+        if (
+            not self.user_settings
+            or not self.user_settings.player.is_character_completed()
+        ):
+            sub_agent = CharacterCreationAgent(tools=[], llm=None)
+        else:
+            if self.user_settings.current_quest is None:
+                sub_agent = CampAgent(
+                    tools=[], llm=None, user_settings=self.user_settings
+                )
+            else:
+                quest = None
+                for quest in self.user_settings.quests:
+                    if quest.name == self.user_settings.current_quest:
+                        quest = quest
+                if quest is None:
+                    quest = Quest()
+                sub_agent = QuestAgent(
+                    tools=[], llm=None, user_settings=self.user_settings, quest=quest
+                )
+
+        # Defer to the right agent.
         return sub_agent.next_action(context)
 
 

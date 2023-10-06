@@ -1,7 +1,8 @@
+import json
 import logging
 from typing import List, Optional, Union
 
-from steamship import Block, MimeTypes, Tag, Task
+from steamship import Block, MimeTypes, Steamship, Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.agents.schema.chathistory import ChatHistory
 from steamship.data.operations.generator import GenerateResponse
@@ -9,9 +10,12 @@ from steamship.data.tags import TagValueKey
 
 from context_utils import (
     get_background_image_generator,
+    get_background_music_generator,
     get_narration_generator,
     get_story_generator,
 )
+from mixins.server_settings import ServerSettings
+from schema.quest_settings import Quest
 from tags import CharacterTag, SceneTag, TagKindExtensions
 
 
@@ -84,29 +88,31 @@ class Script(ChatHistory):
         """
 
         generator = get_background_image_generator(context)
-        task = generator.generate(
+        _ = generator.generate(
             text=prompt,
             append_output_to_file=True,
             output_file_id=self.file.id,
             make_output_public=True,
             streaming=True,
         )
-        self.emit_blocks(task.output.blocks, context)
-        return task.output.blocks
+        # self.emit_blocks(task.output.blocks, context)
+        # return task.output.blocks
+        return []
 
     def generate_background_music(
         self, prompt: str, context: AgentContext
     ) -> List[Block]:
-        generator = get_background_image_generator(context)
-        task = generator.generate(
+        generator = get_background_music_generator(context)
+        _ = generator.generate(
             text=prompt,
             append_output_to_file=True,
             output_file_id=self.file.id,
             make_output_public=True,
             streaming=True,
         )
-        self.emit_blocks(task.output.blocks, context)
-        return task.output.blocks
+        # self.emit_blocks(task.output.blocks, context)
+        # return task.output.blocks
+        return []
 
     def generate_narration(
         self, block: Block, context: AgentContext
@@ -119,8 +125,6 @@ class Script(ChatHistory):
             make_output_public=True,
             streaming=True,
         )
-        task.wait()
-        self.emit_blocks(task.output.blocks, context)
         return task
 
     def generate_story(self, prompt: str, context: AgentContext) -> Block:
@@ -135,8 +139,26 @@ class Script(ChatHistory):
         self.append_system_message(prompt)
         generated_text = generator.generate(self.file.id).wait().blocks[0].text
         block = self.append_assistant_message(generated_text, tags=BASE_TAGS)
-        self.emit_blocks([block], context)
+        # self.emit_blocks([block], context)
         return block
+
+    def end_scene(self, quest: Quest, context: AgentContext):
+        BASE_TAGS = [
+            Tag(
+                kind="request-id",
+                name=context.request_id,
+                value={TagValueKey.STRING_VALUE.value: context.request_id},
+            )
+        ]
+
+        script.file.append_block(
+            text=json.dumps(quest.dict()),
+            mime_type=MimeTypes.JSON,
+            tags=[
+                BASE_TAGS,
+                Tag(kind=TagKindExtensions.SCENE.value, name=SceneTag.END.value),
+            ],
+        )
 
     def emit_blocks(self, blocks: List[Block], context: AgentContext):
         # TODO: Can we have a web collector emit func?
@@ -151,3 +173,14 @@ class Script(ChatHistory):
 # Scene Change
 # Narration
 # Item Found
+
+if __name__ == "__main__":
+    client = Steamship()
+    context = AgentContext.get_or_create(client, {"id": "FOOOO"})
+    script = Script(context.chat_history)
+    settings = ServerSettings()
+    settings.add_to_agent_context(context)
+    block = script.generate_story("Hi", context)
+    print(block)
+    narration = script.generate_narration(block, context)
+    print(narration)

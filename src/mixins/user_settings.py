@@ -52,6 +52,11 @@ class UserSettings(BaseModel):
 
     camp: Optional[Camp] = Field()
 
+    current_quest: Optional[str] = Field(
+        None,
+        description="The current quest-id that the character is on. This is used for game logic.",
+    )
+
     def save(self, context_id: str, client: Steamship) -> dict:
         """Save UserSettings to the KeyValue store."""
         key = f"UserSettings-{context_id}"

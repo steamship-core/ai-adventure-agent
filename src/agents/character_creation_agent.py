@@ -1,8 +1,6 @@
-from steamship import Block, MimeTypes, PluginInstance, Steamship
+from steamship import Block, MimeTypes, Steamship
 from steamship.agents.schema import Action, Agent, AgentContext
 from steamship.agents.schema.action import FinishAction
-
-from mixins.server_settings import ServerSettings
 
 
 class CharacterCreationAgent(Agent):
@@ -18,10 +16,6 @@ class CharacterCreationAgent(Agent):
     """
 
     client: Steamship
-    server_settings: ServerSettings
-
-    voice_generator: PluginInstance
-    image_generator: PluginInstance
 
     PROMPT = ""
 

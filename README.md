@@ -17,3 +17,5 @@ python -m pip install -r requirements.dev.txt
 > Requirements you put in `requirements.txt` are what will be run along with the game agent when you deploy.
 > The dependencies in `requirements.dev.txt` have been prepopulated with packages you may need while developing on your machine.
 
+## Design Notes
+

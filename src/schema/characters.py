@@ -2,16 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-
-class Item(BaseModel):
-    name: Optional[str]
-    description: Optional[str]
-    is_one_time_use: Optional[bool]
-
-    modifier: Optional[int]
-    """Modifier is a placeholder for the future. The game settings can assigne int->String values like "mythic", etc."""
-
-    picture_url: Optional[str]
+from schema.objects import Item
 
 
 class Character(BaseModel):
@@ -78,12 +69,13 @@ class HumanCharacter(Character):
 
     def is_character_completed(self) -> bool:
         """Return True if the character is completed."""
-        return (
-            self.name is not None
-            and self.background is not None
-            and self.inventory is not None
-            and self.motivation is not None
-        )
+        return True
+        # return (
+        #     self.name is not None
+        #     and self.background is not None
+        #     and self.inventory is not None
+        #     and self.motivation is not None
+        # )
 
         # TODO: return self.name and self.background and self.inventory and self.motivation and self.tone
         # Such that we interrupt and ask about these if they're not there.

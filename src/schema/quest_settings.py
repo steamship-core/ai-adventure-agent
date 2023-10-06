@@ -1,19 +1,38 @@
 import uuid
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 from steamship import Steamship
 from steamship.agents.schema import ChatHistory
 
-from schema.characters import Character
+from schema.characters import Character, Item
 
 
 class Quest(BaseModel):
     """Information about a quest."""
 
+    # Input Fields
+
     name: Optional[str]
-    text_summary: Optional[str]
+
+    # Metadata Fields
+
     chat_file_id: Optional[str]
+
+    # Output Fields
+    # These are generated after the
+
+    image_url: Optional[List[int]]
+    """An image of this quest. Ideally movie poster style."""
+
+    text_summary: Optional[str]
+    """The summary of this quest. To be written in book jacket style."""
+
+    new_items: Optional[List[Item]]
+    """New items you found on this quest."""
+
+    rank_delta: Optional[List[int]]
+    """The change in rank that resulted from this quest."""
 
     class Config:
         arbitrary_types_allowed = True
