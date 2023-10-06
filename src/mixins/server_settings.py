@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 from steamship import PluginInstance, Steamship, SteamshipError
+from steamship.agents.llms.openai import ChatOpenAI
+from steamship.agents.schema import ChatLLM
 from steamship.agents.schema.agent import AgentContext
 from steamship.invocable import get, post
 from steamship.invocable.package_mixin import PackageMixin
@@ -7,6 +9,7 @@ from steamship.invocable.package_mixin import PackageMixin
 from context_utils import (
     with_background_image_generator,
     with_background_music_generator,
+    with_function_capable_llm,
     with_narration_generator,
     with_profile_image_generator,
     with_server_settings,
@@ -24,8 +27,13 @@ class ServerSettings(BaseModel):
     default_profile_image_model: str = Field("dall-e", description="")
     default_background_image_model: str = Field("dall-e", description="")
 
-    # Language Generation Settings
-    default_llm_model: str = Field("gpt-3.5-turbo", description="")
+    # Language Generation Settings - Function calling
+    default_function_capable_llm_model: str = Field("gpt-4", description="")
+    default_function_capable_llm_temperature: float = Field(0.4, description="")
+    default_function_capable_llm_max_tokens: int = Field(256, description="")
+
+    # Language Generation Settings - Story telling
+    default_llm_model: str = Field("gpt-4", description="")
     default_llm_temperature: float = Field(0.4, description="")
     default_llm_max_tokens: int = Field(256, description="")
 
@@ -55,6 +63,10 @@ class ServerSettings(BaseModel):
                 "temperature": self.default_llm_temperature,
             },
         )
+
+    def get_function_capable_llm(self, client: Steamship) -> ChatLLM:
+        """Return a plugin instance for the story generator."""
+        return ChatOpenAI(client)
 
     def get_profile_image_generator(self, client: Steamship) -> PluginInstance:
         """Return a plugin instance for the profile image generator."""
@@ -113,6 +125,9 @@ class ServerSettings(BaseModel):
         return client.use_plugin(plugin_handle)
 
     def add_to_agent_context(self, context: AgentContext) -> AgentContext:
+        # TODO: This feels like a great way to interact with AgentContext, but this is a LOT of loading that has to
+        # happen on EVERY call. Perhaps we move this to happen on-demand to speed things up if latency is bad.
+
         context = with_story_generator(
             self.get_story_generator(context.client), context
         )
@@ -131,6 +146,10 @@ class ServerSettings(BaseModel):
 
         context = with_background_image_generator(
             self.get_background_image_generator(context.client), context
+        )
+
+        context = with_function_capable_llm(
+            self.get_function_capable_llm(context.client), context
         )
 
         context = with_server_settings(self, context)

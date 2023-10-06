@@ -3,7 +3,7 @@ from steamship.agents.schema import Action, Agent, AgentContext
 from steamship.agents.schema.action import FinishAction
 
 
-class CharacterCreationAgent(Agent):
+class OnboardingAgent(Agent):
     """
     DESIGN GOALS:
     This implements the "create a character flow" and only that.

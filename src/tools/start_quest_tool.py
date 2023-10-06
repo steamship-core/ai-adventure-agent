@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Union
 from steamship import Block, Task
 from steamship.agents.schema import AgentContext, Tool
 
-from context_utils import get_narration_generator
+from context_utils import get_narration_generator, get_user_settings
 from mixins.user_settings import UserSettings
 from schema.quest_settings import Quest
 
@@ -11,13 +11,15 @@ from schema.quest_settings import Quest
 class StartQuestTool(Tool):
     """Starts a quest.
 
-    Designed in a way that either an API call or an Agent can call it.
+    This Tool is meant to TRANSITION from one agent (the CAMP AGENT) to the next (THE QUEST AGENT). It does that
+    by modifying state and returning.
+
+    It can either be called by:
+     - The CAMP AGENT (when in full-chat mode) -- see camp_agent.py
+     - The WEB APP (when in web-mode, via api) -- see quest_mixin.py
     """
 
-    user_settings: UserSettings
-
-    def __init__(self, user_settings: UserSettings, **kwargs):
-        self.user_settings = user_settings
+    def __init__(self, **kwargs):
         kwargs["name"] = "StartQuestTool"
         kwargs[
             "agent_description"
@@ -25,7 +27,6 @@ class StartQuestTool(Tool):
         kwargs[
             "human_description"
         ] = "Tool to initiate a quest. Modifies the global state such that the next time the agent is contacted, it will be on a quets."
-
         # It always returns.. OK! Let's go!
         kwargs["is_final"] = True
         super().__init__(**kwargs)
@@ -70,9 +71,10 @@ class StartQuestTool(Tool):
         self, tool_input: List[Block], context: AgentContext
     ) -> Union[List[Block], Task[Any]]:
         purpose = None
+        user_settings = get_user_settings(context)
 
         if tool_input:
             purpose = tool_input[0].text
 
-        quest = self.start_quest(self.user_settings, context, purpose)
+        quest = self.start_quest(user_settings, context, purpose)
         return [Block(text=f"Starting quest... titled: {quest.name}")]

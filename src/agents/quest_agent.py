@@ -2,6 +2,7 @@ from steamship import Block, MimeTypes
 from steamship.agents.schema import Action, Agent, AgentContext
 from steamship.agents.schema.action import FinishAction
 
+from context_utils import get_current_quest, get_user_settings
 from mixins.user_settings import UserSettings
 from schema.objects import Item
 from schema.quest_settings import Quest
@@ -33,10 +34,7 @@ class QuestAgent(Agent):
     It can be slotted into as a state machine sub-agent by the overall agent.
     """
 
-    user_settings: UserSettings
-    quest: Quest
-
-    def begin_quest(self, context: AgentContext):
+    def begin_quest(self, user_settings: UserSettings, context: AgentContext):
         """
 
         CONSIDER: Should this be a Tool?
@@ -44,7 +42,7 @@ class QuestAgent(Agent):
         script = Script(context.chat_history)
 
         _ = script.generate_story(
-            f"Like the narrator of a movie, explain that {self.user_settings.player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
+            f"Like the narrator of a movie, explain that {user_settings.player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
             context,
         )
 
@@ -57,13 +55,13 @@ class QuestAgent(Agent):
         script = Script(context.chat_history)
 
         story_part_1 = script.generate_story(
-            f"{self.user_settings.player.name} it about to go on a mission. Describe the first few things they do in a few sentences",
+            f"{user_settings.player.name} it about to go on a mission. Describe the first few things they do in a few sentences",
             context,
         )
 
         script.generate_narration(story_part_1, context)
 
-    def finish_quest(self, context: AgentContext):
+    def finish_quest(self, user_settings: UserSettings, context: AgentContext):
         """
 
         CONSIDER: Should this be a Tool?
@@ -72,13 +70,15 @@ class QuestAgent(Agent):
         script = Script(context.chat_history)
 
         story_part_2 = script.generate_story(
-            f"How does this mission end? {self.user_settings.player.name} should not yet achieve their overall goal of {self.user_settings.player.motivation}",
+            f"How does this mission end? {user_settings.player.name} should not yet achieve their overall goal of {user_settings.player.motivation}",
             context,
         )
 
         script.generate_narration(story_part_2, context)
 
-    def release_agent(self, context: AgentContext):
+    def release_agent(
+        self, user_settings: UserSettings, quest: Quest, context: AgentContext
+    ):
         """Does final summarizing activities.
 
         TODO: Inform the controlling agent that our work is done.
@@ -86,20 +86,23 @@ class QuestAgent(Agent):
         """
         script = Script(context.chat_history)
 
-        self.quest.text_summary = "[TODO] Replace this summary with a generated one."
-        self.quest.new_items = [
+        quest.text_summary = "[TODO] Replace this summary with a generated one."
+        quest.new_items = [
             Item(name="[TODO] Replace this with an item the player found.")
         ]
-        self.quest.rank_delta = 1
+        quest.rank_delta = 1
 
         # TODO: Save quest
-        script.end_scene(self.quest, context)
+        script.end_scene(quest, context)
 
     def next_action(self, context: AgentContext) -> Action:
+        user_settings = get_user_settings(context)
+        quest = get_current_quest(context)
+
         try:
-            self.begin_quest(context)
-            self.finish_quest(context)
-            self.release_agent(context)
+            self.begin_quest(user_settings, context)
+            self.finish_quest(user_settings, context)
+            self.release_agent(user_settings, quest, context)
 
             # CONCLUDE STORY
             """
