@@ -16,7 +16,7 @@ class SceneTag(str, Enum):
     # A scene has ended
     END = "end"
 
-    # A scene backround is being described
+    # A scene background is being described
     BACKGROUND = "background"
 
     # The scene's background audio is being described
