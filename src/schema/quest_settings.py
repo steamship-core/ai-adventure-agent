@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from steamship import Steamship
 from steamship.agents.schema import ChatHistory
 
-from mixins import UserSettings
+from mixins.user_settings import UserSettings
 
 
 class Quest(BaseModel):

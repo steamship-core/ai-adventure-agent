@@ -72,7 +72,9 @@ class Script(ChatHistory):
         )
         return block
 
-    def generate_background_image(self, prompt: str, context: AgentContext) -> Block:
+    def generate_background_image(
+        self, prompt: str, context: AgentContext
+    ) -> List[Block]:
         """game developer perspective:
 
         script.generate_sound_effect("dsf")
@@ -89,11 +91,12 @@ class Script(ChatHistory):
             make_output_public=True,
             streaming=True,
         )
-        task.wait()
         self.emit_blocks(task.output.blocks, context)
-        return task
+        return task.output.blocks
 
-    def generate_background_music(self, prompt: str, context: AgentContext) -> Block:
+    def generate_background_music(
+        self, prompt: str, context: AgentContext
+    ) -> List[Block]:
         generator = get_background_image_generator(context)
         task = generator.generate(
             text=prompt,
@@ -102,9 +105,8 @@ class Script(ChatHistory):
             make_output_public=True,
             streaming=True,
         )
-        task.wait()
         self.emit_blocks(task.output.blocks, context)
-        return task
+        return task.output.blocks
 
     def generate_narration(
         self, block: Block, context: AgentContext

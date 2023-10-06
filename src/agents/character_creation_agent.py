@@ -2,7 +2,7 @@ from steamship import Block, MimeTypes, PluginInstance, Steamship
 from steamship.agents.schema import Action, Agent, AgentContext
 from steamship.agents.schema.action import FinishAction
 
-from schema import ServerSettings
+from mixins.server_settings import ServerSettings
 
 
 class CharacterCreationAgent(Agent):

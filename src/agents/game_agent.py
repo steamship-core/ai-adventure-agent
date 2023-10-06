@@ -3,9 +3,10 @@ from typing import Optional
 from steamship import PluginInstance, Steamship
 from steamship.agents.schema import Action, Agent, AgentContext
 
-from character_creation_agent import CharacterCreationAgent
-from mixins import ServerSettings, UserSettings
-from quest_agent import QuestAgent
+from agents.character_creation_agent import CharacterCreationAgent
+from agents.quest_agent import QuestAgent
+from mixins.server_settings import ServerSettings
+from mixins.user_settings import UserSettings
 
 
 class GameAgent(Agent):
@@ -39,14 +40,12 @@ class GameAgent(Agent):
         context = self.server_settings.add_to_agent_context(context)
 
         if not self.user_settings or not self.user_settings.is_character_completed():
-            print("Character")
             sub_agent = CharacterCreationAgent(
                 tools=[],
                 llm=self.llm,
             )
         else:
             # The character is completed! Go on a quest!
-            print("Quest")
             sub_agent = QuestAgent(
                 tools=[],
                 llm=self.llm,
