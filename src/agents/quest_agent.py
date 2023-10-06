@@ -10,8 +10,26 @@ from script import Script
 
 class QuestAgent(Agent):
     """
-    DESIGN GOALS:
-    This implements the "going on a quest" and only that.
+    The quest agent goes on a quest!
+
+    HOW THIS AGENT IS ACTIVATED
+    ===========================
+
+    The game log defers to this agent when `user_settings.current_quest` is not None.
+
+    The `user_settings.current_quest` argument matches `user_settings.quests[].name` and is used to provide the
+    Quest object to this agent at construction time so that it has a handle on where to load/store state.
+
+    WHAT CAUSES THAT ACTIVATION TO HAPPEN
+    =====================================
+
+    The `use_settings.current_quest` string is set to not-None when the following things happen:
+
+    - POST /start_quest (See the quest_mixin)
+    - maybe later: The Camp Agent runs the Start Quest Tool
+
+
+
     It can be slotted into as a state machine sub-agent by the overall agent.
     """
 

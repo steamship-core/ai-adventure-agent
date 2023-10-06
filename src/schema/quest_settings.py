@@ -14,6 +14,7 @@ class Quest(BaseModel):
     # Input Fields
 
     name: Optional[str]
+    user_input: Optional[str]
 
     # Metadata Fields
 

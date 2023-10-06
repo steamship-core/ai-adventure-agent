@@ -1,6 +1,8 @@
+import logging
 from typing import Optional
 
 from steamship import Steamship
+from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import Action, Agent, AgentContext
 
 from agents.camp_agent import CampAgent
@@ -41,7 +43,7 @@ class GameAgent(Agent):
 
         # Init Settings Objects
         self.server_settings = ServerSettings()
-        self.user_settings = UserSettings.load("player", self.client)
+        self.user_settings = UserSettings.load(self.client)
 
     def next_action(self, context: AgentContext) -> Action:
         """Select the next action to perform, which might involve deferring to another Agent."""
@@ -71,6 +73,15 @@ class GameAgent(Agent):
                 sub_agent = QuestAgent(
                     tools=[], llm=None, user_settings=self.user_settings, quest=quest
                 )
+
+        logging.info(
+            f"Deferring to sub-agent: {sub_agent.__class__.__name__}.",
+            extra={
+                AgentLogging.IS_MESSAGE: True,
+                AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+            },
+        )
 
         # Defer to the right agent.
         return sub_agent.next_action(context)

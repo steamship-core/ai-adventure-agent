@@ -57,18 +57,18 @@ class UserSettings(BaseModel):
         description="The current quest-id that the character is on. This is used for game logic.",
     )
 
-    def save(self, context_id: str, client: Steamship) -> dict:
+    def save(self, client: Steamship) -> dict:
         """Save UserSettings to the KeyValue store."""
-        key = f"UserSettings-{context_id}"
+        key = "UserSettings"
         value = self.dict()
         kv = KeyValueStore(client, key)
         kv.set(key, value)
         return value
 
     @staticmethod
-    def load(context_id: str, client: Steamship) -> "UserSettings":
+    def load(client: Steamship) -> "UserSettings":
         """Save UserSettings to the KeyValue store."""
-        key = f"UserSettings-{context_id}"
+        key = "UserSettings"
         kv = KeyValueStore(client, key)
         try:
             value = kv.get(key)

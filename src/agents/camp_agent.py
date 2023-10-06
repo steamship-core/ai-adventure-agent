@@ -3,6 +3,7 @@ from steamship.agents.schema import Action, Agent, AgentContext
 from steamship.agents.schema.action import FinishAction
 
 from mixins.user_settings import UserSettings
+from tools.start_quest_tool import StartQuestTool
 
 
 class CampAgent(Agent):
@@ -16,6 +17,12 @@ class CampAgent(Agent):
     PROMPT = ""
 
     user_settings: UserSettings
+
+    start_quest_tool: StartQuestTool
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.start_quest_tool = StartQuestTool(self.user_settings)
 
     def set_prompt(self):
         npcs = self.user_settings.camp.npcs or []
