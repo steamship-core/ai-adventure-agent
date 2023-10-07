@@ -12,7 +12,7 @@ from utils.context_utils import get_game_state
 
 
 class QuestMixin(PackageMixin):
-    """Provides endpoints for User Settings."""
+    """Provides endpoints for Game State."""
 
     client: Steamship
     agent_service: AgentService

@@ -4,7 +4,7 @@ from steamship.invocable.package_mixin import PackageMixin
 
 
 class ServerSettingsMixin(PackageMixin):
-    """Provides endpoints for User Settings."""
+    """Provides endpoints for Game State."""
 
     client: Steamship
 
@@ -13,12 +13,12 @@ class ServerSettingsMixin(PackageMixin):
 
     @post("/server_settings")
     def post_game_state(self, **kwargs) -> dict:
-        """Set the user settings."""
-        # TODO: Save the user settings
+        """Set the game state."""
+        # TODO: Save the game state
         return {}
 
     @get("/server_settings")
     def get_game_state(self, **kwargs) -> dict:
-        """Get the user settings."""
-        # TODO: Load the user settings
+        """Get the game state."""
+        # TODO: Load the game state
         return {}

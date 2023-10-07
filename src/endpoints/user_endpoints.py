@@ -10,7 +10,7 @@ from utils.context_utils import save_game_state
 
 
 class GameStateMixin(PackageMixin):
-    """Provides endpoints for User Settings."""
+    """Provides endpoints for Game State."""
 
     agent_service: AgentService
     client: Steamship
@@ -21,7 +21,7 @@ class GameStateMixin(PackageMixin):
 
     @post("/game_state")
     def post_game_state(self, **kwargs) -> dict:
-        """Set the user settings."""
+        """Set the game state."""
         game_state = GameState.parse_obj(kwargs)
         context = self.agent_service.build_default_context()
         # TODO: Do we want to update more softly rather than completely replace? That's pretty harsh.
@@ -30,5 +30,5 @@ class GameStateMixin(PackageMixin):
 
     @get("/game_state")
     def get_game_state(self) -> dict:
-        """Get the user settings."""
+        """Get the game state."""
         return GameState.load(client=self.client).dict()

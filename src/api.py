@@ -23,10 +23,10 @@ from agents.camp_agent import CampAgent
 from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
-from api_endpoints.npc_endpoints import NpcMixin
-from api_endpoints.quest_endpoints import QuestMixin
-from api_endpoints.server_endpoints import ServerSettingsMixin
-from api_endpoints.user_endpoints import GameStateMixin
+from endpoints.npc_endpoints import NpcMixin
+from endpoints.quest_endpoints import QuestMixin
+from endpoints.server_endpoints import ServerSettingsMixin
+from endpoints.user_endpoints import GameStateMixin
 from schema.game_state import GameState
 from schema.server_settings import ServerSettings
 from utils.context_utils import (
@@ -164,13 +164,13 @@ class AdventureGameService(AgentService):
         # API for getting and setting server settings
         self.add_mixin(ServerSettingsMixin(client=self.client))
 
-        # API for getting and setting user settings
+        # API for getting and setting game state
         self.add_mixin(GameStateMixin(client=self.client, agent_service=self))
 
-        # API for getting and setting user settings
+        # API for getting and setting game state
         self.add_mixin(QuestMixin(client=self.client, agent_service=self))
 
-        # API for getting and setting user settings
+        # API for getting and setting game state
         self.add_mixin(NpcMixin(client=self.client, agent_service=self))
 
         # Instantiate the core game agents
@@ -253,7 +253,7 @@ class AdventureGameService(AgentService):
         server_settings = ServerSettings()
         context = server_settings.add_to_agent_context(context)
 
-        # Now add in the User Settings
+        # Now add in the Game State
         game_state = GameState.load(self.client)
         context = game_state.add_to_agent_context(context)
 
