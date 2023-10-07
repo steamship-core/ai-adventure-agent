@@ -19,3 +19,15 @@ python -m pip install -r requirements.dev.txt
 
 ## Design Notes
 
+
+## TODOs
+
+- Narration should just be kicked out to an API. That saves us from having to figure out how to do it
+- Interrupt the user mid-quest to ask them to solve their problem
+- Asset generation for quests
+- Need to have something that announces the TRANSITION
+- Need to have something that allows the agent to initiate a conversation.
+
+## Next week
+
+- Profiling would be useful to understand if we can shave time
