@@ -1,4 +1,11 @@
-"""These are a set of utilities for interacting with the AgentContext object.
+"""Utilities for interacting with the AgentContext.
+
+IMPORTANT:
+
+This file is one of the key design principles of the game.
+The helper functions within mediate light-weight access to global game state using only the AgentContext.
+
+USAGE:
 
 The following things should ALWAYS be done via these functions:
 - getting / setting of game state
@@ -15,7 +22,7 @@ from typing import List, Optional, Union
 
 from steamship import Block, PluginInstance, Tag
 from steamship.agents.logging import AgentLogging
-from steamship.agents.schema import ChatHistory, ChatLLM
+from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
 from steamship.data import TagValueKey
 from steamship.utils.kv_store import KeyValueStore
@@ -251,7 +258,22 @@ def _key_for_question(blocks: List[Block], key: Optional[str] = None) -> str:
     return ret
 
 
-def ask_user(
+class FinishActionException(Exception):
+    """Thrown when a piece of code wishes to pop the stack all the way up to the enclosing Agent or AgentService.
+
+    The intended result is that the agent treat teh Exception as a FinishAction, emitting the response.
+
+    It is up to the throwing party to do any additional data preparation (e.g. see await_ask) related.
+    """
+
+    action: FinishAction
+
+    def __init__(self, action: FinishAction):
+        super().__init__()
+        self.action = action
+
+
+def await_ask(
     question: Union[str, List[Block]], context: AgentContext, key: Optional[str] = None
 ):
     """Asks the user a question. Can be used like `input` in Python.
@@ -262,10 +284,13 @@ def ask_user(
 
     RESULT:
 
-        If the key exists in the game_state object.
+        * If the key is equal to game_state.await_ask_key object, then this method immediately returns the last
+          user input from the chat_history. This means the agent has awoken after asking a question and getting input.
+          We also clear the game_state.await_ask_key bit.
+        * If the key is not equal to game_state.await_ask_key, then this method (1) sets it, (2) emits the question
+          to the chat history file, and (3) throws a FinishActionException.
 
-
-
+        The FinishActionException is handled by the enclosing Agent.
     """
     BASE_TAGS = [
         Tag(
@@ -277,4 +302,25 @@ def ask_user(
 
     # Make sure question is List[Block]
     if isinstance(question, str):
-        question = [Block(text=question, tags=BASE_TAGS)]
+        output = [Block(text=question, tags=BASE_TAGS)]
+    else:
+        output = question
+
+    key = _key_for_question(output)
+
+    # Check if we have ALREADY asked about this key!
+    game_state = get_game_state(context)
+
+    if game_state.await_ask_key == key:
+        # Assume we've already asked! Let's return the last user response.
+        if context.chat_history and context.chat_history.last_user_message:
+            if context.chat_history.last_user_message.text:
+                game_state.await_ask_key = None
+                save_game_state(game_state, context)
+                return context.chat_history.last_user_message.text
+
+    # Otherwise we set the key and throw the asking exception
+    game_state.await_ask_key = key
+    save_game_state(game_state, context)
+
+    raise FinishActionException(action=FinishAction(output=output))

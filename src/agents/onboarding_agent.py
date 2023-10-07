@@ -1,32 +1,93 @@
-from steamship import Block, MimeTypes, Steamship
-from steamship.agents.schema import Action, Agent, AgentContext
+from steamship import Block, MimeTypes
+from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
+from schema.characters import HumanCharacter
+from schema.game_state import GameState
+from schema.objects import Item
+from utils.context_utils import await_ask, get_game_state, save_game_state
+from utils.interruptible_python_agent import InterruptiblePythonAgent
 
-class OnboardingAgent(Agent):
+
+class OnboardingAgent(InterruptiblePythonAgent):
+    """Implements the flow to onboared a new player.
+
+    - For pure chat users, this is essential.
+    - For web users, this is not necessary, as the website will provide this information via API.
+
+    This flow uses checks against the game_state object to fast-forward through this logic in such that only
+    the missing pieces of information are asked of the user in either chat or web mode.
     """
-    DESIGN GOALS:
-    This implements the "create a character flow" and only that.
-    It can be slotted into as a state machine sub-agent by the overall agent.
 
-    NOTE:
-    The web site will actually take care of this so we technically don't need this.
-    This is just to help the agent-side develop things in a way that doesn't require the web to work.
-    It also holds a finger on the possibility that we might run in "only Slack" mode or something without a web site.
-    """
+    def run(self, context: AgentContext) -> Action:
+        game_state: GameState = get_game_state(context)
+        player: HumanCharacter = game_state.player
 
-    client: Steamship
+        if not player.name:
+            player.name = await_ask("What is your character's name?", context)
+            save_game_state(game_state, context)
 
-    PROMPT = ""
+        if not player.background:
+            player.background = await_ask(
+                f"What is {player.name}'s backstory?", context
+            )
+            save_game_state(game_state, context)
 
-    def record_action_run(self, action: Action, context: AgentContext):
-        pass
+        if not player.description:
+            player.background = await_ask(
+                f"Describe {player.name}'s backstory?", context
+            )
+            save_game_state(game_state, context)
 
-    def next_action(self, context: AgentContext) -> Action:
+        # TODO: How can we do something like this:
+        # if not player.image_generation:
+        #    player.image_generation = generate(..)
+        #    save_game_state(game_state, context)
+        #
+        # But have that operation:
+        #    1) NOT WAIT!! for the generation to complete!
+        #    2) Result in game_state having data that contains, without ANY additional requirements by the web client,
+        #       the URL of the generation
+        #    3) Some kind of notification.. e.g. on the chat history, etc, of the asset being ready
+        #
+        # Ideally as soon as we:
+        #    1) Know the description, but
+        #    2) Realize we haven't made a character image
+        #
+        # We just kick off a generation loop.
+        #
+
+        if not player.inventory:
+            name = await_ask(f"What is {player.name}'s starting item?", context)
+            if player.inventory is None:
+                player.inventory = []
+            player.inventory.append(Item(name=name))
+            save_game_state(game_state, context)
+
+        if not player.motivation:
+            player.motivation = await_ask(
+                f"What is {player.name} motivated to achieve?", context
+            )
+            save_game_state(game_state, context)
+
+        if not game_state.genre:
+            game_state.genre = await_ask(
+                "What is the genre of the story (Adventure, Fantasy, Thriller, Sci-Fi)?",
+                context,
+            )
+            save_game_state(game_state, context)
+
+        if not game_state.tone:
+            game_state.tone = await_ask(
+                "What is the tone of the story (Hollywood style, Dark, Funny, Romantic)?",
+                context,
+            )
+            save_game_state(game_state, context)
+
         return FinishAction(
             output=[
                 Block(
-                    text="TODO: Character creation flow and persistence.",
+                    text=f"{player.name}! Let's get you to camp! This is where all your quests begin from.",
                     mime_type=MimeTypes.MKD,
                 )
             ]

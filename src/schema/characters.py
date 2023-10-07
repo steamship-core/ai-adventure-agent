@@ -66,17 +66,3 @@ class HumanCharacter(Character):
         100,
         description="The energy the player has. Going on a quest requires and expends energy. This is the unit of monetization for the game.",
     )
-
-    def is_character_completed(self) -> bool:
-        """Return True if the character is completed."""
-        return True
-        # return (
-        #     self.name is not None
-        #     and self.background is not None
-        #     and self.inventory is not None
-        #     and self.motivation is not None
-        # )
-
-        # TODO: return self.name and self.background and self.inventory and self.motivation and self.tone
-        # Such that we interrupt and ask about these if they're not there.
-        # Could we have some sort of BaseMode.set_with_question("field", "question") class?

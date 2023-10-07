@@ -39,7 +39,7 @@ The story describes your character as: {npc.description}
 The story describes your character's background as: {npc.background}
 The story describes your character's motivation as: {npc.motivation}
 
-The story's theme is: {game_state.theme}
+The story's theme is: {game_state.genre}
 The story's tone is: {game_state.tone}
 
 Respond to the chat with only dialogue that character would say - no more. Speak as a character in a story would: immersed in the scene, assuming the person you are speaking with shares similar knowledge.

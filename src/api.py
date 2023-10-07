@@ -23,10 +23,10 @@ from agents.camp_agent import CampAgent
 from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
+from endpoints.game_state_endpoints import GameStateMixin
 from endpoints.npc_endpoints import NpcMixin
 from endpoints.quest_endpoints import QuestMixin
 from endpoints.server_endpoints import ServerSettingsMixin
-from endpoints.user_endpoints import GameStateMixin
 from schema.game_state import GameState
 from schema.server_settings import ServerSettings
 from utils.context_utils import (
@@ -270,20 +270,21 @@ class AdventureGameService(AgentService):
         context = self.build_default_context()
         game_state = get_game_state(context)
 
-        if not game_state or not game_state.player.is_character_completed():
+        if not game_state.is_onboarding_complete():
+            # Use the ONBOARDING AGENT if we still need to collect player/game information
             sub_agent = self.onboarding_agent
         else:
             if game_state.in_conversation_with:
-                # If the user is talking to someone, we use the NpcAgent
+                # Use the NPC AGENT if we're currently in a conversation.
                 sub_agent = self.npc_agent
                 switch_history_to_current_conversant(context)
 
             elif game_state.current_quest:
-                # Else if the user is on a quest, we use the QuestAgent
+                # Use the QUEST AGENT if we're currently on a quest.
                 sub_agent = self.quest_agent
                 switch_history_to_current_quest(context)
             else:
-                # Finally, we default to the CampAgent
+                # Use the CAMP AGENT as the default. This is like the home base router.
                 sub_agent = self.camp_agent
 
         logging.info(

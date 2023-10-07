@@ -2,21 +2,21 @@ import json
 import logging
 from typing import List, Optional, Union
 
-from context_utils import (
-    get_audio_narration_generator,
-    get_background_image_generator,
-    get_background_music_generator,
-    get_story_text_generator,
-)
 from steamship import Block, MimeTypes, Steamship, Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.agents.schema.chathistory import ChatHistory
 from steamship.data.operations.generator import GenerateResponse
 from steamship.data.tags import TagValueKey
-from tags import CharacterTag, SceneTag, TagKindExtensions
 
 from schema.quest import Quest
 from schema.server_settings import ServerSettings
+from utils.context_utils import (
+    get_audio_narration_generator,
+    get_background_image_generator,
+    get_background_music_generator,
+    get_story_text_generator,
+)
+from utils.tags import CharacterTag, SceneTag, TagKindExtensions
 
 
 class Script(ChatHistory):

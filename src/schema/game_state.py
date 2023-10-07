@@ -34,7 +34,7 @@ class GameState(BaseModel):
     tone: Optional[str] = Field(
         "Silly", description="The tone of the story being told."
     )
-    theme: Optional[str] = Field(
+    genre: Optional[str] = Field(
         "Fantasy", description="The genre of the story being told."
     )
 
@@ -57,6 +57,28 @@ class GameState(BaseModel):
         None,
         description="The name of the NPC that the user is currently in conversation with.",
     )
+
+    await_ask_key: Optional[str] = Field(
+        None,
+        description="The key of the last question asked to the user via context_utils.await_ask.",
+    )
+
+    def is_onboarding_complete(self) -> bool:
+        """Return True if the player onboarding has been completed.
+
+        This is used by api.pyu to decide whether to route to the ONBOARDING AGENT.
+        """
+        return (
+            self.player is not None
+            and self.player.name is not None
+            and self.player.description is not None
+            and self.player.background is not None
+            and self.player.motivation is not None
+            and self.player.inventory is not None
+            and len(self.player.inventory) > 0
+            and self.genre is not None
+            and self.tone is not None
+        )
 
     @staticmethod
     def load(client: Steamship) -> "GameState":
