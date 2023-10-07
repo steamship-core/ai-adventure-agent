@@ -27,6 +27,7 @@ python -m pip install -r requirements.dev.txt
 - Asset generation for quests
 - Need to have something that announces the TRANSITION
 - Need to have something that allows the agent to initiate a conversation.
+- Permit the NPC Agent to initiate quest -- it's weird you have to go back to camp
 
 ## Next week
 
