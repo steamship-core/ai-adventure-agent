@@ -8,13 +8,13 @@ from steamship.agents.schema.chathistory import ChatHistory
 from steamship.data.operations.generator import GenerateResponse
 from steamship.data.tags import TagValueKey
 
+from api_endpoints.server_settings import ServerSettings
 from context_utils import (
+    get_audio_narration_generator,
     get_background_image_generator,
     get_background_music_generator,
-    get_narration_generator,
-    get_story_generator,
+    get_story_text_generator,
 )
-from mixins.server_settings import ServerSettings
 from schema.quest_settings import Quest
 from tags import CharacterTag, SceneTag, TagKindExtensions
 
@@ -117,7 +117,7 @@ class Script(ChatHistory):
     def generate_narration(
         self, block: Block, context: AgentContext
     ) -> Task[GenerateResponse]:
-        generator = get_narration_generator(context)
+        generator = get_audio_narration_generator(context)
         task = generator.generate(
             text=block.text,
             append_output_to_file=True,
@@ -135,7 +135,7 @@ class Script(ChatHistory):
                 value={TagValueKey.STRING_VALUE.value: context.request_id},
             )
         ]
-        generator = get_story_generator(context)
+        generator = get_story_text_generator(context)
         self.append_system_message(prompt)
         generated_text = generator.generate(self.file.id).wait().blocks[0].text
         block = self.append_assistant_message(generated_text, tags=BASE_TAGS)

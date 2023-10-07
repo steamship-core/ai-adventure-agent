@@ -20,12 +20,13 @@ from steamship.invocable import Config
 from steamship.utils.repl import AgentREPL
 
 from agents.camp_agent import CampAgent
+from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
+from api_endpoints.quest_mixin import QuestMixin
+from api_endpoints.server_settings import ServerSettings, ServerSettingsMixin
+from api_endpoints.user_settings import UserSettings, UserSettingsMixin
 from context_utils import get_user_settings
-from mixins.quest_mixin import QuestMixin
-from mixins.server_settings import ServerSettings, ServerSettingsMixin
-from mixins.user_settings import UserSettings, UserSettingsMixin
 
 
 class AdventureGameService(AgentService):
@@ -156,7 +157,7 @@ class AdventureGameService(AgentService):
         self.add_mixin(ServerSettingsMixin(client=self.client))
 
         # API for getting and setting user settings
-        self.add_mixin(UserSettingsMixin(client=self.client))
+        self.add_mixin(UserSettingsMixin(client=self.client, agent_service=self))
 
         # API for getting and setting user settings
         self.add_mixin(QuestMixin(client=self.client, agent_service=self))
@@ -169,6 +170,7 @@ class AdventureGameService(AgentService):
         )
         self.quest_agent = QuestAgent(tools=[], llm=function_capable_llm)
         self.camp_agent = CampAgent(llm=function_capable_llm)
+        self.npc_agent = NpcAgent(llm=function_capable_llm)
 
     def build_default_context(
         self, context_id: Optional[str] = None, **kwargs
@@ -260,10 +262,15 @@ class AdventureGameService(AgentService):
         if not user_settings or not user_settings.player.is_character_completed():
             sub_agent = self.onboarding_agent
         else:
-            if user_settings.current_quest is None:
-                sub_agent = self.camp_agent
-            else:
+            if user_settings.in_conversation_with:
+                # If the user is talking to someone, we use the NpcAgent
+                sub_agent = self.npc_agent
+            elif user_settings.current_quest:
+                # Else if the user is on a quest, we use the QuestAgent
                 sub_agent = self.quest_agent
+            else:
+                # Finally, we default to the CampAgent
+                sub_agent = self.camp_agent
 
         logging.info(
             f"Selecting Agent: {sub_agent.__class__.__name__}.",

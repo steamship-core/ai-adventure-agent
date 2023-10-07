@@ -6,9 +6,9 @@ from PIL import Image
 from steamship import Block, PluginInstance, Steamship
 from steamship.agents.schema import AgentContext
 
+from api_endpoints.server_settings import ServerSettings
+from api_endpoints.user_settings import UserSettings
 from context_utils import get_profile_image_generator
-from mixins.server_settings import ServerSettings
-from mixins.user_settings import UserSettings
 from schema.characters import Item
 from schema.quest_settings import Quest
 

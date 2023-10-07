@@ -3,7 +3,8 @@ from steamship.agents.schema import AgentContext
 from steamship.agents.schema.message_selectors import MessageWindowMessageSelector
 
 from context_utils import get_user_settings
-from mixins.user_settings import UserSettings
+from schema.user_settings import UserSettings
+from tools.start_conversation_tool import StartConversationTool
 from tools.start_quest_tool import StartQuestTool
 
 
@@ -19,7 +20,7 @@ class CampAgent(FunctionsBasedAgent):
 
     def __init__(self, **kwargs):
         super().__init__(
-            tools=[StartQuestTool()],
+            tools=[StartQuestTool(), StartConversationTool()],
             message_selector=MessageWindowMessageSelector(k=10),
             **kwargs,
         )

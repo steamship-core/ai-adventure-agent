@@ -12,9 +12,8 @@ class Quest(BaseModel):
     """Information about a quest."""
 
     # Input Fields
-
+    originating_string: Optional[str]
     name: Optional[str]
-    user_input: Optional[str]
 
     # Metadata Fields
 

@@ -2,8 +2,8 @@ from steamship import Block, MimeTypes
 from steamship.agents.schema import Action, Agent, AgentContext
 from steamship.agents.schema.action import FinishAction
 
+from api_endpoints.user_settings import UserSettings
 from context_utils import get_current_quest, get_user_settings
-from mixins.user_settings import UserSettings
 from schema.objects import Item
 from schema.quest_settings import Quest
 from script import Script
@@ -28,8 +28,6 @@ class QuestAgent(Agent):
 
     - POST /start_quest (See the quest_mixin)
     - maybe later: The Camp Agent runs the Start Quest Tool
-
-
 
     It can be slotted into as a state machine sub-agent by the overall agent.
     """

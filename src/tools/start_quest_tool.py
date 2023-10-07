@@ -1,10 +1,16 @@
+import logging
 from typing import Any, List, Optional, Union
 
 from steamship import Block, Task
+from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, Tool
 
-from context_utils import get_narration_generator, get_user_settings
-from mixins.user_settings import UserSettings
+from api_endpoints.user_settings import UserSettings
+from context_utils import (
+    get_story_text_generator,
+    get_user_settings,
+    save_user_settings,
+)
 from schema.quest_settings import Quest
 
 
@@ -31,15 +37,25 @@ class StartQuestTool(Tool):
         kwargs["is_final"] = True
         super().__init__(**kwargs)
 
-    def create_quest(
+    def start_quest(
         self,
         user_settings: UserSettings,
         context: AgentContext,
         purpose: Optional[str] = None,
     ) -> Quest:
-        generator = get_narration_generator(context)
+        generator = get_story_text_generator(context)
 
         if not purpose:
+            logging.info(
+                "No purpose for the quest was given, so inventing one..",
+                extra={
+                    AgentLogging.IS_MESSAGE: True,
+                    AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                    AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
+                    AgentLogging.TOOL_NAME: self.name,
+                },
+            )
+
             # TODO: Incorporate character information.
             task = generator.generate(text="What is a storybook quest one might go on?")
             task.wait()
@@ -50,22 +66,28 @@ class StartQuestTool(Tool):
         )
         task.wait()
         name = task.output.blocks[0].text
-        return Quest(name=name, user_input=purpose)
 
-    def start_quest(
-        self,
-        user_settings: UserSettings,
-        context: AgentContext,
-        purpose: Optional[str] = None,
-    ) -> Quest:
-        """Creates and starts a new quest."""
-        quest = self.create_quest(user_settings, context, purpose)
+        logging.info(
+            f"Naming this quest: {name}",
+            extra={
+                AgentLogging.IS_MESSAGE: True,
+                AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
+                AgentLogging.TOOL_NAME: self.name,
+            },
+        )
+
+        quest = Quest(name=name, originating_string=purpose)
+
         if not user_settings.quests:
             user_settings.quests = []
         user_settings.quests.append(quest)
         user_settings.current_quest = quest.name
-        user_settings.save(context.client)
-        return quest
+
+        # This saves it in a way that is both persistent (KV Store) and updates the context
+        save_user_settings(user_settings, context)
+
+        return Quest(name=name, user_input=purpose)
 
     def run(
         self, tool_input: List[Block], context: AgentContext
