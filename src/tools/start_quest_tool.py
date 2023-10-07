@@ -3,15 +3,15 @@ from typing import Any, List, Optional, Union
 
 from steamship import Block, Task
 from steamship.agents.logging import AgentLogging
-from steamship.agents.schema import AgentContext, Tool
+from steamship.agents.schema import AgentContext, ChatHistory, Tool
 
-from api_endpoints.user_settings import UserSettings
 from context_utils import (
     get_story_text_generator,
     get_user_settings,
     save_user_settings,
 )
-from schema.quest_settings import Quest
+from schema.quest import Quest
+from schema.user_settings import UserSettings
 
 
 class StartQuestTool(Tool):
@@ -79,6 +79,58 @@ class StartQuestTool(Tool):
 
         quest = Quest(name=name, originating_string=purpose)
 
+        # Create a Chat History for it.
+        logging.info(
+            "Creating a new chat history and seeding it with information...",
+            extra={
+                AgentLogging.IS_MESSAGE: True,
+                AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
+                AgentLogging.TOOL_NAME: self.name,
+            },
+        )
+
+        player = user_settings.player
+
+        chat_history = ChatHistory.get_or_create(
+            context.client, {"id": f"quest:{quest.name}"}
+        )
+        chat_history.append_system_message(
+            f"We are writing a story about the adventure of a character named {player.name}."
+        )
+        chat_history.append_system_message(
+            f"{player.name} has the following background: {player.background}"
+        )
+
+        # Add in information about pinventory
+        items = []
+        for item in player.inventory:
+            items.append(item.name)
+        if len(items) > 0:
+            item_list = ",".join(items)
+            chat_history.append_system_message(
+                f"{player.name} has the following things in their inventory: {item_list}"
+            )
+
+        chat_history.append_system_message(
+            f"{player.name}'s motivation is to {player.motivation}"
+        )
+        chat_history.append_system_message(
+            f"The tone of this story is {user_settings.tone}"
+        )
+
+        # Add in information about prior quests
+        prepared_mission_summaries = []
+        for prior_quest in user_settings.quests:
+            prepared_mission_summaries.append(prior_quest.text_summary)
+        if len(prepared_mission_summaries) > 0:
+            chat_history.append_system_message(
+                f"{player.name} has already been on previous missions: \n {prepared_mission_summaries}"
+            )
+
+        # Now save the chat history file
+        quest.chat_file_id = chat_history.file.id
+
         if not user_settings.quests:
             user_settings.quests = []
         user_settings.quests.append(quest)
@@ -87,7 +139,7 @@ class StartQuestTool(Tool):
         # This saves it in a way that is both persistent (KV Store) and updates the context
         save_user_settings(user_settings, context)
 
-        return Quest(name=name, user_input=purpose)
+        return quest
 
     def run(
         self, tool_input: List[Block], context: AgentContext

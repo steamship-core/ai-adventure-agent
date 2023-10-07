@@ -23,10 +23,17 @@ from agents.camp_agent import CampAgent
 from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
-from api_endpoints.quest_mixin import QuestMixin
-from api_endpoints.server_settings import ServerSettings, ServerSettingsMixin
-from api_endpoints.user_settings import UserSettings, UserSettingsMixin
-from context_utils import get_user_settings
+from api_endpoints.npc_endpoints import NpcMixin
+from api_endpoints.quest_endpoints import QuestMixin
+from api_endpoints.server_endpoints import ServerSettingsMixin
+from api_endpoints.user_endpoints import UserSettingsMixin
+from context_utils import (
+    get_user_settings,
+    switch_history_to_current_conversant,
+    switch_history_to_current_quest,
+)
+from schema.server_settings import ServerSettings
+from schema.user_settings import UserSettings
 
 
 class AdventureGameService(AgentService):
@@ -91,6 +98,7 @@ class AdventureGameService(AgentService):
         UserSettingsMixin,  # Provides API Endpoints for User Management (used by the associated web app)
         ServerSettingsMixin,  # Provides API Endpoints for Server Management (used by the associated web app)
         QuestMixin,  # Provides API Endpoints for Quest Management (used by the associated web app)
+        NpcMixin,  # Provides API Endpoints for NPC Chat Management (used by the associated web app)
     ]
     """USED_MIXIN_CLASSES tells Steamship what additional HTTP endpoints to register on your AgentService."""
 
@@ -161,6 +169,9 @@ class AdventureGameService(AgentService):
 
         # API for getting and setting user settings
         self.add_mixin(QuestMixin(client=self.client, agent_service=self))
+
+        # API for getting and setting user settings
+        self.add_mixin(NpcMixin(client=self.client, agent_service=self))
 
         # Instantiate the core game agents
         function_capable_llm = ChatOpenAI(self.client)
@@ -265,9 +276,12 @@ class AdventureGameService(AgentService):
             if user_settings.in_conversation_with:
                 # If the user is talking to someone, we use the NpcAgent
                 sub_agent = self.npc_agent
+                switch_history_to_current_conversant(context)
+
             elif user_settings.current_quest:
                 # Else if the user is on a quest, we use the QuestAgent
                 sub_agent = self.quest_agent
+                switch_history_to_current_quest(context)
             else:
                 # Finally, we default to the CampAgent
                 sub_agent = self.camp_agent

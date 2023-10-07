@@ -1,12 +1,12 @@
-from steamship import Block, MimeTypes
+import logging
+
 from steamship.agents.schema import Action, Agent, AgentContext
 from steamship.agents.schema.action import FinishAction
 
-from api_endpoints.user_settings import UserSettings
-from context_utils import get_current_quest, get_user_settings
-from schema.objects import Item
-from schema.quest_settings import Quest
+from context_utils import get_user_settings
+from schema.user_settings import UserSettings
 from script import Script
+from tools.end_quest_tool import EndQuestTool
 
 
 class QuestAgent(Agent):
@@ -32,13 +32,14 @@ class QuestAgent(Agent):
     It can be slotted into as a state machine sub-agent by the overall agent.
     """
 
-    def begin_quest(self, user_settings: UserSettings, context: AgentContext):
+    def run_quest(self, user_settings: UserSettings, context: AgentContext):
         """
+        TODO: This is basically where the meat of the storytelling happens.
 
-        CONSIDER: Should this be a Tool?
+        It could go in a tool, but that doesn't feel necessary.. there are some other spots where tools feel very
+        well fit, but this might be better left open-ended so we can stop/start things as we like.
         """
         script = Script(context.chat_history)
-
         _ = script.generate_story(
             f"Like the narrator of a movie, explain that {user_settings.player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
             context,
@@ -59,64 +60,18 @@ class QuestAgent(Agent):
 
         script.generate_narration(story_part_1, context)
 
-    def finish_quest(self, user_settings: UserSettings, context: AgentContext):
-        """
-
-        CONSIDER: Should this be a Tool?
-        """
-
         script = Script(context.chat_history)
-
         story_part_2 = script.generate_story(
             f"How does this mission end? {user_settings.player.name} should not yet achieve their overall goal of {user_settings.player.motivation}",
             context,
         )
-
         script.generate_narration(story_part_2, context)
-
-    def release_agent(
-        self, user_settings: UserSettings, quest: Quest, context: AgentContext
-    ):
-        """Does final summarizing activities.
-
-        TODO: Inform the controlling agent that our work is done.
-        CONSIDER: Could this be async?
-        """
-        script = Script(context.chat_history)
-
-        quest.text_summary = "[TODO] Replace this summary with a generated one."
-        quest.new_items = [
-            Item(name="[TODO] Replace this with an item the player found.")
-        ]
-        quest.rank_delta = 1
-
-        # TODO: Save quest
-        script.end_scene(quest, context)
 
     def next_action(self, context: AgentContext) -> Action:
         user_settings = get_user_settings(context)
-        quest = get_current_quest(context)
-
         try:
-            self.begin_quest(user_settings, context)
-            self.finish_quest(user_settings, context)
-            self.release_agent(user_settings, quest, context)
-
-            # CONCLUDE STORY
-            """
-            TODO
-            Block is of type END SCENE and contains JSON with the summary.
-
-            - how much gold
-            - what items
-            - summary of the journey
-
-            Every Quest is a different chat history.
-            - There would be a quest log button somewhere.
-            - In that quest log.
-            """
-
-            final_block = Block(text="The quest is over.", mime_type=MimeTypes.MKD)
-            return FinishAction(output=[final_block])
+            self.run_quest(user_settings, context)
+            blocks = EndQuestTool().run([], context)
+            return FinishAction(output=blocks)
         except BaseException as e:
-            print(e)
+            logging.exception(e)

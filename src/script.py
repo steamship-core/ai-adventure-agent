@@ -8,14 +8,14 @@ from steamship.agents.schema.chathistory import ChatHistory
 from steamship.data.operations.generator import GenerateResponse
 from steamship.data.tags import TagValueKey
 
-from api_endpoints.server_settings import ServerSettings
 from context_utils import (
     get_audio_narration_generator,
     get_background_image_generator,
     get_background_music_generator,
     get_story_text_generator,
 )
-from schema.quest_settings import Quest
+from schema.quest import Quest
+from schema.server_settings import ServerSettings
 from tags import CharacterTag, SceneTag, TagKindExtensions
 
 
@@ -84,7 +84,6 @@ class Script(ChatHistory):
         script.generate_sound_effect("dsf")
         script.generate_background_image("In a dark forest, you see a castle in the distance.", context)
         script.generate_background_image("This", context)
-
         """
 
         generator = get_background_image_generator(context)
@@ -150,8 +149,8 @@ class Script(ChatHistory):
                 value={TagValueKey.STRING_VALUE.value: context.request_id},
             )
         ]
-
-        script.file.append_block(
+        print("Ending scene", quest)
+        self.file.append_block(
             text=json.dumps(quest.dict()),
             mime_type=MimeTypes.JSON,
             tags=[

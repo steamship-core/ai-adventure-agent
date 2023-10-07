@@ -10,7 +10,7 @@ from api_endpoints.server_settings import ServerSettings
 from api_endpoints.user_settings import UserSettings
 from context_utils import get_profile_image_generator
 from schema.characters import Item
-from schema.quest_settings import Quest
+from schema.quest import Quest
 
 
 class AdventureGame:

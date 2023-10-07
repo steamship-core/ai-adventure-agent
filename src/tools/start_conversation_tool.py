@@ -77,7 +77,7 @@ class StartConversationTool(Tool):
 
         npc: Optional[NpcCharacter] = None
         for char in user_settings.camp.npcs:
-            if character_name == npc.name:
+            if character_name == char.name:
                 npc = char
                 break
 
@@ -90,6 +90,7 @@ class StartConversationTool(Tool):
         # Finally.. we have our NPC.
         user_settings.in_conversation_with = npc.name
         save_user_settings(user_settings, context)
+        return npc
 
     def run(
         self, tool_input: List[Block], context: AgentContext

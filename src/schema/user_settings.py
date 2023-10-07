@@ -9,7 +9,7 @@ from steamship.utils.kv_store import KeyValueStore
 from context_utils import with_user_settings
 from schema.camp import Camp
 from schema.characters import HumanCharacter
-from schema.quest_settings import Quest
+from schema.quest import Quest
 
 
 class UserSettings(BaseModel):

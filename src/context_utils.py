@@ -1,3 +1,15 @@
+"""These are a set of utilities for interacting with the AgentContext object.
+
+The following things should ALWAYS be done via these functions:
+- getting / setting of game state
+- getting or generators
+- manipulations on active chat histories
+
+That way these can as global accessors into the shared AgentContext object that is passed around, with persistence
+layered on top to boot.
+
+That reduces the need of the game code to perform verbose plumbing operations.
+"""
 import logging
 from typing import Optional
 
@@ -146,7 +158,7 @@ def get_current_quest(context: AgentContext) -> Optional["Quest"]:  # noqa: F821
     return None
 
 
-def switch_history_to_current_conversant(
+def get_current_conversant(
     context: AgentContext,
 ) -> Optional["NpcCharacter"]:  # noqa: F821
     """Return the NpcCharacter of the current conversation, or None."""
@@ -166,21 +178,53 @@ def switch_history_to_current_conversant(
 
     for npc in user_settings.camp.npcs or []:
         if npc.name == user_settings.in_conversation_with:
-            logging.info(
-                f"Switching to NPC Chat History: {npc.name}.",
-                extra={
-                    AgentLogging.IS_MESSAGE: True,
-                    AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
-                    AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
-                },
-            )
-            history = ChatHistory.get_or_create(
-                context.client, {"id": npc.name}, [], searchable=True
-            )
-            context.chat_history = history
             return npc
 
     return None
+
+
+def switch_history_to_current_conversant(
+    context: AgentContext,
+) -> AgentContext:  # noqa: F821
+    """Return the NpcCharacter of the current conversation, or None."""
+    npc = get_current_conversant(context)
+
+    if npc:
+        logging.info(
+            f"Switching to NPC Chat History: {npc.name}.",
+            extra={
+                AgentLogging.IS_MESSAGE: True,
+                AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+            },
+        )
+        history = ChatHistory.get_or_create(
+            context.client, {"id": npc.name}, [], searchable=True
+        )
+        context.chat_history = history
+    return context
+
+
+def switch_history_to_current_quest(
+    context: AgentContext,
+) -> AgentContext:  # noqa: F821
+    """Return the NpcCharacter of the current conversation, or None."""
+    quest = get_current_quest(context)
+
+    if quest:
+        logging.info(
+            f"Switching to Quest Chat History: {quest.name}.",
+            extra={
+                AgentLogging.IS_MESSAGE: True,
+                AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+            },
+        )
+        history = ChatHistory.get_or_create(
+            context.client, {"id": f"quest:{quest.name}"}, [], searchable=True
+        )
+        context.chat_history = history
+    return context
 
 
 def get_function_capable_llm(

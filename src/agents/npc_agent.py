@@ -3,7 +3,7 @@ from steamship.agents.functional import FunctionsBasedAgent
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.message_selectors import MessageWindowMessageSelector
 
-from context_utils import get_user_settings, switch_history_to_current_conversant
+from context_utils import get_current_conversant, get_user_settings
 from schema.characters import NpcCharacter
 from schema.user_settings import UserSettings
 from tools.end_conversation_tool import EndConversationTool
@@ -37,16 +37,28 @@ class NpcAgent(FunctionsBasedAgent):
 
 The story describes your character as: {npc.description}
 The story describes your character's background as: {npc.background}
+The story describes your character's motivation as: {npc.motivation}
 
 The story's theme is: {user_settings.theme}
 The story's tone is: {user_settings.tone}
 
 Respond to the chat with only dialogue that character would say - no more. Speak as a character in a story would: immersed in the scene, assuming the person you are speaking with shares similar knowledge.
+
+Don't speak like an assistant (how can I assist you?). Instead, speak like a familiar person, as your character would.
+
+NOTE: Some functions return images, video, and audio files. These multimedia files will be represented in messages as
+UUIDs for Steamship Blocks. When responding directly to a user, you SHOULD print the Steamship Blocks for the images,
+video, or audio as follows: `Block(UUID for the block)`.
+
+Example response for a request that generated an image:
+Here is the image you requested: Block(288A2CA1-4753-4298-9716-53C1E42B726B).
+
+Only use the functions you have been provided with. Do not make up functions. If the user wants to go on a quest, function which ends the conversation.
 """
 
     def next_action(self, context: AgentContext) -> Action:
         # Switch the history to the new conversant
-        npc = switch_history_to_current_conversant(context)
+        npc = get_current_conversant(context)
 
         if not npc:
             raise SteamshipError(
