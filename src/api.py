@@ -26,14 +26,14 @@ from agents.quest_agent import QuestAgent
 from api_endpoints.npc_endpoints import NpcMixin
 from api_endpoints.quest_endpoints import QuestMixin
 from api_endpoints.server_endpoints import ServerSettingsMixin
-from api_endpoints.user_endpoints import UserSettingsMixin
-from context_utils import (
-    get_user_settings,
+from api_endpoints.user_endpoints import GameStateMixin
+from schema.game_state import GameState
+from schema.server_settings import ServerSettings
+from utils.context_utils import (
+    get_game_state,
     switch_history_to_current_conversant,
     switch_history_to_current_quest,
 )
-from schema.server_settings import ServerSettings
-from schema.user_settings import UserSettings
 
 
 class AdventureGameService(AgentService):
@@ -95,7 +95,7 @@ class AdventureGameService(AgentService):
         SteamshipWidgetTransport,  # Adds compatibility with Steamship's Hosting Panel
         TelegramTransport,  # Adds compatibility with Telegram
         SlackTransport,  # Adds compatibility with Slack
-        UserSettingsMixin,  # Provides API Endpoints for User Management (used by the associated web app)
+        GameStateMixin,  # Provides API Endpoints for User Management (used by the associated web app)
         ServerSettingsMixin,  # Provides API Endpoints for Server Management (used by the associated web app)
         QuestMixin,  # Provides API Endpoints for Quest Management (used by the associated web app)
         NpcMixin,  # Provides API Endpoints for NPC Chat Management (used by the associated web app)
@@ -165,7 +165,7 @@ class AdventureGameService(AgentService):
         self.add_mixin(ServerSettingsMixin(client=self.client))
 
         # API for getting and setting user settings
-        self.add_mixin(UserSettingsMixin(client=self.client, agent_service=self))
+        self.add_mixin(GameStateMixin(client=self.client, agent_service=self))
 
         # API for getting and setting user settings
         self.add_mixin(QuestMixin(client=self.client, agent_service=self))
@@ -193,7 +193,7 @@ class AdventureGameService(AgentService):
 
         You can fetch many things from it using fetchers in `context_utils.py` such as:
 
-        - get_user_settings
+        - get_game_state
         - get_server_settings
         - get_background_image_generator
         - etc
@@ -254,8 +254,8 @@ class AdventureGameService(AgentService):
         context = server_settings.add_to_agent_context(context)
 
         # Now add in the User Settings
-        user_settings = UserSettings.load(self.client)
-        context = user_settings.add_to_agent_context(context)
+        game_state = GameState.load(self.client)
+        context = game_state.add_to_agent_context(context)
 
         return context
 
@@ -268,17 +268,17 @@ class AdventureGameService(AgentService):
         agent switches and can't take them? We'll find out during gameplay..
         """
         context = self.build_default_context()
-        user_settings = get_user_settings(context)
+        game_state = get_game_state(context)
 
-        if not user_settings or not user_settings.player.is_character_completed():
+        if not game_state or not game_state.player.is_character_completed():
             sub_agent = self.onboarding_agent
         else:
-            if user_settings.in_conversation_with:
+            if game_state.in_conversation_with:
                 # If the user is talking to someone, we use the NpcAgent
                 sub_agent = self.npc_agent
                 switch_history_to_current_conversant(context)
 
-            elif user_settings.current_quest:
+            elif game_state.current_quest:
                 # Else if the user is on a quest, we use the QuestAgent
                 sub_agent = self.quest_agent
                 switch_history_to_current_quest(context)

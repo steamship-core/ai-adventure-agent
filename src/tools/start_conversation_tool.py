@@ -5,15 +5,15 @@ from steamship import Block, Task
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, Tool
 
-from context_utils import get_user_settings, save_user_settings
 from schema.characters import NpcCharacter
-from schema.user_settings import UserSettings
+from schema.game_state import GameState
+from utils.context_utils import get_game_state, save_game_state
 
 
 class StartConversationTool(Tool):
     """Talks to an NPC.
 
-    This Tool is meant to TRANSITION the user state to "in_dialogue" by modifying user_settings and returning.
+    This Tool is meant to TRANSITION the user state to "in_dialogue" by modifying game_state and returning.
 
     It can either be called by:
      - The CAMP AGENT (when in full-chat mode) -- see camp_agent.py
@@ -47,7 +47,7 @@ class StartConversationTool(Tool):
     def start_conversation(
         self,
         character_name: str,
-        user_settings: UserSettings,
+        game_state: GameState,
         context: AgentContext,
     ) -> Union[str, NpcCharacter]:
         if not character_name:
@@ -55,53 +55,53 @@ class StartConversationTool(Tool):
                 "I couldn't figure out who you were trying to start a conversation with.",
             )
 
-        if user_settings.current_quest:
+        if game_state.current_quest:
             return self.log_error(
                 "You are currently on a quest. You can only start a chat back at camp.",
             )
 
-        if user_settings.in_conversation_with:
+        if game_state.in_conversation_with:
             return self.log_error(
-                f"You are currently in a conversation with {user_settings.in_conversation_with}. You can't start one with {character_name} until you leave that one.",
+                f"You are currently in a conversation with {game_state.in_conversation_with}. You can't start one with {character_name} until you leave that one.",
             )
 
-        if not user_settings.camp:
+        if not game_state.camp:
             return self.log_error(
                 f"No camp object has been created. Unable to start a chat with {character_name}",
             )
 
-        if not user_settings.camp.npcs:
+        if not game_state.camp.npcs:
             return self.log_error(
                 f"Nobody is at camp! Unable to start a chat with {character_name}",
             )
 
         npc: Optional[NpcCharacter] = None
-        for char in user_settings.camp.npcs:
+        for char in game_state.camp.npcs:
             if character_name == char.name:
                 npc = char
                 break
 
         if not npc:
-            all_names = ", ".join([npc.name for npc in user_settings.camp.npcs])
+            all_names = ", ".join([npc.name for npc in game_state.camp.npcs])
             return self.log_error(
                 f"Unable to start a chat with {character_name}. The only people in camp are {all_names}.",
             )
 
         # Finally.. we have our NPC.
-        user_settings.in_conversation_with = npc.name
-        save_user_settings(user_settings, context)
+        game_state.in_conversation_with = npc.name
+        save_game_state(game_state, context)
         return npc
 
     def run(
         self, tool_input: List[Block], context: AgentContext
     ) -> Union[List[Block], Task[Any]]:
         character_name = None
-        user_settings = get_user_settings(context)
+        game_state = get_game_state(context)
 
         if tool_input:
             character_name = tool_input[0].text
 
-        npc_or_error = self.start_conversation(character_name, user_settings, context)
+        npc_or_error = self.start_conversation(character_name, game_state, context)
 
         if isinstance(npc_or_error, str):
             return [Block(text=npc_or_error)]

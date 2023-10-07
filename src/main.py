@@ -6,16 +6,16 @@ from PIL import Image
 from steamship import Block, PluginInstance, Steamship
 from steamship.agents.schema import AgentContext
 
+from api_endpoints.game_state import GameState
 from api_endpoints.server_settings import ServerSettings
-from api_endpoints.user_settings import UserSettings
-from context_utils import get_profile_image_generator
 from schema.characters import Item
 from schema.quest import Quest
+from utils.context_utils import get_profile_image_generator
 
 
 class AdventureGame:
     context: AgentContext
-    user_settings: UserSettings
+    game_state: GameState
     server_settings: ServerSettings
 
     client: Steamship
@@ -32,37 +32,33 @@ class AdventureGame:
         self.context = AgentContext.get_or_create(self.client, {"id": "default"})
 
         # Load settings for server, user, and quest
-        self.user_settings = UserSettings()
+        self.game_state = GameState()
         self.server_settings = ServerSettings()
 
         self.server_settings.add_to_agent_context(self.context)
 
-    def collect_user_settings(self):
+    def collect_game_state(self):
         """Long term goal: this is persistent and picks up with the user at each stage of the way."""
-        self.user_settings.player.name = input("What is your character's name? ")
-        self.user_settings.player.background = input(
-            "What's your character's backstory? "
-        )
+        self.game_state.player.name = input("What is your character's name? ")
+        self.game_state.player.background = input("What's your character's backstory? ")
         item = input("What is your character's starting item? ")
-        self.user_settings.player.inventory.append(Item(name=item))
-        self.user_settings.player.motivation = input(
+        self.game_state.player.inventory.append(Item(name=item))
+        self.game_state.player.motivation = input(
             "What is your character motivated to achieve? "
         )
-        self.user_settings.tone = input("What's the tone of the story? ")
+        self.game_state.tone = input("What's the tone of the story? ")
         self.create_character_image()
 
     def collect_quest_settings(self) -> Quest:
         quest = Quest()
-        inventory = "\n".join(
-            [item.name for item in self.user_settings.player.inventory]
-        )
+        inventory = "\n".join([item.name for item in self.game_state.player.inventory])
         print(f"\n*****\nYour current inventory is: \n{inventory}\n******")
 
         quest.description = input(
-            f"What mission should {self.user_settings.player.name} go on? "
+            f"What mission should {self.game_state.player.name} go on? "
         )
         quest.chat_history = quest.create_chat_history(
-            self.client, self.user_settings.player
+            self.client, self.game_state.player
         )
 
         return quest
@@ -72,7 +68,7 @@ class AdventureGame:
 
         # Generate setting image
         quest.chat_history.append_system_message(
-            f"{self.user_settings.player.name} is about to go on a mission to {quest}.  Describe the setting using visually descriptive words."
+            f"{self.game_state.player.name} is about to go on a mission to {quest}.  Describe the setting using visually descriptive words."
         )
         setting_description = (
             self.llm.generate(quest.chat_history.file.id, options={"max_tokens": 100})
@@ -93,17 +89,17 @@ class AdventureGame:
 
         # Problem generation / user solution
         quest.chat_history.append_system_message(
-            f"What problem did {self.user_settings.player.name} encounter next? "
+            f"What problem did {self.game_state.player.name} encounter next? "
         )
         problem = self.llm.generate(quest.chat_history.file.id).wait().blocks[0].text
         quest.chat_history.append_system_message(
-            f"{self.user_settings.player.name} encountered a problem: {problem}"
+            f"{self.game_state.player.name} encountered a problem: {problem}"
         )
         solution = input(
-            f"\n*****\nOh no! {self.user_settings.player.name} has a problem: {problem}. \nWhat should {self.user_settings.player.name} do? "
+            f"\n*****\nOh no! {self.game_state.player.name} has a problem: {problem}. \nWhat should {self.game_state.player.name} do? "
         )
         quest.chat_history.append_system_message(
-            f"{self.user_settings.player.name} solved that by {solution}. What happens next? "
+            f"{self.game_state.player.name} solved that by {solution}. What happens next? "
         )
         next_part = self.llm.generate(quest.chat_history.file.id).wait().blocks[0].text
         print(next_part)
@@ -111,14 +107,14 @@ class AdventureGame:
 
         # Last part of the mission
         quest.chat_history.append_system_message(
-            f"How does this mission end? {self.user_settings.player.name} should not yet achieve their overall goal of {self.user_settings.player.motivation}"
+            f"How does this mission end? {self.game_state.player.name} should not yet achieve their overall goal of {self.game_state.player.motivation}"
         )
         last_part = self.llm.generate(quest.chat_history.file.id).wait().blocks[0].text
         print(last_part)
         quest.chat_history.append_assistant_message(last_part)
 
         quest.chat_history.append_system_message(
-            f"What object or item did {self.user_settings.player.name} find during that story? It should fit the setting of the story and help {self.user_settings.player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
+            f"What object or item did {self.game_state.player.name} find during that story? It should fit the setting of the story and help {self.game_state.player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
         )
         item = (
             self.llm.generate(quest.chat_history.file.id, options={"max_tokens": 100})
@@ -126,10 +122,10 @@ class AdventureGame:
             .blocks[0]
             .text
         )
-        print(f"{self.user_settings.player.name} found an item!\n{item}")
+        print(f"{self.game_state.player.name} found an item!\n{item}")
         item_pic_block = self.generate_image_block(item)
         self.show_image(item_pic_block)
-        self.user_settings.player.inventory += Item(name=item)
+        self.game_state.player.inventory += Item(name=item)
 
         # Build summary for next mission
         quest.chat_history.append_system_message(
@@ -142,7 +138,7 @@ class AdventureGame:
             .text
         )
 
-        self.user_settings.quests.append(Quest(text_summary=summary))
+        self.game_state.quests.append(Quest(text_summary=summary))
 
         return quest
 
@@ -169,21 +165,21 @@ class AdventureGame:
         accepted = False
         while not accepted:
             # Note on the second time through it would be better to let them edit the previous description, but there's no easy way to do this in python CLI
-            self.user_settings.player.description = input(
-                f"Describe {self.user_settings.player.name}'s appearance: "
+            self.game_state.player.description = input(
+                f"Describe {self.game_state.player.name}'s appearance: "
             )
             new_pic_block = self.generate_image_block(
-                self.user_settings.player.description
+                self.game_state.player.description
             )
             self.show_image(new_pic_block)
             response = input(
-                f"Does {self.user_settings.player.name} look like that (y/n)? "
+                f"Does {self.game_state.player.name} look like that (y/n)? "
             )
             accepted = response.lower() == "y"
 
     def game_loop(self):
         """The main game loop."""
-        self.collect_user_settings()
+        self.collect_game_state()
 
         while True:
             # Start a single mission

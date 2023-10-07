@@ -5,20 +5,20 @@ from steamship import Block, Task
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, Tool
 
-from context_utils import (
-    get_current_quest,
-    get_story_text_generator,
-    get_user_settings,
-    save_user_settings,
-)
+from schema.game_state import GameState
 from schema.objects import Item
-from schema.user_settings import UserSettings
+from utils.context_utils import (
+    get_current_quest,
+    get_game_state,
+    get_story_text_generator,
+    save_game_state,
+)
 
 
 class EndQuestTool(Tool):
     """Ends the quest the player is on.
 
-    This Tool is meant to TRANSITION the user state out of "questing" by modifying user_settings and returning.
+    This Tool is meant to TRANSITION the user state out of "questing" by modifying game_state and returning.
 
     It can either be called by:
      - The QUEST AGENT (when in full-chat mode) -- see quest_agent.py
@@ -52,7 +52,7 @@ class EndQuestTool(Tool):
 
     def end_quest(
         self,
-        user_settings: UserSettings,
+        game_state: GameState,
         context: AgentContext,
     ) -> str:
         quest = get_current_quest(context)
@@ -64,7 +64,7 @@ class EndQuestTool(Tool):
 
         generator = get_story_text_generator(context)
 
-        player = user_settings.player
+        player = game_state.player
 
         # Let's do some things to tidy up.
         task = generator.generate(
@@ -104,17 +104,17 @@ class EndQuestTool(Tool):
         quest.text_summary = summary
 
         # Finally.. close the quest.
-        user_settings.current_quest = None
+        game_state.current_quest = None
 
         # TODO: Verify that python's pass-by-reference means all the above modifications are automatically
         # included in this.
-        save_user_settings(user_settings, context)
+        save_game_state(game_state, context)
 
         return "You've finished the quest! TODO: Stream celebration."
 
     def run(
         self, tool_input: List[Block], context: AgentContext
     ) -> Union[List[Block], Task[Any]]:
-        user_settings = get_user_settings(context)
-        msg = self.end_quest(user_settings, context)
+        game_state = get_game_state(context)
+        msg = self.end_quest(game_state, context)
         return [Block(text=msg)]

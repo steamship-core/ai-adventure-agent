@@ -2,10 +2,10 @@ from steamship.agents.functional import FunctionsBasedAgent
 from steamship.agents.schema import AgentContext
 from steamship.agents.schema.message_selectors import MessageWindowMessageSelector
 
-from context_utils import get_user_settings
-from schema.user_settings import UserSettings
+from schema.game_state import GameState
 from tools.start_conversation_tool import StartConversationTool
 from tools.start_quest_tool import StartQuestTool
+from utils.context_utils import get_game_state
 
 
 class CampAgent(FunctionsBasedAgent):
@@ -29,14 +29,14 @@ class CampAgent(FunctionsBasedAgent):
         """Choose the next action.
 
         We defer to the superclass but have to dynamically set our prompt with the context."""
-        user_settings = get_user_settings(context)
-        self.set_prompt(user_settings)
+        game_state = get_game_state(context)
+        self.set_prompt(game_state)
         return super().next_action(context)
 
-    def set_prompt(self, user_settings: UserSettings):
+    def set_prompt(self, game_state: GameState):
         npcs = []
-        if user_settings and user_settings.camp and user_settings.camp.npcs:
-            npcs = user_settings.camp.npcs
+        if game_state and game_state.camp and game_state.camp.npcs:
+            npcs = game_state.camp.npcs
 
         if npcs:
             camp_crew = "Your camp has the following people:\n\n" + "\n".join(
@@ -54,7 +54,7 @@ They only have two options to choose between:
 
 {camp_crew}
 
-If they're not asking to go on a quest or talk to someone in a camp, greet them by name, {user_settings.player.name}, and concisely entertain casual chit-chat but remind them of what options are at their disposal.
+If they're not asking to go on a quest or talk to someone in a camp, greet them by name, {game_state.player.name}, and concisely entertain casual chit-chat but remind them of what options are at their disposal.
 
 Don't speak like an assistant (how can I assist you?). Instead, speak like a familiar person.
 

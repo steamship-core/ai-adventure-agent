@@ -5,14 +5,15 @@ from steamship import Steamship
 from steamship.agents.schema import AgentContext
 from steamship.utils.kv_store import KeyValueStore
 
-# An instnace is a game instance.
-from context_utils import with_user_settings
 from schema.camp import Camp
 from schema.characters import HumanCharacter
 from schema.quest import Quest
 
+# An instnace is a game instance.
+from utils.context_utils import with_game_state
 
-class UserSettings(BaseModel):
+
+class GameState(BaseModel):
     """Settings for a user of the game.
 
     Max Notes:
@@ -58,16 +59,16 @@ class UserSettings(BaseModel):
     )
 
     @staticmethod
-    def load(client: Steamship) -> "UserSettings":
-        """Save UserSettings to the KeyValue store."""
-        key = "UserSettings"
+    def load(client: Steamship) -> "GameState":
+        """Save GameState to the KeyValue store."""
+        key = "GameState"
         kv = KeyValueStore(client, key)
         try:
             value = kv.get(key)
-            return UserSettings.parse_obj(value)
+            return GameState.parse_obj(value)
         except BaseException:
-            return UserSettings()
+            return GameState()
 
     def add_to_agent_context(self, context: AgentContext) -> AgentContext:
-        context = with_user_settings(self, context)
+        context = with_game_state(self, context)
         return context

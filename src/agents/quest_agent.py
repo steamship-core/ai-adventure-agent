@@ -3,10 +3,10 @@ import logging
 from steamship.agents.schema import Action, Agent, AgentContext
 from steamship.agents.schema.action import FinishAction
 
-from context_utils import get_user_settings
-from schema.user_settings import UserSettings
-from script import Script
+from schema.game_state import GameState
 from tools.end_quest_tool import EndQuestTool
+from utils.context_utils import get_game_state
+from utils.script import Script
 
 
 class QuestAgent(Agent):
@@ -16,9 +16,9 @@ class QuestAgent(Agent):
     HOW THIS AGENT IS ACTIVATED
     ===========================
 
-    The game log defers to this agent when `user_settings.current_quest` is not None.
+    The game log defers to this agent when `game_state.current_quest` is not None.
 
-    The `user_settings.current_quest` argument matches `user_settings.quests[].name` and is used to provide the
+    The `game_state.current_quest` argument matches `game_state.quests[].name` and is used to provide the
     Quest object to this agent at construction time so that it has a handle on where to load/store state.
 
     WHAT CAUSES THAT ACTIVATION TO HAPPEN
@@ -32,7 +32,7 @@ class QuestAgent(Agent):
     It can be slotted into as a state machine sub-agent by the overall agent.
     """
 
-    def run_quest(self, user_settings: UserSettings, context: AgentContext):
+    def run_quest(self, game_state: GameState, context: AgentContext):
         """
         TODO: This is basically where the meat of the storytelling happens.
 
@@ -41,7 +41,7 @@ class QuestAgent(Agent):
         """
         script = Script(context.chat_history)
         _ = script.generate_story(
-            f"Like the narrator of a movie, explain that {user_settings.player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
+            f"Like the narrator of a movie, explain that {game_state.player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
             context,
         )
 
@@ -54,7 +54,7 @@ class QuestAgent(Agent):
         script = Script(context.chat_history)
 
         story_part_1 = script.generate_story(
-            f"{user_settings.player.name} it about to go on a mission. Describe the first few things they do in a few sentences",
+            f"{game_state.player.name} it about to go on a mission. Describe the first few things they do in a few sentences",
             context,
         )
 
@@ -62,15 +62,15 @@ class QuestAgent(Agent):
 
         script = Script(context.chat_history)
         story_part_2 = script.generate_story(
-            f"How does this mission end? {user_settings.player.name} should not yet achieve their overall goal of {user_settings.player.motivation}",
+            f"How does this mission end? {game_state.player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
             context,
         )
         script.generate_narration(story_part_2, context)
 
     def next_action(self, context: AgentContext) -> Action:
-        user_settings = get_user_settings(context)
+        game_state = get_game_state(context)
         try:
-            self.run_quest(user_settings, context)
+            self.run_quest(game_state, context)
             blocks = EndQuestTool().run([], context)
             return FinishAction(output=blocks)
         except BaseException as e:

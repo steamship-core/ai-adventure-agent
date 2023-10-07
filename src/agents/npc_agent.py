@@ -3,17 +3,17 @@ from steamship.agents.functional import FunctionsBasedAgent
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.message_selectors import MessageWindowMessageSelector
 
-from context_utils import get_current_conversant, get_user_settings
 from schema.characters import NpcCharacter
-from schema.user_settings import UserSettings
+from schema.game_state import GameState
 from tools.end_conversation_tool import EndConversationTool
+from utils.context_utils import get_current_conversant, get_game_state
 
 
 class NpcAgent(FunctionsBasedAgent):
     """Agent to conduct a conversation with the player as an NPC.
 
     Players can converse with NPCs while at camp in between quests. Whether a player is in conversation is marked
-    by the `user_settings.in_conversation_with` field -- that will cause this agent to become active.
+    by the `game_state.in_conversation_with` field -- that will cause this agent to become active.
 
     This agent loads the profile of the NPC being conversed with and conducts it.
 
@@ -31,7 +31,7 @@ class NpcAgent(FunctionsBasedAgent):
             **kwargs,
         )
 
-    def set_prompt(self, user_settings: UserSettings, npc: NpcCharacter):
+    def set_prompt(self, game_state: GameState, npc: NpcCharacter):
 
         self.PROMPT = f"""You a script writer, imaging yourself as the character {npc.name} in a story.
 
@@ -39,8 +39,8 @@ The story describes your character as: {npc.description}
 The story describes your character's background as: {npc.background}
 The story describes your character's motivation as: {npc.motivation}
 
-The story's theme is: {user_settings.theme}
-The story's tone is: {user_settings.tone}
+The story's theme is: {game_state.theme}
+The story's tone is: {game_state.tone}
 
 Respond to the chat with only dialogue that character would say - no more. Speak as a character in a story would: immersed in the scene, assuming the person you are speaking with shares similar knowledge.
 
@@ -66,6 +66,6 @@ Only use the functions you have been provided with. Do not make up functions. If
             )
 
         # Set the prompt to this NPC
-        user_settings = get_user_settings(context)
-        self.set_prompt(user_settings, npc)
+        game_state = get_game_state(context)
+        self.set_prompt(game_state, npc)
         return super().next_action(context)

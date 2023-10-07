@@ -11,12 +11,13 @@ layered on top to boot.
 That reduces the need of the game code to perform verbose plumbing operations.
 """
 import logging
-from typing import Optional
+from typing import List, Optional, Union
 
-from steamship import PluginInstance
+from steamship import Block, PluginInstance, Tag
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM
 from steamship.agents.schema.agent import AgentContext
+from steamship.data import TagValueKey
 from steamship.utils.kv_store import KeyValueStore
 
 _STORY_GENERATOR_KEY = "story-generator"
@@ -28,7 +29,7 @@ _BACKGROUND_IMAGE_GENERATOR_KEY = "background-image-generator"
 _PROFILE_IMAGE_GENERATOR_KEY = "profile-image-generator"
 _NARRATION_GENERATOR_KEY = "narration-generator"
 _SERVER_SETTINGS_KEY = "server-settings"
-_USER_SETTINGS_KEY = "user-settings"
+_game_state_KEY = "user-settings"
 
 
 def with_story_generator(
@@ -78,10 +79,10 @@ def with_server_settings(
     return context
 
 
-def with_user_settings(
-    server_settings: "UserSettings", context: AgentContext  # noqa: F821
-) -> "UserSettings":  # noqa: F821
-    context.metadata[_USER_SETTINGS_KEY] = server_settings
+def with_game_state(
+    server_settings: "GameState", context: AgentContext  # noqa: F821
+) -> "GameState":  # noqa: F821
+    context.metadata[_game_state_KEY] = server_settings
     return context
 
 
@@ -121,38 +122,38 @@ def get_server_settings(
     return context.metadata.get(_SERVER_SETTINGS_KEY, default)
 
 
-def get_user_settings(
-    context: AgentContext, default: Optional["UserSettings"] = None  # noqa: F821
-) -> Optional["UserSettings"]:  # noqa: F821
-    return context.metadata.get(_USER_SETTINGS_KEY, default)
+def get_game_state(
+    context: AgentContext, default: Optional["GameState"] = None  # noqa: F821
+) -> Optional["GameState"]:  # noqa: F821
+    return context.metadata.get(_game_state_KEY, default)
 
 
-def save_user_settings(user_settings, context: AgentContext):
-    """Save UserSettings to the KeyValue store."""
+def save_game_state(game_state, context: AgentContext):
+    """Save GameState to the KeyValue store."""
 
     # Save it to the KV Store
-    key = "UserSettings"
-    value = user_settings.dict()
+    key = "GameState"
+    value = game_state.dict()
     kv = KeyValueStore(context.client, key)
     kv.set(key, value)
 
     # Also save it to the context
-    context.metadata[_USER_SETTINGS_KEY] = user_settings
+    context.metadata[_game_state_KEY] = game_state
 
 
 def get_current_quest(context: AgentContext) -> Optional["Quest"]:  # noqa: F821
     """Return current Quest, or None."""
 
-    user_settings = get_user_settings(context)
+    game_state = get_game_state(context)
 
-    if not user_settings:
+    if not game_state:
         return None
 
-    if not user_settings.current_quest:
+    if not game_state.current_quest:
         return None
 
-    for quest in user_settings.quests or []:
-        if quest.name == user_settings.current_quest:
+    for quest in game_state.quests or []:
+        if quest.name == game_state.current_quest:
             return quest
 
     return None
@@ -162,22 +163,22 @@ def get_current_conversant(
     context: AgentContext,
 ) -> Optional["NpcCharacter"]:  # noqa: F821
     """Return the NpcCharacter of the current conversation, or None."""
-    user_settings = get_user_settings(context)
+    game_state = get_game_state(context)
 
-    if not user_settings:
+    if not game_state:
         return None
 
-    if not user_settings.in_conversation_with:
+    if not game_state.in_conversation_with:
         return None
 
-    if not user_settings.camp:
+    if not game_state.camp:
         return None
 
-    if not user_settings.camp.npcs:
+    if not game_state.camp.npcs:
         return None
 
-    for npc in user_settings.camp.npcs or []:
-        if npc.name == user_settings.in_conversation_with:
+    for npc in game_state.camp.npcs or []:
+        if npc.name == game_state.in_conversation_with:
             return npc
 
     return None
@@ -231,3 +232,49 @@ def get_function_capable_llm(
     context: AgentContext, default: Optional[ChatLLM] = None  # noqa: F821
 ) -> Optional[ChatLLM]:  # noqa: F821
     return context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
+
+
+def _key_for_question(blocks: List[Block], key: Optional[str] = None) -> str:
+    """The lookup key for a particular question being asked of the user.
+
+    This can be used to tell -- in the "future" -- if the value being awaited is the same as the value last solicited.
+    """
+    if key:
+        return key
+
+    ret = ""
+    for block in blocks:
+        if block.text:
+            ret += block.text
+        else:
+            ret += block.url
+    return ret
+
+
+def ask_user(
+    question: Union[str, List[Block]], context: AgentContext, key: Optional[str] = None
+):
+    """Asks the user a question. Can be used like `input` in Python.
+
+    USAGE:
+
+        name = ask_user("What is your name?")
+
+    RESULT:
+
+        If the key exists in the game_state object.
+
+
+
+    """
+    BASE_TAGS = [
+        Tag(
+            kind="request-id",
+            name=context.request_id,
+            value={TagValueKey.STRING_VALUE.value: context.request_id},
+        )
+    ]
+
+    # Make sure question is List[Block]
+    if isinstance(question, str):
+        question = [Block(text=question, tags=BASE_TAGS)]

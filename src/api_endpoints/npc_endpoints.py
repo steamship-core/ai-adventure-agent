@@ -3,10 +3,11 @@ from steamship.agents.service.agent_service import AgentService
 from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
 
-# An instnace is a game instance.
-from context_utils import get_user_settings
 from tools.end_conversation_tool import EndConversationTool
 from tools.start_conversation_tool import StartConversationTool
+
+# An instnace is a game instance.
+from utils.context_utils import get_game_state
 
 
 class NpcMixin(PackageMixin):
@@ -23,9 +24,9 @@ class NpcMixin(PackageMixin):
     def start_conversation(self, character_name: str, **kwargs) -> dict:
         """Starts a conversation with the NPC by the provided name."""
         context = self.agent_service.build_default_context()
-        user_settings = get_user_settings(context)
+        game_state = get_game_state(context)
         tool = StartConversationTool()
-        convo_or_error = tool.start_conversation(character_name, user_settings, context)
+        convo_or_error = tool.start_conversation(character_name, game_state, context)
         if isinstance(convo_or_error, str):
             return {"error": True, "message": convo_or_error}
         return convo_or_error.dict()
@@ -34,7 +35,7 @@ class NpcMixin(PackageMixin):
     def end_conversation(self, **kwargs) -> dict:
         """Starts a conversation with the NPC by the provided name."""
         context = self.agent_service.build_default_context()
-        user_settings = get_user_settings(context)
+        game_state = get_game_state(context)
         tool = EndConversationTool()
-        response = tool.end_conversation(user_settings, context)
+        response = tool.end_conversation(game_state, context)
         return {"message": response}

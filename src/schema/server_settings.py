@@ -4,7 +4,7 @@ from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.schema import ChatLLM
 from steamship.agents.schema.agent import AgentContext
 
-from context_utils import (
+from utils.context_utils import (
     with_background_image_generator,
     with_background_music_generator,
     with_function_capable_llm,

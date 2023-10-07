@@ -5,14 +5,14 @@ from steamship import Block, Task
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, Tool
 
-from context_utils import get_user_settings, save_user_settings
-from schema.user_settings import UserSettings
+from schema.game_state import GameState
+from utils.context_utils import get_game_state, save_game_state
 
 
 class EndConversationTool(Tool):
     """Ends a conversation with an NPC.
 
-    This Tool is meant to TRANSITION the user state out of "in_dialogue" by modifying user_settings and returning.
+    This Tool is meant to TRANSITION the user state out of "in_dialogue" by modifying game_state and returning.
 
     It can either be called by:
      - The NPC AGENT (when in full-chat mode) -- see npc_agent.py
@@ -45,25 +45,25 @@ class EndConversationTool(Tool):
 
     def end_conversation(
         self,
-        user_settings: UserSettings,
+        game_state: GameState,
         context: AgentContext,
     ) -> str:
-        if not user_settings.in_conversation_with:
+        if not game_state.in_conversation_with:
             return self.log_error(
                 "You weren't currently in a conversation with anyone.",
             )
 
-        npc = user_settings.in_conversation_with
+        npc = game_state.in_conversation_with
 
         # Finally.. we have our NPC.
-        user_settings.in_conversation_with = None
-        save_user_settings(user_settings, context)
+        game_state.in_conversation_with = None
+        save_game_state(game_state, context)
 
         return f"You've left the conversation with {npc} and returned to camp."
 
     def run(
         self, tool_input: List[Block], context: AgentContext
     ) -> Union[List[Block], Task[Any]]:
-        user_settings = get_user_settings(context)
-        msg = self.end_conversation(user_settings, context)
+        game_state = get_game_state(context)
+        msg = self.end_conversation(game_state, context)
         return [Block(text=msg)]

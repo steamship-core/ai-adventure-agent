@@ -12,13 +12,13 @@ class ServerSettingsMixin(PackageMixin):
         self.client = client
 
     @post("/server_settings")
-    def post_user_settings(self, **kwargs) -> dict:
+    def post_game_state(self, **kwargs) -> dict:
         """Set the user settings."""
         # TODO: Save the user settings
         return {}
 
     @get("/server_settings")
-    def get_user_settings(self, **kwargs) -> dict:
+    def get_game_state(self, **kwargs) -> dict:
         """Get the user settings."""
         # TODO: Load the user settings
         return {}

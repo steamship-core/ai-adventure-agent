@@ -5,13 +5,13 @@ from steamship import Block, Task
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, ChatHistory, Tool
 
-from context_utils import (
-    get_story_text_generator,
-    get_user_settings,
-    save_user_settings,
-)
+from schema.game_state import GameState
 from schema.quest import Quest
-from schema.user_settings import UserSettings
+from utils.context_utils import (
+    get_game_state,
+    get_story_text_generator,
+    save_game_state,
+)
 
 
 class StartQuestTool(Tool):
@@ -39,7 +39,7 @@ class StartQuestTool(Tool):
 
     def start_quest(
         self,
-        user_settings: UserSettings,
+        game_state: GameState,
         context: AgentContext,
         purpose: Optional[str] = None,
     ) -> Quest:
@@ -90,7 +90,7 @@ class StartQuestTool(Tool):
             },
         )
 
-        player = user_settings.player
+        player = game_state.player
 
         chat_history = ChatHistory.get_or_create(
             context.client, {"id": f"quest:{quest.name}"}
@@ -116,12 +116,12 @@ class StartQuestTool(Tool):
             f"{player.name}'s motivation is to {player.motivation}"
         )
         chat_history.append_system_message(
-            f"The tone of this story is {user_settings.tone}"
+            f"The tone of this story is {game_state.tone}"
         )
 
         # Add in information about prior quests
         prepared_mission_summaries = []
-        for prior_quest in user_settings.quests:
+        for prior_quest in game_state.quests:
             prepared_mission_summaries.append(prior_quest.text_summary)
         if len(prepared_mission_summaries) > 0:
             chat_history.append_system_message(
@@ -131,13 +131,13 @@ class StartQuestTool(Tool):
         # Now save the chat history file
         quest.chat_file_id = chat_history.file.id
 
-        if not user_settings.quests:
-            user_settings.quests = []
-        user_settings.quests.append(quest)
-        user_settings.current_quest = quest.name
+        if not game_state.quests:
+            game_state.quests = []
+        game_state.quests.append(quest)
+        game_state.current_quest = quest.name
 
         # This saves it in a way that is both persistent (KV Store) and updates the context
-        save_user_settings(user_settings, context)
+        save_game_state(game_state, context)
 
         return quest
 
@@ -145,10 +145,10 @@ class StartQuestTool(Tool):
         self, tool_input: List[Block], context: AgentContext
     ) -> Union[List[Block], Task[Any]]:
         purpose = None
-        user_settings = get_user_settings(context)
+        game_state = get_game_state(context)
 
         if tool_input:
             purpose = tool_input[0].text
 
-        quest = self.start_quest(user_settings, context, purpose)
+        quest = self.start_quest(game_state, context, purpose)
         return [Block(text=f"Starting quest... titled: {quest.name}")]
