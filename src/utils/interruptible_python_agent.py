@@ -24,7 +24,7 @@ class InterruptiblePythonAgent(Agent, ABC):
 
     def next_action(self, context: AgentContext) -> Action:
         try:
-            self.run(context)
+            return self.run(context)
         except FinishActionException as fae:
             # A FinishActionException indicates control-flow breakage, not error.
             # If we get one, return the action immediately.
