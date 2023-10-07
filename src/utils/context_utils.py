@@ -20,7 +20,7 @@ That reduces the need of the game code to perform verbose plumbing operations.
 import logging
 from typing import List, Optional, Union
 
-from steamship import Block, PluginInstance, Tag
+from steamship import Block, MimeTypes, PluginInstance, Tag
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
@@ -324,3 +324,64 @@ def await_ask(
     save_game_state(game_state, context)
 
     raise FinishActionException(action=FinishAction(output=output))
+
+
+def emit(output: Union[str, Block, List[Block]], context: AgentContext):
+    """Emits a message to the user."""
+    if isinstance(output, str):
+        output = [Block(text=output)]
+    elif isinstance(output, Block):
+        output = [output]
+
+    for func in context.emit_funcs:
+        logging.info(
+            f"Emitting via function '{func.__name__}' for context: {context.id}"
+        )
+        func(output, context.metadata)
+
+
+def append_to_chat_history_and_emit(
+    context: AgentContext,
+    text: str = None,
+    tags: List[Tag] = None,
+    content: Union[str, bytes] = None,
+    url: Optional[str] = None,
+    mime_type: Optional[MimeTypes] = None,
+    block: Optional[Block] = None,
+) -> Block:
+    """Append a new block and then trigger an emit() for sync clients.
+
+    Adds a new `blocks` option for in-process generation output.
+
+    TODO / NOTA BENE:
+      While we could just generate directly into the ChatHistory, this currently (1) doesn't enable
+      us to ensure those generated blocks have the correct chat-related tags, and (2) doesn't give us a way to
+      notify non-streaming clients of these new blocks.
+
+    This is the preferred way to send an assistant message to the user if:
+
+    - One is streaming messages amidst operation (e.g. streaming back several messages)
+    - One wishes to still support non-streaming clients, including the development CLI
+
+    The streaming client will see the message because of the chat history append operation.
+    The non-streaming client will see the message because of the emit() operation.
+    """
+
+    if block is None:
+        block = context.chat_history.append_assistant_message(
+            text=text, tags=tags, content=content, url=url, mime_type=mime_type
+        )
+        emit(block, context)
+        return block
+    else:
+        if block.is_video() or block.is_audio() or block.is_image():
+            # TODO: This is super inefficient.
+            _block = context.chat_history.append_assistant_message(
+                url=block.to_public_url(), tags=block.tags, mime_type=block.mime_type
+            )
+        else:
+            _block = context.chat_history.append_assistant_message(
+                text=block.text, tags=block.tags, mime_type=block.mime_type
+            )
+        emit(_block, context)
+        return block

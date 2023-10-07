@@ -270,6 +270,9 @@ class AdventureGameService(AgentService):
         context = self.build_default_context()
         game_state = get_game_state(context)
 
+        # TODO: We need some way to have a hook for agent transitions. I think this belongs in the Tools given the
+        # way they're used to transition. That way agents can greet you and then say goodbye so you know what's happening.
+
         if not game_state.is_onboarding_complete():
             # Use the ONBOARDING AGENT if we still need to collect player/game information
             sub_agent = self.onboarding_agent

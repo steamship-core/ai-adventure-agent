@@ -1,28 +1,33 @@
-import logging
+import uuid
 from typing import Any, List, Optional, Union
 
 from steamship import Block, Task
-from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, ChatHistory, Tool
 
 from schema.game_state import GameState
 from schema.quest import Quest
-from utils.context_utils import (
-    get_game_state,
-    get_story_text_generator,
-    save_game_state,
-)
+from utils.context_utils import get_game_state, save_game_state
 
 
 class StartQuestTool(Tool):
     """Starts a quest.
 
-    This Tool is meant to TRANSITION from one agent (the CAMP AGENT) to the next (THE QUEST AGENT). It does that
-    by modifying state and returning.
+    This Tool is meant to TRANSITION from the CAMP AGENT to the QUEST AGENT.
 
     It can either be called by:
      - The CAMP AGENT (when in full-chat mode) -- see camp_agent.py
      - The WEB APP (when in web-mode, via api) -- see quest_mixin.py
+
+    This Tool does the following things:
+    - Creates a new QUEST and CHAT HISTORY
+    - Sets the GAME STATE to that QUEST
+    - Seeds the CHAT HISTORY with system messages related to the overall game GAME STATE.
+
+    That's it. All other interactions, which may involve asking the user questions or dynamically generating assets,
+    are handled by the QUEST AGENT. This includes naming the quest, picking a location, etc etc.
+
+    That keeps tools simple -- as objects whose purpose is to transition -- and leaves the Agents as objects that
+    have more complex logic with conditionals / user-interrupt behavior / etc.
     """
 
     def __init__(self, **kwargs):
@@ -43,57 +48,11 @@ class StartQuestTool(Tool):
         context: AgentContext,
         purpose: Optional[str] = None,
     ) -> Quest:
-        generator = get_story_text_generator(context)
-
-        if not purpose:
-            logging.info(
-                "No purpose for the quest was given, so inventing one..",
-                extra={
-                    AgentLogging.IS_MESSAGE: True,
-                    AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
-                    AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
-                    AgentLogging.TOOL_NAME: self.name,
-                },
-            )
-
-            # TODO: Incorporate character information.
-            task = generator.generate(text="What is a storybook quest one might go on?")
-            task.wait()
-            purpose = task.output.blocks[0].text
-
-        task = generator.generate(
-            text=f"What is a short, movie-title name for a storybook chapter/quest with this purpose: {purpose}"
-        )
-        task.wait()
-        name = task.output.blocks[0].text
-
-        logging.info(
-            f"Naming this quest: {name}",
-            extra={
-                AgentLogging.IS_MESSAGE: True,
-                AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
-                AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
-                AgentLogging.TOOL_NAME: self.name,
-            },
-        )
-
-        quest = Quest(name=name, originating_string=purpose)
-
-        # Create a Chat History for it.
-        logging.info(
-            "Creating a new chat history and seeding it with information...",
-            extra={
-                AgentLogging.IS_MESSAGE: True,
-                AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
-                AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
-                AgentLogging.TOOL_NAME: self.name,
-            },
-        )
-
+        quest = Quest(chat_file_id=f"quest-{uuid.uuid4()}")
         player = game_state.player
 
         chat_history = ChatHistory.get_or_create(
-            context.client, {"id": f"quest:{quest.name}"}
+            context.client, {"id": quest.chat_file_id}
         )
         chat_history.append_system_message(
             f"We are writing a story about the adventure of a character named {player.name}."
@@ -134,6 +93,7 @@ class StartQuestTool(Tool):
         if not game_state.quests:
             game_state.quests = []
         game_state.quests.append(quest)
+
         game_state.current_quest = quest.name
 
         # This saves it in a way that is both persistent (KV Store) and updates the context
@@ -150,5 +110,5 @@ class StartQuestTool(Tool):
         if tool_input:
             purpose = tool_input[0].text
 
-        quest = self.start_quest(game_state, context, purpose)
-        return [Block(text=f"Starting quest... titled: {quest.name}")]
+        self.start_quest(game_state, context, purpose)
+        return [Block(text="Starting quest...")]
