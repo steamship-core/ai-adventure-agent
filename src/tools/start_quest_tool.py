@@ -1,12 +1,12 @@
 import uuid
 from typing import Any, List, Optional, Union
 
-from steamship import Block, Task
-from steamship.agents.schema import AgentContext, ChatHistory, Tool
+from steamship import Block, MimeTypes, Task
+from steamship.agents.schema import AgentContext, ChatHistory, FinishAction, Tool
 
 from schema.game_state import GameState
 from schema.quest import Quest
-from utils.context_utils import get_game_state, save_game_state
+from utils.context_utils import RunNextAgentException, get_game_state, save_game_state
 
 
 class StartQuestTool(Tool):
@@ -112,8 +112,21 @@ class StartQuestTool(Tool):
 
         self.start_quest(game_state, context, purpose)
 
-        return [
-            Block(
-                text="{player.name} gets up from camp and prepares to embark on a quest."
+        player = game_state.player
+
+        raise RunNextAgentException(
+            action=FinishAction(
+                input=[
+                    Block(
+                        text=f"{player.name} gathers his items and prepares to embark on a quest..",
+                        mime_type=MimeTypes.MKD,
+                    )
+                ],
+                output=[
+                    Block(
+                        text="{player.name} stands up.",
+                        mime_type=MimeTypes.MKD,
+                    )
+                ],
             )
-        ]
+        )

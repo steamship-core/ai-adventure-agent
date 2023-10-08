@@ -1,8 +1,9 @@
+import json
 import logging
 from typing import List, Optional, Type
 
 from pydantic import Field
-from steamship import Block
+from steamship import Steamship
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging, StreamingOpts
 from steamship.agents.mixins.transports.slack import (
@@ -14,8 +15,7 @@ from steamship.agents.mixins.transports.telegram import (
     TelegramTransport,
     TelegramTransportConfig,
 )
-from steamship.agents.schema import Action, Agent, AgentContext, Tool
-from steamship.agents.service.agent_service import AgentService
+from steamship.agents.schema import Agent, AgentContext, Tool
 from steamship.agents.utils import with_llm
 from steamship.invocable import Config
 from steamship.utils.repl import AgentREPL
@@ -30,9 +30,8 @@ from endpoints.quest_endpoints import QuestMixin
 from endpoints.server_endpoints import ServerSettingsMixin
 from schema.game_state import GameState
 from schema.server_settings import ServerSettings
+from utils.agent_service import AgentService
 from utils.context_utils import (
-    ActivateNextAgentException,
-    append_to_chat_history_and_emit,
     get_game_state,
     switch_history_to_current_conversant,
     switch_history_to_current_quest,
@@ -273,6 +272,15 @@ class AdventureGameService(AgentService):
         context = self.build_default_context()
         game_state = get_game_state(context)
 
+        logging.info(
+            f"Game State: {json.dumps(game_state.dict())}.",
+            extra={
+                AgentLogging.IS_MESSAGE: True,
+                AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+            },
+        )
+
         # TODO: We need some way to have a hook for agent transitions. I think this belongs in the Tools given the
         # way they're used to transition. That way agents can greet you and then say goodbye so you know what's happening.
 
@@ -304,31 +312,13 @@ class AdventureGameService(AgentService):
 
         return sub_agent
 
-    def next_action(
-        self, agent: Agent, input_blocks: List[Block], context: AgentContext
-    ) -> Action:
-        try:
-            return super().next_action(agent, input_blocks, context)
-        except ActivateNextAgentException as e:
-            append_to_chat_history_and_emit(context, block=e.action.output)
-
-            # Whatever threw this exception has hopefully modified game state such that a different action
-            # will now be selected.
-
-            # TODO: Can we turn this into a for-loop so that we can apply some kind of cutoff to prevent
-            # an accidental infinite loop?
-
-            # TODO: Is there any book-keeping at the AgentService level that we need to reset here? Like
-            # completed_steps? We may need to cut-in with this try/except at a higher level like run_agent
-            # so that book keeping is done for us.
-            next_agent = self.get_default_agent()
-            return self.next_action(next_agent, input_blocks, context)
-
 
 if __name__ == "__main__":
     # AgentREPL provides a mechanism for local execution of an AgentService method.
     # This is used for simplified debugging as agents and tools are developed and
     # added.
-    AgentREPL(AdventureGameService, agent_package_config={}).run(
-        dump_history_on_exit=True
-    )
+
+    # NOTE: There's a bug in the repl where it doesn't respect my workspace selection below. It always creates a new one.
+    client = Steamship(workspace="snugly-crater-i8mli")
+    repl = AgentREPL(AdventureGameService, agent_package_config={}, client=client)
+    repl.run(dump_history_on_exit=True)

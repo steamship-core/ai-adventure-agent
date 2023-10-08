@@ -5,7 +5,12 @@ from steamship.agents.schema.action import FinishAction
 from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from schema.objects import Item
-from utils.context_utils import await_ask, get_game_state, save_game_state
+from utils.context_utils import (
+    RunNextAgentException,
+    await_ask,
+    get_game_state,
+    save_game_state,
+)
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 
 
@@ -30,12 +35,6 @@ class OnboardingAgent(InterruptiblePythonAgent):
         if not player.background:
             player.background = await_ask(
                 f"What is {player.name}'s backstory?", context
-            )
-            save_game_state(game_state, context)
-
-        if not player.description:
-            player.background = await_ask(
-                f"Describe {player.name}'s backstory?", context
             )
             save_game_state(game_state, context)
 
@@ -84,11 +83,19 @@ class OnboardingAgent(InterruptiblePythonAgent):
             )
             save_game_state(game_state, context)
 
-        return FinishAction(
-            output=[
-                Block(
-                    text=f"{player.name}! Let's get you to camp! This is where all your quests begin from.",
-                    mime_type=MimeTypes.MKD,
-                )
-            ]
+        raise RunNextAgentException(
+            action=FinishAction(
+                input=[
+                    Block(
+                        text=f"{player.name} arrives at camp.",
+                        mime_type=MimeTypes.MKD,
+                    )
+                ],
+                output=[
+                    Block(
+                        text=f"{player.name}! Let's get you to camp! This is where all your quests begin from.",
+                        mime_type=MimeTypes.MKD,
+                    )
+                ],
+            )
         )

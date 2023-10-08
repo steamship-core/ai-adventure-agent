@@ -132,6 +132,15 @@ def get_server_settings(
 def get_game_state(
     context: AgentContext, default: Optional["GameState"] = None  # noqa: F821
 ) -> Optional["GameState"]:  # noqa: F821
+    logging.info(
+        f"Refreshing Game State from workspace {context.client.config.workspace_handle}.",
+        extra={
+            AgentLogging.IS_MESSAGE: True,
+            AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+            AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+        },
+    )
+
     return context.metadata.get(_game_state_KEY, default)
 
 
@@ -311,18 +320,54 @@ def await_ask(
     # Check if we have ALREADY asked about this key!
     game_state = get_game_state(context)
 
+    logging.info(
+        f"Seeking input with await_ask key: {key}.",
+        extra={
+            AgentLogging.IS_MESSAGE: True,
+            AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+            AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+        },
+    )
+
     if game_state.await_ask_key == key:
+        logging.info(
+            f"Last await_ask key matches: {game_state.await_ask_key}.",
+            extra={
+                AgentLogging.IS_MESSAGE: True,
+                AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+            },
+        )
+
         # Assume we've already asked! Let's return the last user response.
         if context.chat_history and context.chat_history.last_user_message:
             if context.chat_history.last_user_message.text:
                 game_state.await_ask_key = None
                 save_game_state(game_state, context)
-                return context.chat_history.last_user_message.text
+                answer = context.chat_history.last_user_message.text
+                logging.info(
+                    f"Using last user input as answer: {answer}.",
+                    extra={
+                        AgentLogging.IS_MESSAGE: True,
+                        AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                        AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+                    },
+                )
+                return answer
 
     # Otherwise we set the key and throw the asking exception
     game_state.await_ask_key = key
-    save_game_state(game_state, context)
 
+    logging.info(
+        f"Awaiting user response with await_ask key: {game_state.await_ask_key}.",
+        extra={
+            AgentLogging.IS_MESSAGE: True,
+            AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+            AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+        },
+    )
+
+    save_game_state(game_state, context)
     raise FinishActionException(action=FinishAction(output=output))
 
 
@@ -383,11 +428,17 @@ def append_to_chat_history_and_emit(
             _block = context.chat_history.append_assistant_message(
                 text=block.text, tags=block.tags, mime_type=block.mime_type
             )
-        emit(_block, context)
+        try:
+            emit(_block, context)
+        except BaseException as e:
+            logging.error(e)
+            logging.error(
+                "Ted note: I'm not going to fix right now but I think the engine is having trouble returning /raw for a text block."
+            )
         return block
 
 
-class ActivateNextAgentException(Exception):
+class RunNextAgentException(Exception):
     """Thrown when a piece of code, anywhere, wishes to pop the stack all the way up to the AgentService and
     activate the next agent.
 
@@ -404,7 +455,7 @@ class ActivateNextAgentException(Exception):
     Instead, the following can happen:
 
     User: Go on a quest
-    CampAgent -> StartQuestTool: OK! Let's Quest! <modifies game state> <throws ActivateNextAgentException>
+    CampAgent -> StartQuestTool: OK! Let's Quest! <modifies game state> <throws RunNextAgentException>
     QuestAgent: The quest begins! You walk out of camp and gather your items.. You've got..
 
     Basically: this is a way to let the game take two conversational turns right in a row, the second affected

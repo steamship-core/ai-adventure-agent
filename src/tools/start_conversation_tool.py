@@ -1,13 +1,13 @@
 import logging
 from typing import Any, List, Optional, Union
 
-from steamship import Block, Task
+from steamship import Block, MimeTypes, Task
 from steamship.agents.logging import AgentLogging
-from steamship.agents.schema import AgentContext, Tool
+from steamship.agents.schema import AgentContext, FinishAction, Tool
 
 from schema.characters import NpcCharacter
 from schema.game_state import GameState
-from utils.context_utils import get_game_state, save_game_state
+from utils.context_utils import RunNextAgentException, get_game_state, save_game_state
 
 
 class StartConversationTool(Tool):
@@ -77,7 +77,8 @@ class StartConversationTool(Tool):
 
         npc: Optional[NpcCharacter] = None
         for char in game_state.camp.npcs:
-            if character_name == char.name:
+            # This allows the name to just be a subset
+            if char.name.lower() in character_name.lower():
                 npc = char
                 break
 
@@ -107,8 +108,19 @@ class StartConversationTool(Tool):
             return [Block(text=npc_or_error)]
         else:
             player = game_state.player
-            return [
-                Block(
-                    text=f"{player.name} walks up to {npc_or_error.name}. They look up, waiting for {player.name} to speak first."
+            raise RunNextAgentException(
+                action=FinishAction(
+                    input=[
+                        Block(
+                            text="Hi.",
+                            mime_type=MimeTypes.MKD,
+                        )
+                    ],
+                    output=[
+                        Block(
+                            text=f"{player.name} walks up to {npc_or_error.name} and says hello.",
+                            mime_type=MimeTypes.MKD,
+                        )
+                    ],
                 )
-            ]
+            )

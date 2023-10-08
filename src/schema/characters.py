@@ -6,19 +6,19 @@ from schema.objects import Item
 
 
 class Character(BaseModel):
-    name: Optional[str]
+    name: Optional[str] = Field("Ted", description="The name of the character.")
 
     description: Optional[str] = Field(
-        "A Programmer", description="The description of the character."
+        "DC", description="The description of the character."
     )
     background: Optional[str] = Field(
-        "From a small town", description="The background of the character."
+        "From DC", description="The background of the character."
     )
     inventory: Optional[List[Item]] = Field(
         [], description="The inventory of the character."
     )
     motivation: Optional[str] = Field(
-        "Wants to be Bill Gates", description="The motivation of the character."
+        "Go to DC", description="The motivation of the character."
     )
 
 

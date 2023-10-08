@@ -35,7 +35,7 @@ class GameState(BaseModel):
         "Silly", description="The tone of the story being told."
     )
     genre: Optional[str] = Field(
-        "Fantasy", description="The genre of the story being told."
+        "Thriller", description="The genre of the story being told."
     )
 
     # NOTE: The fields below are not intended to be settable BY the user themselves.
