@@ -385,3 +385,34 @@ def append_to_chat_history_and_emit(
             )
         emit(_block, context)
         return block
+
+
+class ActivateNextAgentException(Exception):
+    """Thrown when a piece of code, anywhere, wishes to pop the stack all the way up to the AgentService and
+    activate the next agent.
+
+    In the game, this is used when a Tool (which starts/ends different states of the game) wishes to proceed
+    IMMEDIATELY to the next state without waiting for user input to trigger it.
+
+    Otherwise, there would be the following awkward moment in gameplay:
+
+    User: Go on a quest
+    CampAgent -> StartQuestTool: OK! Let's quest! <modifies game state>
+    ...
+    (PROBLEM: User now needs to say something back to re-trigger the next phrase, which will be QuestAgent).
+
+    Instead, the following can happen:
+
+    User: Go on a quest
+    CampAgent -> StartQuestTool: OK! Let's Quest! <modifies game state> <throws ActivateNextAgentException>
+    QuestAgent: The quest begins! You walk out of camp and gather your items.. You've got..
+
+    Basically: this is a way to let the game take two conversational turns right in a row, the second affected
+    by the state transition of the first.
+    """
+
+    action: FinishAction
+
+    def __init__(self, action: FinishAction):
+        super().__init__()
+        self.action = action

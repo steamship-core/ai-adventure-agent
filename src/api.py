@@ -2,6 +2,7 @@ import logging
 from typing import List, Optional, Type
 
 from pydantic import Field
+from steamship import Block
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging, StreamingOpts
 from steamship.agents.mixins.transports.slack import (
@@ -13,7 +14,7 @@ from steamship.agents.mixins.transports.telegram import (
     TelegramTransport,
     TelegramTransportConfig,
 )
-from steamship.agents.schema import Agent, AgentContext, Tool
+from steamship.agents.schema import Action, Agent, AgentContext, Tool
 from steamship.agents.service.agent_service import AgentService
 from steamship.agents.utils import with_llm
 from steamship.invocable import Config
@@ -30,6 +31,8 @@ from endpoints.server_endpoints import ServerSettingsMixin
 from schema.game_state import GameState
 from schema.server_settings import ServerSettings
 from utils.context_utils import (
+    ActivateNextAgentException,
+    append_to_chat_history_and_emit,
     get_game_state,
     switch_history_to_current_conversant,
     switch_history_to_current_quest,
@@ -300,6 +303,26 @@ class AdventureGameService(AgentService):
         )
 
         return sub_agent
+
+    def next_action(
+        self, agent: Agent, input_blocks: List[Block], context: AgentContext
+    ) -> Action:
+        try:
+            return super().next_action(agent, input_blocks, context)
+        except ActivateNextAgentException as e:
+            append_to_chat_history_and_emit(context, block=e.action.output)
+
+            # Whatever threw this exception has hopefully modified game state such that a different action
+            # will now be selected.
+
+            # TODO: Can we turn this into a for-loop so that we can apply some kind of cutoff to prevent
+            # an accidental infinite loop?
+
+            # TODO: Is there any book-keeping at the AgentService level that we need to reset here? Like
+            # completed_steps? We may need to cut-in with this try/except at a higher level like run_agent
+            # so that book keeping is done for us.
+            next_agent = self.get_default_agent()
+            return self.next_action(next_agent, input_blocks, context)
 
 
 if __name__ == "__main__":

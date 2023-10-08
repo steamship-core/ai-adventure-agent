@@ -111,4 +111,9 @@ class StartQuestTool(Tool):
             purpose = tool_input[0].text
 
         self.start_quest(game_state, context, purpose)
-        return [Block(text="Starting quest...")]
+
+        return [
+            Block(
+                text="{player.name} gets up from camp and prepares to embark on a quest."
+            )
+        ]

@@ -106,4 +106,9 @@ class StartConversationTool(Tool):
         if isinstance(npc_or_error, str):
             return [Block(text=npc_or_error)]
         else:
-            return [Block(text=f"Starting a conversation with {npc_or_error.name}")]
+            player = game_state.player
+            return [
+                Block(
+                    text=f"{player.name} walks up to {npc_or_error.name}. They look up, waiting for {player.name} to speak first."
+                )
+            ]
