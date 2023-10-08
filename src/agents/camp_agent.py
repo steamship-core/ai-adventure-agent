@@ -1,103 +1,68 @@
-from steamship import Block, MimeTypes
-from steamship.agents.schema import Action, Agent, AgentContext
-from steamship.agents.schema.action import FinishAction
+from steamship.agents.functional import FunctionsBasedAgent
+from steamship.agents.schema import AgentContext
+from steamship.agents.schema.message_selectors import MessageWindowMessageSelector
 
-from mixins.user_settings import UserSettings
-from schema.objects import Item
-from schema.quest_settings import Quest
-from script import Script
+from schema.game_state import GameState
+from tools.start_conversation_tool import StartConversationTool
+from tools.start_quest_tool import StartQuestTool
+from utils.context_utils import get_game_state
 
 
-class CampAgent(Agent):
+class CampAgent(FunctionsBasedAgent):
+    """The Camp Agent is in charge of your experience while at camp.
+
+    A player is at camp while they are not on a quest.
+
+    CONSIDER: This feels like a FunctionCallingAgent
     """
-    DESIGN GOALS:
-    This implements the "going on a quest" and only that.
-    It can be slotted into as a state machine sub-agent by the overall agent.
-    """
 
-    user_settings: UserSettings
-    quest: Quest
+    PROMPT = ""
 
-    def begin_quest(self, context: AgentContext):
-        """
-
-        CONSIDER: Should this be a Tool?
-        """
-        script = Script(context.chat_history)
-
-        _ = script.generate_story(
-            f"Like the narrator of a movie, explain that {self.user_settings.player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
-            context,
+    def __init__(self, **kwargs):
+        super().__init__(
+            tools=[StartQuestTool(), StartConversationTool()],
+            message_selector=MessageWindowMessageSelector(k=10),
+            **kwargs,
         )
 
-        # TODO: How can these be emitted in a way that is both streaming friendly and sync-agent friendly?
-        # THOUGHT: We might need to throw sync under the bus so that streaming can thrive
-        script.generate_background_music("Soft guitar music playing", context)
+    def next_action(self, context: AgentContext):
+        """Choose the next action.
 
-        script.generate_background_image("A picture of a forest", context)
+        We defer to the superclass but have to dynamically set our prompt with the context."""
+        game_state = get_game_state(context)
+        self.set_prompt(game_state)
+        return super().next_action(context)
 
-        script = Script(context.chat_history)
+    def set_prompt(self, game_state: GameState):
+        npcs = []
+        if game_state and game_state.camp and game_state.camp.npcs:
+            npcs = game_state.camp.npcs
 
-        story_part_1 = script.generate_story(
-            f"{self.user_settings.player.name} it about to go on a mission. Describe the first few things they do in a few sentences",
-            context,
-        )
+        if npcs:
+            camp_crew = "Your camp has the following people:\n\n" + "\n".join(
+                [f"- {npc.name}" for npc in npcs or []]
+            )
+        else:
+            camp_crew = "Nobody is currently with you at camp."
 
-        script.generate_narration(story_part_1, context)
+        self.PROMPT = f"""You a game engine which helps users make a choice of option.
 
-    def finish_quest(self, context: AgentContext):
-        """
+They only have two options to choose between:
 
-        CONSIDER: Should this be a Tool?
-        """
+1) Go on a quest
+2) Talk to someone in the camp
 
-        script = Script(context.chat_history)
+{camp_crew}
 
-        story_part_2 = script.generate_story(
-            f"How does this mission end? {self.user_settings.player.name} should not yet achieve their overall goal of {self.user_settings.player.motivation}",
-            context,
-        )
+If they're not asking to go on a quest or talk to someone in a camp, greet them by name, {game_state.player.name}, and concisely entertain casual chit-chat but remind them of what options are at their disposal.
 
-        script.generate_narration(story_part_2, context)
+Don't speak like an assistant (how can I assist you?). Instead, speak like a familiar person.
 
-    def release_agent(self, context: AgentContext):
-        """Does final summarizing activities.
+NOTE: Some functions return images, video, and audio files. These multimedia files will be represented in messages as
+UUIDs for Steamship Blocks. When responding directly to a user, you SHOULD print the Steamship Blocks for the images,
+video, or audio as follows: `Block(UUID for the block)`.
 
-        TODO: Inform the controlling agent that our work is done.
-        CONSIDER: Could this be async?
-        """
-        script = Script(context.chat_history)
+Example response for a request that generated an image:
+Here is the image you requested: Block(288A2CA1-4753-4298-9716-53C1E42B726B).
 
-        self.quest.text_summary = "[TODO] Replace this summary with a generated one."
-        self.quest.new_items = [
-            Item(name="[TODO] Replace this with an item the player found.")
-        ]
-        self.quest.rank_delta = 1
-
-        # TODO: Save quest
-        script.end_scene(self.quest, context)
-
-    def next_action(self, context: AgentContext) -> Action:
-        try:
-            self.begin_quest(context)
-            self.finish_quest(context)
-            self.release_agent(context)
-
-            # CONCLUDE STORY
-            """
-            TODO
-            Block is of type END SCENE and contains JSON with the summary.
-
-            - how much gold
-            - what items
-            - summary of the journey
-
-            Every Quest is a different chat history.
-            - There would be a quest log button somewhere.
-            - In that quest log.
-            """
-
-            final_block = Block(text="The quest is over.", mime_type=MimeTypes.MKD)
-            return FinishAction(output=[final_block])
-        except BaseException as e:
-            print(e)
+Only use the functions you have been provided with."""
