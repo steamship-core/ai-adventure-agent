@@ -82,7 +82,12 @@ def send_story_generation(prompt: str, context: AgentContext) -> Optional[Block]
     logging.warning("THIS ISN'T GOING TO USE THE WHOLE CHAT HISTORY!")
 
     logging.warning(f"Generating: {prompt}")
-    task = generator.generate(text=prompt, append_output_to_file=True, streaming=True)
+    task = generator.generate(
+        text=prompt,
+        append_output_to_file=True,
+        output_file_id=context.chat_history.file.id,
+        streaming=True,
+    )
 
     # TODO: Figure out how to do this in a way that's streaming friendly AND sync friendly
     # TODO: Figure out how to stream narration in a way that's streaming friendly AND sync friendly
