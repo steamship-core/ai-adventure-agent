@@ -29,7 +29,7 @@ class Quest(BaseModel):
     )
 
     # Output Fields
-    image_url: Optional[List[int]] = Field(
+    image_url: Optional[str] = Field(
         None, description="An image of this quest generated afterwards by AI."
     )
     text_summary: Optional[str] = Field(
@@ -38,6 +38,6 @@ class Quest(BaseModel):
     new_items: Optional[List[Item]] = Field(
         None, description="Any new items the player got while on the quest."
     )
-    rank_delta: Optional[List[int]] = Field(
+    rank_delta: Optional[int] = Field(
         1, description="The change in rank that resulted from this quest."
     )
