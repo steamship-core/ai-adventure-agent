@@ -10,6 +10,7 @@ While at the same time not committing to any huge abstraction overhead: this is 
 functions whose mechanics can change under the hood as we discover better ways to do things, and the game developer
 doesn't need to know.
 """
+import logging
 from typing import Optional
 
 from steamship import Block
@@ -76,11 +77,16 @@ def send_story_generation(prompt: str, context: AgentContext) -> Optional[Block]
     """Generates and sends a background image to the player."""
 
     generator = get_story_text_generator(context)
-    context.chat_history.append_system_message(prompt)
-    task = generator.generate(context.chat_history.file.id, streaming=True)
+    # context.chat_history.append_system_message(prompt)
+
+    logging.warning("THIS ISN'T GOING TO USE THE WHOLE CHAT HISTORY!")
+
+    logging.warning(f"Generating: {prompt}")
+    task = generator.generate(text=prompt, append_output_to_file=True, streaming=True)
 
     # TODO: Figure out how to do this in a way that's streaming friendly AND sync friendly
     # TODO: Figure out how to stream narration in a way that's streaming friendly AND sync friendly
+
     task.wait()
     block = task.output.blocks[0]
     append_to_chat_history_and_emit(context, block=block)

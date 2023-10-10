@@ -8,11 +8,7 @@ from utils.context_utils import (
     get_game_state,
     save_game_state,
 )
-from utils.generation_utils import (
-    send_background_image,
-    send_background_music,
-    send_story_generation,
-)
+from utils.generation_utils import send_story_generation
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 
 
@@ -56,8 +52,8 @@ class QuestAgent(InterruptiblePythonAgent):
                 context=context,
             )
 
-            send_background_music(prompt="Guitar music", context=context)
-            send_background_image(prompt="In a deep, dark forest", context=context)
+            # send_background_music(prompt="Guitar music", context=context)
+            # send_background_image(prompt="In a deep, dark forest", context=context)
 
             send_story_generation(
                 f"{game_state.player.name} it about to go on a mission. Describe the first few things they do in a few sentences",

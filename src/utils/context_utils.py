@@ -27,6 +27,8 @@ from steamship.agents.schema.agent import AgentContext
 from steamship.data import TagValueKey
 from steamship.utils.kv_store import KeyValueStore
 
+from schema.game_state import GameState
+
 _STORY_GENERATOR_KEY = "story-generator"
 _FUNCTION_CAPABLE_LLM = (
     "function-capable-llm"  # This could be distinct from the one generating the story.
@@ -87,9 +89,9 @@ def with_server_settings(
 
 
 def with_game_state(
-    server_settings: "GameState", context: AgentContext  # noqa: F821
-) -> "GameState":  # noqa: F821
-    context.metadata[_game_state_KEY] = server_settings
+    game_state: "GameState", context: AgentContext  # noqa: F821
+) -> "AgentContext":  # noqa: F821
+    context.metadata[_game_state_KEY] = game_state
     return context
 
 
@@ -129,9 +131,7 @@ def get_server_settings(
     return context.metadata.get(_SERVER_SETTINGS_KEY, default)
 
 
-def get_game_state(
-    context: AgentContext, default: Optional["GameState"] = None  # noqa: F821
-) -> Optional["GameState"]:  # noqa: F821
+def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F821
     logging.info(
         f"Refreshing Game State from workspace {context.client.config.workspace_handle}.",
         extra={
@@ -141,7 +141,25 @@ def get_game_state(
         },
     )
 
-    return context.metadata.get(_game_state_KEY, default)
+    if _game_state_KEY in context.metadata:
+        return context.metadata.get(_game_state_KEY)
+
+    # Get it from the KV Store
+    key = "GameState"
+    kv = KeyValueStore(context.client, key)
+    value = kv.get(key)
+
+    if value:
+        print("Parsing game state from stored value")
+        print(value)
+        game_state = GameState.parse_obj(value)
+        context.metadata[_game_state_KEY] = game_state
+        return game_state
+    else:
+        print("Creating new game state -- one didn't exist!")
+        game_state = GameState()
+        context.metadata[_game_state_KEY] = game_state
+        return game_state
 
 
 def save_game_state(game_state, context: AgentContext):
@@ -155,6 +173,8 @@ def save_game_state(game_state, context: AgentContext):
 
     # Also save it to the context
     context.metadata[_game_state_KEY] = game_state
+
+    print("Just saved game state to", value)
 
 
 def get_current_quest(context: AgentContext) -> Optional["Quest"]:  # noqa: F821

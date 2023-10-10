@@ -6,20 +6,34 @@ from schema.objects import Item
 
 
 class Character(BaseModel):
-    name: Optional[str] = Field("Ted", description="The name of the character.")
+    name: Optional[str] = Field(None, description="The name of the character.")
 
     description: Optional[str] = Field(
-        "DC", description="The description of the character."
+        None, description="The description of the character."
     )
     background: Optional[str] = Field(
-        "From DC", description="The background of the character."
+        None, description="The background of the character."
     )
     inventory: Optional[List[Item]] = Field(
         [], description="The inventory of the character."
     )
     motivation: Optional[str] = Field(
-        "Go to DC", description="The motivation of the character."
+        None, description="The motivation of the character."
     )
+
+    def is_onboarding_complete(self) -> bool:
+        """Return True if the player onboarding has been completed.
+
+        This is used by api.pyu to decide whether to route to the ONBOARDING AGENT.
+        """
+        return (
+            self.name is not None
+            and self.description is not None
+            and self.background is not None
+            and self.motivation is not None
+            and self.inventory is not None
+            and len(self.inventory) > 0
+        )
 
 
 class NpcCharacter(Character):

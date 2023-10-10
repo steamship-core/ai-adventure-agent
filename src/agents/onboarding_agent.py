@@ -38,6 +38,12 @@ class OnboardingAgent(InterruptiblePythonAgent):
             )
             save_game_state(game_state, context)
 
+        if not player.description:
+            player.description = await_ask(
+                f"What is {player.name}'s physical description?", context
+            )
+            save_game_state(game_state, context)
+
         # TODO: How can we do something like this:
         # if not player.image_generation:
         #    player.image_generation = generate(..)

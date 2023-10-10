@@ -1,16 +1,10 @@
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
-from steamship import Steamship
-from steamship.agents.schema import AgentContext
-from steamship.utils.kv_store import KeyValueStore
 
 from schema.camp import Camp
 from schema.characters import HumanCharacter
 from schema.quest import Quest
-
-# An instnace is a game instance.
-from utils.context_utils import with_game_state
 
 
 class GameState(BaseModel):
@@ -32,12 +26,8 @@ class GameState(BaseModel):
         HumanCharacter(), description="The player of the game."
     )
 
-    tone: Optional[str] = Field(
-        "Silly", description="The tone of the story being told."
-    )
-    genre: Optional[str] = Field(
-        "Thriller", description="The genre of the story being told."
-    )
+    tone: Optional[str] = Field(None, description="The tone of the story being told.")
+    genre: Optional[str] = Field(None, description="The genre of the story being told.")
     # END ONBOARDING FIELDS
 
     # NOTE: The fields below are not intended to be settable BY the user themselves.
@@ -72,27 +62,7 @@ class GameState(BaseModel):
         """
         return (
             self.player is not None
-            and self.player.name is not None
-            and self.player.description is not None
-            and self.player.background is not None
-            and self.player.motivation is not None
-            and self.player.inventory is not None
-            and len(self.player.inventory) > 0
+            and self.player.is_onboarding_complete()
             and self.genre is not None
             and self.tone is not None
         )
-
-    @staticmethod
-    def load(client: Steamship) -> "GameState":
-        """Save GameState to the KeyValue store."""
-        key = "GameState"
-        kv = KeyValueStore(client, key)
-        try:
-            value = kv.get(key)
-            return GameState.parse_obj(value)
-        except BaseException:
-            return GameState()
-
-    def add_to_agent_context(self, context: AgentContext) -> AgentContext:
-        context = with_game_state(self, context)
-        return context

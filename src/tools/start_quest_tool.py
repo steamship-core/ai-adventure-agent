@@ -48,7 +48,12 @@ class StartQuestTool(Tool):
         context: AgentContext,
         purpose: Optional[str] = None,
     ) -> Quest:
-        quest = Quest(chat_file_id=f"quest-{uuid.uuid4()}")
+
+        # quest = Quest(chat_file_id=f"quest-{uuid.uuid4()}")
+        quest = Quest(
+            chat_file_id=context.chat_history.file.id
+        )  # TODO: This may need to change.
+
         player = game_state.player
 
         chat_history = ChatHistory.get_or_create(
@@ -102,6 +107,9 @@ class StartQuestTool(Tool):
             game_state.quests = []
         game_state.quests.append(quest)
 
+        quest.name = f"{uuid.uuid4()}"
+
+        print(f"Current quest name is: {quest.name}")
         game_state.current_quest = quest.name
 
         # This saves it in a way that is both persistent (KV Store) and updates the context

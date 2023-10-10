@@ -8,7 +8,7 @@ from steamship.invocable.package_mixin import PackageMixin
 from schema.game_state import GameState
 
 # An instnace is a game instance.
-from utils.context_utils import save_game_state
+from utils.context_utils import get_game_state, save_game_state
 
 
 class GameStateMixin(PackageMixin):
@@ -37,4 +37,5 @@ class GameStateMixin(PackageMixin):
     @get("/game_state")
     def get_game_state(self) -> dict:
         """Get the game state."""
-        return GameState.load(client=self.client).dict()
+        context = self.agent_service.build_default_context()
+        return get_game_state(context).dict()

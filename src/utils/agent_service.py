@@ -13,9 +13,13 @@ from steamship.data.tags.tag_constants import ChatTag
 from steamship.invocable import PackageService, post
 from steamship.invocable.invocable_response import StreamingResponse
 
-from schema.game_state import GameState
 from schema.server_settings import ServerSettings
-from utils.context_utils import RunNextAgentException, append_to_chat_history_and_emit
+from utils.context_utils import (
+    RunNextAgentException,
+    append_to_chat_history_and_emit,
+    get_game_state,
+    with_game_state,
+)
 
 
 def build_context_appending_emit_func(
@@ -30,12 +34,18 @@ def build_context_appending_emit_func(
     def chat_history_append_func(blocks: List[Block], metadata: Metadata):
         for block in blocks:
             block.set_public_data(make_blocks_public)
-            context.chat_history.append_assistant_message(
-                text=block.text,
-                tags=block.tags,
-                url=block.raw_data_url or block.url or block.content_url or None,
-                mime_type=block.mime_type,
-            )
+            if block.text:
+                context.chat_history.append_assistant_message(
+                    text=block.text,
+                    tags=block.tags,
+                    mime_type=block.mime_type,
+                )
+            else:
+                context.chat_history.append_assistant_message(
+                    tags=block.tags,
+                    url=block.raw_data_url or block.url or block.content_url or None,
+                    mime_type=block.mime_type,
+                )
 
     return chat_history_append_func
 
@@ -389,8 +399,9 @@ class AgentService(PackageService):
         context = server_settings.add_to_agent_context(context)
 
         # Now add in the Game State
-        game_state = GameState.load(self.client)
-        context = game_state.add_to_agent_context(context)
+        game_state = get_game_state(context)
+
+        context = with_game_state(game_state, context)
 
         self._agent_context = context
         return context
@@ -455,7 +466,6 @@ class AgentService(PackageService):
         self, prompt: Optional[str] = None, context_id: Optional[str] = None, **kwargs
     ) -> List[Block]:
         """Run an agent with the provided text as the input."""
-        print("HI")
         with self.build_default_context(context_id, **kwargs) as context:
             prompt = prompt or kwargs.get("question") or "Hi."
             logging.info(f"/prompt called with message {prompt}")
@@ -485,11 +495,27 @@ class AgentService(PackageService):
             had_exception = (
                 True  # Not true, but it causes the loop to execute at least once.
             )
+            max_exceptions_allowed = 4
+            exception_count = 0
             while had_exception:
                 try:
                     self._prompt(prompt, context)
                     had_exception = False
                 except RunNextAgentException as e:
+                    exception_count += 1
+                    if exception_count > max_exceptions_allowed:
+                        raise SteamshipError(message="Maximum agent switches exceeded")
+
+                    logging.info(
+                        "Got RunNextAgentException. Loading next agent.",
+                        extra={
+                            AgentLogging.IS_MESSAGE: True,
+                            AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                            AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+                        },
+                    )
+                    self.agent = None
+
                     had_exception = True
                     for block in e.action.output or []:
                         append_to_chat_history_and_emit(context, block=block)

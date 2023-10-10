@@ -91,12 +91,11 @@ class EndQuestTool(Tool):
         # Increase the player's rank
         player.rank += quest.rank_delta
 
-        # Summarize the quest
-        quest.chat_history.append_system_message(
-            "Summarize this quest in three sentences."
-        )
         summary = (
-            generator.generate(quest.chat_history.file.id, options={"max_tokens": 200})
+            generator.generate(
+                text="Summarize this quest in three sentences.",
+                options={"max_tokens": 200},
+            )
             .wait()
             .blocks[0]
             .text
