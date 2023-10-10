@@ -29,13 +29,13 @@ class Quest(BaseModel):
     )
 
     # For managing the back-and-forth
-    sent_intro = Optional[bool] = Field(
+    sent_intro: Optional[bool] = Field(
         False, description="Whether the intro of the quest was sent to the user."
     )
-    user_problem_solution = Optional[str] = Field(
+    user_problem_solution: Optional[str] = Field(
         False, description="The user's solution to the problem."
     )
-    sent_outro = Optional[bool] = Field(
+    sent_outro: Optional[bool] = Field(
         False, description="Whether the outro of the quest was sent to the user."
     )
 

@@ -23,9 +23,7 @@ class QuestMixin(PackageMixin):
 
     @post("/start_quest")
     def start_quest(self, purpose: Optional[str] = None, **kwargs) -> dict:
-        """Starts a quest.
-        THOUGHT: Can this call into some functionality (agent/tool) which could also be performed by a Function calling agent?
-        """
+        """Starts a quest."""
         context = self.agent_service.build_default_context()
         game_state = get_game_state(context)
         quest_tool = StartQuestTool()

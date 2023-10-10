@@ -42,7 +42,7 @@ class StartQuestTool(Tool):
         kwargs["is_final"] = True
         super().__init__(**kwargs)
 
-    def start_quest(
+    def start_quest(  # noqa: C901
         self,
         game_state: GameState,
         context: AgentContext,
@@ -57,35 +57,41 @@ class StartQuestTool(Tool):
         chat_history.append_system_message(
             f"We are writing a story about the adventure of a character named {player.name}."
         )
-        chat_history.append_system_message(
-            f"{player.name} has the following background: {player.background}"
-        )
-
-        # Add in information about pinventory
-        items = []
-        for item in player.inventory:
-            items.append(item.name)
-        if len(items) > 0:
-            item_list = ",".join(items)
+        if player.background:
             chat_history.append_system_message(
-                f"{player.name} has the following things in their inventory: {item_list}"
+                f"{player.name} has the following background: {player.background}"
             )
 
-        chat_history.append_system_message(
-            f"{player.name}'s motivation is to {player.motivation}"
-        )
-        chat_history.append_system_message(
-            f"The tone of this story is {game_state.tone}"
-        )
+        # Add in information about pinventory
+        if player.inventory:
+            items = []
+            for item in player.inventory or []:
+                items.append(item.name)
+            if len(items) > 0:
+                item_list = ",".join(items)
+                chat_history.append_system_message(
+                    f"{player.name} has the following things in their inventory: {item_list}"
+                )
+
+        if player.motivation:
+            chat_history.append_system_message(
+                f"{player.name}'s motivation is to {player.motivation}"
+            )
+
+        if game_state.tone:
+            chat_history.append_system_message(
+                f"The tone of this story is {game_state.tone}"
+            )
 
         # Add in information about prior quests
         prepared_mission_summaries = []
-        for prior_quest in game_state.quests:
-            prepared_mission_summaries.append(prior_quest.text_summary)
-        if len(prepared_mission_summaries) > 0:
-            chat_history.append_system_message(
-                f"{player.name} has already been on previous missions: \n {prepared_mission_summaries}"
-            )
+        if game_state.quests:
+            for prior_quest in game_state.quests or []:
+                prepared_mission_summaries.append(prior_quest.text_summary)
+            if len(prepared_mission_summaries) > 0:
+                chat_history.append_system_message(
+                    f"{player.name} has already been on previous missions: \n {prepared_mission_summaries}"
+                )
 
         # Now save the chat history file
         quest.chat_file_id = chat_history.file.id
