@@ -1,7 +1,7 @@
 {
 	"type": "package",
 	"handle": "ai-adventure-game-beta",
-	"version": "1.0.3-rc.19",
+	"version": "1.0.3-rc.20",
 	"description": "",
 	"author": "",
 	"entrypoint": "Unused",

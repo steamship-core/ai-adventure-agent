@@ -92,6 +92,7 @@ class EndQuestTool(Tool):
         player.rank += quest.rank_delta
 
         summary = (
+            # TODO: This is stateless.
             generator.generate(
                 text="Summarize this quest in three sentences.",
                 options={"max_tokens": 200},

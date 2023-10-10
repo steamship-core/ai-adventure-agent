@@ -2,7 +2,7 @@ import uuid
 from typing import Any, List, Optional, Union
 
 from steamship import Block, MimeTypes, Task
-from steamship.agents.schema import AgentContext, ChatHistory, FinishAction, Tool
+from steamship.agents.schema import AgentContext, FinishAction, Tool
 
 from schema.game_state import GameState
 from schema.quest import Quest
@@ -50,16 +50,11 @@ class StartQuestTool(Tool):
     ) -> Quest:
 
         # quest = Quest(chat_file_id=f"quest-{uuid.uuid4()}")
-        quest = Quest(
-            chat_file_id=context.chat_history.file.id
-        )  # TODO: This may need to change.
+        chat_history = context.chat_history
+
+        quest = Quest(chat_file_id=chat_history.file.id)
 
         player = game_state.player
-
-        chat_history = ChatHistory.get_or_create(
-            context.client, {"id": quest.chat_file_id}
-        )
-
         quest_kickoff_messages = []
 
         quest_kickoff_messages.append(

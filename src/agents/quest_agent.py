@@ -1,3 +1,6 @@
+import logging
+
+from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
@@ -46,10 +49,40 @@ class QuestAgent(InterruptiblePythonAgent):
         player = game_state.player
         quest = get_current_quest(context)
 
+        logging.info(
+            "[DEBUG] Running Quest Agent",
+            extra={
+                AgentLogging.IS_MESSAGE: True,
+                AgentLogging.MESSAGE_TYPE: AgentLogging.AGENT,
+                AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
+                AgentLogging.AGENT_NAME: self.__class__.__name__,
+            },
+        )
+
         if not quest.sent_intro:
+            logging.info(
+                "[DEBUG] Sending Intro Part 1",
+                extra={
+                    AgentLogging.IS_MESSAGE: True,
+                    AgentLogging.MESSAGE_TYPE: AgentLogging.AGENT,
+                    AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
+                    AgentLogging.AGENT_NAME: self.__class__.__name__,
+                },
+            )
+
             send_story_generation(
                 f"Like the narrator of a movie, explain that {player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
                 context=context,
+            )
+
+            logging.info(
+                "[DEBUG] Sending Intro Part 2",
+                extra={
+                    AgentLogging.IS_MESSAGE: True,
+                    AgentLogging.MESSAGE_TYPE: AgentLogging.AGENT,
+                    AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
+                    AgentLogging.AGENT_NAME: self.__class__.__name__,
+                },
             )
 
             # send_background_music(prompt="Guitar music", context=context)
@@ -66,6 +99,16 @@ class QuestAgent(InterruptiblePythonAgent):
             )
             quest.sent_intro = True
             save_game_state(game_state, context)
+        else:
+            logging.info(
+                "[DEBUG] First Quest Story Block Skipped",
+                extra={
+                    AgentLogging.IS_MESSAGE: True,
+                    AgentLogging.MESSAGE_TYPE: AgentLogging.AGENT,
+                    AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
+                    AgentLogging.AGENT_NAME: self.__class__.__name__,
+                },
+            )
 
         if not quest.user_problem_solution:
             quest.user_problem_solution = await_ask(
