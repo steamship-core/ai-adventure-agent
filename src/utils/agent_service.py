@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 from steamship import Block, File, SteamshipError, Task
-from steamship.agents.llms.openai import OpenAI
+from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging, StreamingOpts
 from steamship.agents.schema import Action, Agent, FinishAction
 from steamship.agents.schema.context import AgentContext, EmitFunc, Metadata
@@ -14,6 +14,8 @@ from steamship.data.tags.tag_constants import ChatTag
 from steamship.invocable import PackageService, post
 from steamship.invocable.invocable_response import StreamingResponse
 
+from schema.game_state import GameState
+from schema.server_settings import ServerSettings
 from utils.context_utils import RunNextAgentException, append_to_chat_history_and_emit
 
 
@@ -73,6 +75,8 @@ class AgentService(PackageService):
     This is intended primarily to act as a backstop to prevent a condition in which the Agent decides to loop endlessly
     on tool runs that consume resources with a cost-basis (e.g. prompt completions, embedding operations, vector lookups)
     """
+
+    _agent_context: Optional[AgentContext] = None
 
     def __init__(
         self,
@@ -316,23 +320,41 @@ class AgentService(PackageService):
     def build_default_context(
         self, context_id: Optional[str] = None, **kwargs
     ) -> AgentContext:
-        """Build the agent's default context.
+        """Load the context for the agent.
 
-        The provides a single place to implement (or override) the default context that will be used by endpoints
-        that transports define. This allows an Agent developer to use, eg, the TelegramTransport but with a custom
-        type of memory or caching.
+        The AgentContext is a single place to implement (or override) the all context and state that will be used by
+        the different components of the game.
 
-        The returned context does not have any emit functions yet registered to it.
+        You can fetch many things from it using fetchers in `context_utils.py` such as:
+
+        - get_game_state
+        - get_server_settings
+        - get_background_image_generator
+        - etc
+
+        This provides any piece of code, anywhere in the codebase, access to the correct objects
+        for generating different kinds of assets and fetching/saving different kinds of state.
+
+        INTERNAL NOTE:
+        We provide a DIFFERENT VERSION of AgentService's context so that we can remove the
+        # get_default_agent() call from it. In AgentService,
+        this method depends upon get_default_agent. In this class, that dependency is flipped.
         """
+        print("AG 12")
+
+        if self._agent_context is not None:
+            return self._agent_context  # Used cached copy
 
         # AgentContexts serve to allow the AgentService to run agents
         # with appropriate information about the desired tasking.
-        if context_id is None:
-            context_id = uuid.uuid4()
+        if context_id is not None:
             logging.warning(
-                f"No context_id was provided; generated {context_id}. This likely means "
-                f"no conversational history will be present."
+                "This agent ALWAYS uses the context id `default` since it is a game occuping an entire workspace, not confined to a single chat history. "
+                f"The provided context_id of {context_id} will be ignored. This is to prevent surprising state errors."
             )
+
+        # NOTA BENE!
+        context_id = "default"
 
         use_llm_cache = self.use_llm_cache
         if runtime_use_llm_cache := kwargs.get("use_llm_cache"):
@@ -357,18 +379,22 @@ class AgentService(PackageService):
                 include_llm_messages=include_llm_messages,
                 include_tool_messages=include_tool_messages,
             ),
-            initial_system_message=self.get_default_agent().default_system_message(),
+            initial_system_message="",  # None necessary
         )
 
         # Add a default LLM to the context, using the Agent's if it exists.
-        llm = None
-        if agent := self.get_default_agent():
-            if hasattr(agent, "llm"):
-                llm = agent.llm
-        if llm is None:
-            llm = OpenAI(client=self.client)
-
+        llm = ChatOpenAI(client=self.client)
         context = with_llm(context=context, llm=llm)
+
+        # Now add in the Server Settings
+        server_settings = ServerSettings()
+        context = server_settings.add_to_agent_context(context)
+
+        # Now add in the Game State
+        game_state = GameState.load(self.client)
+        context = game_state.add_to_agent_context(context)
+
+        self._agent_context = context
         return context
 
     def _history_file_for_context(
@@ -410,6 +436,7 @@ class AgentService(PackageService):
         ctx_id, history_file = self._streaming_context_id_and_file(
             context_id=context_id, **kwargs
         )
+        logging.info(f"/async_prompt called with message {prompt}")
         task = self.invoke_later(
             "/prompt", arguments={"prompt": prompt, "context_id": ctx_id, **kwargs}
         )
@@ -425,8 +452,10 @@ class AgentService(PackageService):
         self, prompt: Optional[str] = None, context_id: Optional[str] = None, **kwargs
     ) -> List[Block]:
         """Run an agent with the provided text as the input."""
+        print("HI")
         with self.build_default_context(context_id, **kwargs) as context:
             prompt = prompt or kwargs.get("question") or "Hi."
+            logging.info(f"/prompt called with message {prompt}")
 
             # AgentServices provide an emit function hook to access the output of running
             # agents and tools. The emit functions fire at after the supplied agent emits

@@ -27,6 +27,7 @@ class GameState(BaseModel):
 
     """
 
+    # BEGIN ONBOARDING FIELDS
     player: HumanCharacter = Field(
         HumanCharacter(), description="The player of the game."
     )
@@ -37,6 +38,7 @@ class GameState(BaseModel):
     genre: Optional[str] = Field(
         "Thriller", description="The genre of the story being told."
     )
+    # END ONBOARDING FIELDS
 
     # NOTE: The fields below are not intended to be settable BY the user themselves.
     quests: List[Quest] = Field(

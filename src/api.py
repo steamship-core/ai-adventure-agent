@@ -5,7 +5,7 @@ from typing import List, Optional, Type
 from pydantic import Field
 from steamship import Steamship
 from steamship.agents.llms.openai import ChatOpenAI
-from steamship.agents.logging import AgentLogging, StreamingOpts
+from steamship.agents.logging import AgentLogging
 from steamship.agents.mixins.transports.slack import (
     SlackTransport,
     SlackTransportConfig,
@@ -16,7 +16,6 @@ from steamship.agents.mixins.transports.telegram import (
     TelegramTransportConfig,
 )
 from steamship.agents.schema import Agent, AgentContext, Tool
-from steamship.agents.utils import with_llm
 from steamship.invocable import Config
 from steamship.utils.repl import AgentREPL
 
@@ -28,8 +27,6 @@ from endpoints.game_state_endpoints import GameStateMixin
 from endpoints.npc_endpoints import NpcMixin
 from endpoints.quest_endpoints import QuestMixin
 from endpoints.server_endpoints import ServerSettingsMixin
-from schema.game_state import GameState
-from schema.server_settings import ServerSettings
 from utils.agent_service import AgentService
 from utils.context_utils import (
     get_game_state,
@@ -184,82 +181,6 @@ class AdventureGameService(AgentService):
         self.quest_agent = QuestAgent(tools=[], llm=function_capable_llm)
         self.camp_agent = CampAgent(llm=function_capable_llm)
         self.npc_agent = NpcAgent(llm=function_capable_llm)
-
-    def build_default_context(
-        self, context_id: Optional[str] = None, **kwargs
-    ) -> AgentContext:
-        """Load the context for the agent.
-
-        The AgentContext is a single place to implement (or override) the all context and state that will be used by
-        the different components of the game.
-
-        You can fetch many things from it using fetchers in `context_utils.py` such as:
-
-        - get_game_state
-        - get_server_settings
-        - get_background_image_generator
-        - etc
-
-        This provides any piece of code, anywhere in the codebase, access to the correct objects
-        for generating different kinds of assets and fetching/saving different kinds of state.
-
-        INTERNAL NOTE:
-        We override AgentService's context so that we can remove the get_default_agent() call from it. In AgentService,
-        this method depends upon get_default_agent. In this class, that dependency is flipped.
-        """
-        if self.context is not None:
-            return self.context  # Used cached copy
-
-        # AgentContexts serve to allow the AgentService to run agents
-        # with appropriate information about the desired tasking.
-        if context_id is not None:
-            logging.warning(
-                "This agent ALWAYS uses the context id `default` since it is a game occuping an entire workspace, not confined to a single chat history. "
-                f"The provided context_id of {context_id} will be ignored. This is to prevent surprising state errors."
-            )
-
-        # NOTA BENE!
-        context_id = "default"
-
-        use_llm_cache = self.use_llm_cache
-        if runtime_use_llm_cache := kwargs.get("use_llm_cache"):
-            use_llm_cache = runtime_use_llm_cache
-
-        use_action_cache = self.use_action_cache
-        if runtime_use_action_cache := kwargs.get("use_action_cache"):
-            use_action_cache = runtime_use_action_cache
-
-        include_agent_messages = kwargs.get("include_agent_messages", True)
-        include_llm_messages = kwargs.get("include_llm_messages", True)
-        include_tool_messages = kwargs.get("include_tool_messages", True)
-
-        context = AgentContext.get_or_create(
-            client=self.client,
-            request_id=self.client.config.request_id,
-            context_keys={"id": f"{context_id}"},
-            use_llm_cache=use_llm_cache,
-            use_action_cache=use_action_cache,
-            streaming_opts=StreamingOpts(
-                include_agent_messages=include_agent_messages,
-                include_llm_messages=include_llm_messages,
-                include_tool_messages=include_tool_messages,
-            ),
-            initial_system_message="",  # None necessary
-        )
-
-        # Add a default LLM to the context, using the Agent's if it exists.
-        llm = ChatOpenAI(client=self.client)
-        context = with_llm(context=context, llm=llm)
-
-        # Now add in the Server Settings
-        server_settings = ServerSettings()
-        context = server_settings.add_to_agent_context(context)
-
-        # Now add in the Game State
-        game_state = GameState.load(self.client)
-        context = game_state.add_to_agent_context(context)
-
-        return context
 
     def get_default_agent(self, throw_if_missing: bool = True) -> Optional[Agent]:
         """Returns the active agent at any one time.
