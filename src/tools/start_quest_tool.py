@@ -87,7 +87,9 @@ class StartQuestTool(Tool):
         prepared_mission_summaries = []
         if game_state.quests:
             for prior_quest in game_state.quests or []:
-                prepared_mission_summaries.append(prior_quest.text_summary)
+                if prior_quest.text_summary is not None:
+                    prepared_mission_summaries.append(prior_quest.text_summary)
+
             if len(prepared_mission_summaries) > 0:
                 chat_history.append_system_message(
                     f"{player.name} has already been on previous missions: \n {prepared_mission_summaries}"
@@ -130,7 +132,7 @@ class StartQuestTool(Tool):
                 ],
                 output=[
                     Block(
-                        text="{player.name} stands up.",
+                        text=f"{player.name} stands up.",
                         mime_type=MimeTypes.MKD,
                     )
                 ],
