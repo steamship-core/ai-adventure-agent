@@ -45,7 +45,7 @@ class CampAgent(FunctionsBasedAgent):
         else:
             camp_crew = "Nobody is currently with you at camp."
 
-        self.PROMPT = f"""You a game engine which helps users make a choice of option.
+        self.PROMPT = f"""You are a game engine which helps users make a choice of option.
 
 They only have two options to choose between:
 

@@ -17,7 +17,7 @@ from steamship import Block
 from steamship.agents.schema import AgentContext
 
 from utils.context_utils import (
-    append_to_chat_history_and_emit,
+    emit,
     get_audio_narration_generator,
     get_background_image_generator,
     get_background_music_generator,
@@ -31,13 +31,13 @@ def send_background_music(prompt: str, context: AgentContext) -> Optional[Block]
     task = generator.generate(
         text=prompt,
         make_output_public=True,
-        streaming=True,
+        # streaming=True,
     )
 
     # TODO: Figure out how to do this in a way that's treaming friendly AND sync friendly
     task.wait()
     block = task.output.blocks[0]
-    append_to_chat_history_and_emit(context, block=block)
+    emit(output=block, context=context)
     return block
 
 
@@ -47,13 +47,13 @@ def send_background_image(prompt: str, context: AgentContext) -> Optional[Block]
     task = generator.generate(
         text=prompt,
         make_output_public=True,
-        streaming=True,
+        # streaming=True,
     )
 
     # TODO: Figure out how to do this in a way that's treaming friendly AND sync friendly
     task.wait()
     block = task.output.blocks[0]
-    append_to_chat_history_and_emit(context, block=block)
+    emit(output=block, context=context)
     return block
 
 
@@ -63,13 +63,13 @@ def send_audio_narration(block: Block, context: AgentContext) -> Optional[Block]
     task = generator.generate(
         text=block.text,
         make_output_public=True,
-        streaming=True,
+        # streaming=True,
     )
 
     # TODO: Figure out how to do this in a way that's treaming friendly AND sync friendly
     task.wait()
     block = task.output.blocks[0]
-    append_to_chat_history_and_emit(context, block=block)
+    emit(output=block, context=context)
     return block
 
 
@@ -84,9 +84,12 @@ def send_story_generation(prompt: str, context: AgentContext) -> Optional[Block]
     logging.warning(f"Generating: {prompt}")
     task = generator.generate(
         text=prompt,
-        append_output_to_file=True,
-        output_file_id=context.chat_history.file.id,
-        streaming=True,
+        # append_output_to_file=True,
+        # output_file_id=context.chat_history.file.id,
+        # streaming=True,
+        # options={"add_tags": [
+        #
+        # ]}
     )
 
     # TODO: Figure out how to do this in a way that's streaming friendly AND sync friendly
@@ -94,5 +97,8 @@ def send_story_generation(prompt: str, context: AgentContext) -> Optional[Block]
 
     task.wait()
     block = task.output.blocks[0]
-    append_to_chat_history_and_emit(context, block=block)
+
+    logging.warning(f"Story Block {block.text}")
+    emit(output=block, context=context)
+
     return block

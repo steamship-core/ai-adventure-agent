@@ -16,7 +16,7 @@ from steamship.invocable.invocable_response import StreamingResponse
 from schema.server_settings import ServerSettings
 from utils.context_utils import (
     RunNextAgentException,
-    append_to_chat_history_and_emit,
+    emit,
     get_game_state,
     with_game_state,
 )
@@ -518,7 +518,7 @@ class AgentService(PackageService):
 
                     had_exception = True
                     for block in e.action.output or []:
-                        append_to_chat_history_and_emit(context, block=block)
+                        emit(output=block, context=context)
 
                     prompt = "Hi."
                     if e.action.input:
