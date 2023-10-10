@@ -1,5 +1,4 @@
 import logging
-import uuid
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
@@ -399,10 +398,15 @@ class AgentService(PackageService):
     def _history_file_for_context(
         self, context_id: Optional[str] = None, **kwargs
     ) -> File:
-        # AgentContexts serve to allow the AgentService to run agents
-        # with appropriate information about the desired tasking.
-        if context_id is None:
-            context_id = uuid.uuid4()
+
+        # NOTA BENE!
+        context_id = "default"
+
+        #
+        # # AgentContexts serve to allow the AgentService to run agents
+        # # with appropriate information about the desired tasking.
+        # if context_id is None:
+        #     context_id = uuid.uuid4()
 
         ctx = AgentContext.get_or_create(
             self.client,

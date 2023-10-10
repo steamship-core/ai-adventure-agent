@@ -28,11 +28,7 @@ from endpoints.npc_endpoints import NpcMixin
 from endpoints.quest_endpoints import QuestMixin
 from endpoints.server_endpoints import ServerSettingsMixin
 from utils.agent_service import AgentService
-from utils.context_utils import (
-    get_game_state,
-    switch_history_to_current_conversant,
-    switch_history_to_current_quest,
-)
+from utils.context_utils import get_game_state
 
 
 class AdventureGameService(AgentService):
@@ -213,12 +209,14 @@ class AdventureGameService(AgentService):
             if game_state.in_conversation_with:
                 # Use the NPC AGENT if we're currently in a conversation.
                 sub_agent = self.npc_agent
-                switch_history_to_current_conversant(context)
+                # DANGER: The below might mess with streaming.
+                # switch_history_to_current_conversant(context)
 
             elif game_state.current_quest:
                 # Use the QUEST AGENT if we're currently on a quest.
                 sub_agent = self.quest_agent
-                switch_history_to_current_quest(context)
+                # DANGER: The below might mess with streaming.
+                # switch_history_to_current_quest(context)
             else:
                 # Use the CAMP AGENT as the default. This is like the home base router.
                 sub_agent = self.camp_agent
