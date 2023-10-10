@@ -2,7 +2,12 @@ from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
 from tools.end_quest_tool import EndQuestTool
-from utils.context_utils import get_game_state
+from utils.context_utils import (
+    await_ask,
+    get_current_quest,
+    get_game_state,
+    save_game_state,
+)
 from utils.generation_utils import (
     send_background_image,
     send_background_music,
@@ -43,27 +48,43 @@ class QuestAgent(InterruptiblePythonAgent):
         # Load the main things we're working with. These can modified and the save_game_state called at any time
         game_state = get_game_state(context)
         player = game_state.player
-        # quest = get_current_quest(context)
+        quest = get_current_quest(context)
 
-        # Note:
-        #    We don't generate directly into the ChatHistory file because we can't yet add the right tags along
-        send_story_generation(
-            f"Like the narrator of a movie, explain that {player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
-            context=context,
-        )
+        if not quest.sent_intro:
+            send_story_generation(
+                f"Like the narrator of a movie, explain that {player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
+                context=context,
+            )
 
-        send_background_music(prompt="Guitar music", context=context)
-        send_background_image(prompt="In a deep, dark forest", context=context)
+            send_background_music(prompt="Guitar music", context=context)
+            send_background_image(prompt="In a deep, dark forest", context=context)
 
-        send_story_generation(
-            f"{game_state.player.name} it about to go on a mission. Describe the first few things they do in a few sentences",
-            context=context,
-        )
+            send_story_generation(
+                f"{game_state.player.name} it about to go on a mission. Describe the first few things they do in a few sentences",
+                context=context,
+            )
 
-        send_story_generation(
-            f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
-            context=context,
-        )
+            send_story_generation(
+                f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
+                context=context,
+            )
+            quest.sent_intro = True
+            save_game_state(game_state, context)
+
+        if not quest.user_problem_solution:
+            quest.user_problem_solution = await_ask(
+                f"What does {player.name} do next?",
+                context,
+            )
+            save_game_state(game_state, context)
+
+        if not quest.sent_outro:
+            send_story_generation(
+                f"Explain how {player.name} solves things.",
+                context=context,
+            )
+            quest.sent_outro = True
+            save_game_state(game_state, context)
 
         blocks = EndQuestTool().run([], context)
         return FinishAction(output=blocks)

@@ -28,6 +28,17 @@ class Quest(BaseModel):
         None, description="The ChatFile ID of the quest."
     )
 
+    # For managing the back-and-forth
+    sent_intro = Optional[bool] = Field(
+        False, description="Whether the intro of the quest was sent to the user."
+    )
+    user_problem_solution = Optional[str] = Field(
+        False, description="The user's solution to the problem."
+    )
+    sent_outro = Optional[bool] = Field(
+        False, description="Whether the outro of the quest was sent to the user."
+    )
+
     # Output Fields
     image_url: Optional[str] = Field(
         None, description="An image of this quest generated afterwards by AI."
