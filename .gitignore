@@ -8,3 +8,4 @@ __pycache__
 .log
 logs/
 **/.DS_Store
+.pytest_cache
