@@ -59,11 +59,15 @@ class StartQuestTool(Tool):
         chat_history = ChatHistory.get_or_create(
             context.client, {"id": quest.chat_file_id}
         )
-        chat_history.append_system_message(
+
+        quest_kickoff_messages = []
+
+        quest_kickoff_messages.append(
             f"We are writing a story about the adventure of a character named {player.name}."
         )
+
         if player.background:
-            chat_history.append_system_message(
+            quest_kickoff_messages.append(
                 f"{player.name} has the following background: {player.background}"
             )
 
@@ -74,17 +78,17 @@ class StartQuestTool(Tool):
                 items.append(item.name)
             if len(items) > 0:
                 item_list = ",".join(items)
-                chat_history.append_system_message(
+                quest_kickoff_messages.append(
                     f"{player.name} has the following things in their inventory: {item_list}"
                 )
 
         if player.motivation:
-            chat_history.append_system_message(
+            quest_kickoff_messages.append(
                 f"{player.name}'s motivation is to {player.motivation}"
             )
 
         if game_state.tone:
-            chat_history.append_system_message(
+            quest_kickoff_messages.append(
                 f"The tone of this story is {game_state.tone}"
             )
 
@@ -96,9 +100,11 @@ class StartQuestTool(Tool):
                     prepared_mission_summaries.append(prior_quest.text_summary)
 
             if len(prepared_mission_summaries) > 0:
-                chat_history.append_system_message(
+                quest_kickoff_messages.append(
                     f"{player.name} has already been on previous missions: \n {prepared_mission_summaries}"
                 )
+
+        chat_history.append_system_message("\n".join(quest_kickoff_messages))
 
         # Now save the chat history file
         quest.chat_file_id = chat_history.file.id
