@@ -183,12 +183,16 @@ class AdventureGameService(AgentService):
         self.npc_agent = NpcAgent(llm=function_capable_llm)
 
     def get_default_agent(self, throw_if_missing: bool = True) -> Optional[Agent]:
-        """Returns the active agent at any one time.
+        """Returns the active agent.
 
-        This method is used by the AgentService base class to fetch which agent is supposed to be active.
+        The game is built with different agents which manage different aspects of the game.
 
-        WARNING: Are there any dangers if an agent with a set of tools enqueues actions... but then the active
-        agent switches and can't take them? We'll find out during gameplay..
+        This method is uses the global GAME STATE to select which agent is active.
+
+        - If game_state.is_onboarding_complete: ONBOARDING AGENT
+        - If game_state.in_conversation_with: NPC AGENT
+        - If game_state.current_quest: QUEST AGENT
+        - Else: CAMP AGENT
         """
         context = self.build_default_context()
         game_state = get_game_state(context)
@@ -201,9 +205,6 @@ class AdventureGameService(AgentService):
                 AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
             },
         )
-
-        # TODO: We need some way to have a hook for agent transitions. I think this belongs in the Tools given the
-        # way they're used to transition. That way agents can greet you and then say goodbye so you know what's happening.
 
         if not game_state.is_onboarding_complete():
             # Use the ONBOARDING AGENT if we still need to collect player/game information

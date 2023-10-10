@@ -340,7 +340,6 @@ class AgentService(PackageService):
         # get_default_agent() call from it. In AgentService,
         this method depends upon get_default_agent. In this class, that dependency is flipped.
         """
-        print("AG 12")
 
         if self._agent_context is not None:
             return self._agent_context  # Used cached copy
