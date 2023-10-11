@@ -90,7 +90,6 @@ def send_story_generation(prompt: str, context: AgentContext) -> Optional[Block]
             value={TagValueKey.STRING_VALUE: RoleTag.ASSISTANT},
         ),
         Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
-        Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
         # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
         Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
     ]
