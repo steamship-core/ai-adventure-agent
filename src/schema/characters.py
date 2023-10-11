@@ -21,6 +21,10 @@ class Character(BaseModel):
         None, description="The motivation of the character."
     )
 
+    def fetch_inventory(self, references: List[str]) -> List[Item]:
+        """Fetches inventory that matches the provided names."""
+        return [i for i in self.inventory or [] if i.name in references]
+
     def update_from_web(self, other: "Character"):
         """Performs a gentle update so that the website doesn't accidentally blast over this if it diverges in structure."""
         if other.name:

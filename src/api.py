@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Optional, Type
+from typing import List, Optional, Type, cast
 
 from pydantic import Field
 from steamship import Steamship
@@ -129,7 +129,7 @@ class AdventureGameService(AgentService):
         self.add_mixin(
             SteamshipWidgetTransport(
                 client=self.client,
-                agent_service=self,
+                agent_service=cast(AgentService, self),
             )
         )
 
@@ -138,7 +138,7 @@ class AdventureGameService(AgentService):
             SlackTransport(
                 client=self.client,
                 config=SlackTransportConfig(),
-                agent_service=self,
+                agent_service=cast(AgentService, self),
             )
         )
 
@@ -149,7 +149,7 @@ class AdventureGameService(AgentService):
                 config=TelegramTransportConfig(
                     bot_token=self.config.telegram_bot_token
                 ),
-                agent_service=self,
+                agent_service=cast(AgentService, self),
             )
         )
 
@@ -160,13 +160,19 @@ class AdventureGameService(AgentService):
         self.add_mixin(ServerSettingsMixin(client=self.client))
 
         # API for getting and setting game state
-        self.add_mixin(GameStateMixin(client=self.client, agent_service=self))
+        self.add_mixin(
+            GameStateMixin(client=self.client, agent_service=cast(AgentService, self))
+        )
 
         # API for getting and setting game state
-        self.add_mixin(QuestMixin(client=self.client, agent_service=self))
+        self.add_mixin(
+            QuestMixin(client=self.client, agent_service=cast(AgentService, self))
+        )
 
         # API for getting and setting game state
-        self.add_mixin(NpcMixin(client=self.client, agent_service=self))
+        self.add_mixin(
+            NpcMixin(client=self.client, agent_service=cast(AgentService, self))
+        )
 
         # Instantiate the core game agents
         function_capable_llm = ChatOpenAI(self.client)
@@ -240,5 +246,7 @@ if __name__ == "__main__":
 
     # NOTE: There's a bug in the repl where it doesn't respect my workspace selection below. It always creates a new one.
     client = Steamship(workspace="snugly-crater-i8mli")
-    repl = AgentREPL(AdventureGameService, agent_package_config={}, client=client)
+    repl = AgentREPL(
+        cast(AgentService, AdventureGameService), agent_package_config={}, client=client
+    )
     repl.run(dump_history_on_exit=True)
