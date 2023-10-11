@@ -17,6 +17,7 @@ layered on top to boot.
 
 That reduces the need of the game code to perform verbose plumbing operations.
 """
+import json
 import logging
 from typing import List, Optional, Union
 
@@ -174,7 +175,7 @@ def save_game_state(game_state, context: AgentContext):
     # Also save it to the context
     context.metadata[_game_state_KEY] = game_state
 
-    print("Just saved game state to", value)
+    print("Just saved game state to", json.dumps(value, indent='\t'))
 
 
 def get_current_quest(context: AgentContext) -> Optional["Quest"]:  # noqa: F821

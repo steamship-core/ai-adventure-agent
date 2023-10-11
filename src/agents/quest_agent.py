@@ -1,5 +1,6 @@
 import logging
 
+from steamship import Tag
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
@@ -11,8 +12,9 @@ from utils.context_utils import (
     get_game_state,
     save_game_state,
 )
-from utils.generation_utils import send_story_generation
+from utils.generation_utils import send_story_generation, await_streamed_block
 from utils.interruptible_python_agent import InterruptiblePythonAgent
+from utils.tags import TagKindExtensions, QuestTag
 
 
 class QuestAgent(InterruptiblePythonAgent):
@@ -60,20 +62,20 @@ class QuestAgent(InterruptiblePythonAgent):
         )
 
         if not quest.sent_intro:
-            logging.info(
-                "[DEBUG] Sending Intro Part 1",
-                extra={
-                    AgentLogging.IS_MESSAGE: True,
-                    AgentLogging.MESSAGE_TYPE: AgentLogging.AGENT,
-                    AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
-                    AgentLogging.AGENT_NAME: self.__class__.__name__,
-                },
-            )
-
-            send_story_generation(
-                f"Like the narrator of a movie, explain that {player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
-                context=context,
-            )
+            # logging.info(
+            #     "[DEBUG] Sending Intro Part 1",
+            #     extra={
+            #         AgentLogging.IS_MESSAGE: True,
+            #         AgentLogging.MESSAGE_TYPE: AgentLogging.AGENT,
+            #         AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
+            #         AgentLogging.AGENT_NAME: self.__class__.__name__,
+            #     },
+            # )
+            #
+            # send_story_generation(
+            #     f"Like the narrator of a movie, explain that {player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
+            #     context=context,
+            # )
 
             logging.info(
                 "[DEBUG] Sending Intro Part 2",
@@ -88,16 +90,17 @@ class QuestAgent(InterruptiblePythonAgent):
             # send_background_music(prompt="Guitar music", context=context)
             # send_background_image(prompt="In a deep, dark forest", context=context)
 
-            send_story_generation(
-                f"{game_state.player.name} it about to go on a mission. Describe the first few things they do in a few sentences",
+            block = send_story_generation(
+                f"{game_state.player.name} is about to go on a mission. Describe the first few things they do in a few sentences",
                 context=context,
             )
-
-            send_story_generation(
-                f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
+            await_streamed_block(block)
+            problem_block = send_story_generation(
+                f"Oh no! {game_state.player.name} encounters a problem. Describe the problem.",
                 context=context,
             )
             quest.sent_intro = True
+            await_streamed_block(problem_block)
             save_game_state(game_state, context)
         else:
             logging.info(
@@ -115,11 +118,18 @@ class QuestAgent(InterruptiblePythonAgent):
                 f"What does {player.name} do next?",
                 context,
             )
+            context.chat_history.append_user_message(
+                text=f"{player.name} solves the problem by: {quest.user_problem_solution}", tags=[
+                    Tag(kind=TagKindExtensions.QUEST, name=QuestTag.USER_SOLUTION)])
             save_game_state(game_state, context)
 
         if not quest.sent_outro:
+            # send_story_generation(
+            #     f"Explain how {player.name} solves things.",
+            #     context=context,
+            # )
             send_story_generation(
-                f"Explain how {player.name} solves things.",
+                f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
                 context=context,
             )
             quest.sent_outro = True

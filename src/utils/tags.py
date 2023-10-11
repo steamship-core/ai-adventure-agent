@@ -2,11 +2,16 @@ from enum import Enum
 
 
 class TagKindExtensions(str, Enum):
-    # This tag is of the kind "script" which contains information about a media scene.
+    # This tag is of the kind "scene" which contains information about a media scene.
     SCENE = "scene"
 
     # This tag is of the kind "character" which contains information about a character.
     CHARACTER = "character"
+
+    # This tag contains information about the overall tone / setting of the story
+    STORY_CONTEXT = "story_context"
+
+    QUEST = "quest"
 
 
 class SceneTag(str, Enum):
@@ -31,3 +36,29 @@ class SceneTag(str, Enum):
 class CharacterTag(str, Enum):
     # The character's image is being replaced with a new one
     IMAGE = "image"
+
+    BACKGROUND = "background"
+
+    DESCRIPTION = "description"
+
+    INVENTORY = "inventory"
+
+    MOTIVATION = "motivation"
+
+    NAME = "name"
+
+class StoryContextTag(str, Enum):
+
+    GENRE = "genre"
+
+    TONE = "tone"
+
+
+class QuestTag(str, Enum):
+
+    QUEST_CONTENT = "quest_content"
+    QUEST_PROMPT = "quest_prompt"
+    USER_SOLUTION = "user_solution"
+
+
+
