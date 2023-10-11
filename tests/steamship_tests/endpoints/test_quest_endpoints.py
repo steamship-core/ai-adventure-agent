@@ -1,7 +1,8 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 
 import pytest
-from steamship import Task, TaskState
+from steamship import Steamship, Task, TaskState
+from steamship.agents.schema import ChatHistory
 
 from api import AdventureGameService
 from schema.game_state import GameState
@@ -59,3 +60,21 @@ def test_going_on_quest_impossible_if_insufficient_energy(
     task = Task.parse_obj(result.get("status"))
     assert task.state == TaskState.failed
     assert f"{gs.player.energy}" in task.status_message
+
+
+@pytest.mark.parametrize(
+    "invocable_handler_with_client", [AdventureGameService], indirect=True
+)
+def test_narrate_block(
+    invocable_handler_with_client: Tuple[
+        Callable[[str, str, Optional[dict]], dict], Steamship
+    ]
+):
+    handler, client = invocable_handler_with_client
+    history = ChatHistory.get_or_create(client, context_keys={"id": "bar"})
+    block = history.append_assistant_message(text="Hello there!")
+
+    resp = handler("POST", "narrate_block", {"block_id": block.id})
+
+    assert resp.get("data")
+    assert resp.get("data").get("url")

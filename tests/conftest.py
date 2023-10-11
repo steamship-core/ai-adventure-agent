@@ -10,4 +10,8 @@ from pathlib import Path
 # Make sure `steamship_tests` is on the PYTHONPATH. Otherwise cross-test imports (e.g. to util libraries) will fail.
 sys.path.append(str(Path(__file__).parent.absolute()))
 
-from steamship_tests.fixtures import client, invocable_handler  # noqa: F401, E402
+from steamship_tests.fixtures import (  # noqa: F401, E402
+    client,
+    invocable_handler,
+    invocable_handler_with_client,
+)
