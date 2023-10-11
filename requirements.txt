@@ -1,3 +1,3 @@
 Pillow==10.0.1
-git+https://github.com/steamship-core/python-client.git
+git+https://github.com/steamship-core/python-client.git@refs/pull/582/head
 pydantic
