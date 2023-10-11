@@ -49,7 +49,7 @@ class Character(BaseModel):
             and self.background is not None
             and self.motivation is not None
             and self.inventory is not None
-            and len(self.inventory) > 0
+            # and len(self.inventory) > 0
         )
 
 

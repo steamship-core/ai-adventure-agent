@@ -93,7 +93,7 @@ def send_agent_status_message(
     return block
 
 
-def send_story_generation(prompt: str, context: AgentContext) -> Optional[Block]:
+def send_story_generation(prompt: str, quest_name: str, context: AgentContext) -> Optional[Block]:
     """Generates and sends a background image to the player."""
 
     generator = get_story_text_generator(context)
@@ -112,8 +112,9 @@ def send_story_generation(prompt: str, context: AgentContext) -> Optional[Block]
     ]
 
     context.chat_history.append_system_message(text=prompt,
-                                               tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT)])
-    block_indices = filter_block_indices(context.chat_history.file)
+                                               tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT),
+                                               Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id":quest_name})])
+    block_indices = filter_block_indices_for_quest_content(context.chat_history.file)
     # logging.warning(f"Generating: {prompt}")
 
     task = generator.generate(
@@ -131,8 +132,47 @@ def send_story_generation(prompt: str, context: AgentContext) -> Optional[Block]
     emit(output=block, context=context)
     return block
 
+def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[Block]:
+    """Generates and sends a background image to the player."""
 
-def filter_block_indices(chat_history_file: File) -> [int]:
+    generator = get_story_text_generator(context)
+    # context.chat_history.append_system_message(prompt)
+
+    tags = [
+        Tag(
+            kind=TagKind.CHAT,
+            name=ChatTag.ROLE,
+            value={TagValueKey.STRING_VALUE: RoleTag.ASSISTANT},
+        ),
+        Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
+        # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
+        Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
+        Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_SUMMARY)
+    ]
+
+    context.chat_history.append_system_message(text="Please summarize the above quest in one to two sentences. ",
+                                               tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT),
+                                               Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id":quest_name})])
+    block_indices = filter_block_indices_for_quest_summary(context.chat_history.file, quest_name=quest_name)
+    # logging.warning(f"Generating: {prompt}")
+
+    task = generator.generate(
+        # text=prompt, # Don't want to pass this if we're passing blocks
+        tags=tags,
+        append_output_to_file=True,
+        input_file_id=context.chat_history.file.id,
+        output_file_id=context.chat_history.file.id,
+        streaming=False, # we need this back in the package
+        input_file_block_index_list=block_indices,
+    )
+    task.wait()
+    blocks = task.output.blocks
+    block = blocks[0]
+    emit(output=block, context=context)
+    return block
+
+
+def filter_block_indices_for_quest_content(chat_history_file: File) -> [int]:
 
     allowed_kind_names = [
         (TagKindExtensions.CHARACTER, CharacterTag.NAME),
@@ -149,7 +189,7 @@ def filter_block_indices(chat_history_file: File) -> [int]:
     ]
 
     result = []
-    print("Generation input ************")
+    print("Quest Content input ************")
     for block in chat_history_file.blocks:
         will_include = False
         matching_tag = None
@@ -165,6 +205,26 @@ def filter_block_indices(chat_history_file: File) -> [int]:
     print("******************")
     return result
 
+
+def filter_block_indices_for_quest_summary(chat_history_file: File, quest_name: str) -> [int]:
+
+    result = []
+    print("Summary input ************")
+    for block in chat_history_file.blocks:
+        will_include = False
+        matching_tag = None
+        for tag in block.tags:
+            if tag.kind == TagKindExtensions.QUEST and tag.name == QuestTag.QUEST_ID:
+                if tag.value is not None:
+                    if tag.value.get('id') == quest_name:
+                        will_include = True
+                        matching_tag = tag
+        if will_include:
+            result.append(block.index_in_file)
+            print(f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}")
+
+    print("******************")
+    return result
 
 def await_streamed_block(block: Block):
     while block.stream_state == StreamState.STARTED:
