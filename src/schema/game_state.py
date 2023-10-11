@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
+from steamship import Task, TaskState
 
 from schema.camp import Camp
 from schema.characters import HumanCharacter
@@ -60,8 +61,14 @@ class GameState(BaseModel):
         description="The key of the last question asked to the user via context_utils.await_ask.",
     )
 
+    profile_image_task: Optional[Task] = Field(
+        default=None,
+        description="Task for the generation of an initial profile image for the primary character.",
+    )
+
     def update_from_web(self, other: "GameState"):
-        """Performs a gentle update so that the website doesn't accidentally blast over this if it diverges in structure."""
+        """Perform a gentle update so that the website doesn't accidentally blast over this if it diverges in
+        structure."""
         if other.genre:
             self.genre = other.genre
         if other.tone:
@@ -82,3 +89,14 @@ class GameState(BaseModel):
             and self.genre is not None
             and self.tone is not None
         )
+
+    def image_generation_requested(self) -> bool:
+        if not self.profile_image_task:
+            return False
+        if task := self.profile_image_task:
+            # retry if failed.
+            return task.state in [
+                TaskState.succeeded,
+                TaskState.running,
+                TaskState.waiting,
+            ]

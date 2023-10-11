@@ -5,14 +5,16 @@ from steamship.agents.schema.action import FinishAction
 from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from schema.objects import Item
+from utils.agent_service import _context_key_from_file
 from utils.context_utils import (
     RunNextAgentException,
     await_ask,
     get_game_state,
+    get_package_service,
     save_game_state,
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent
-from utils.tags import TagKindExtensions, CharacterTag, StoryContextTag
+from utils.tags import CharacterTag, StoryContextTag, TagKindExtensions
 
 
 class OnboardingAgent(InterruptiblePythonAgent):
@@ -31,42 +33,49 @@ class OnboardingAgent(InterruptiblePythonAgent):
 
         if not player.name:
             player.name = await_ask("What is your character's name?", context)
-            context.chat_history.append_system_message(text=f"The character's name is {player.name}", tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.NAME)])
+            context.chat_history.append_system_message(
+                text=f"The character's name is {player.name}",
+                tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.NAME)],
+            )
             save_game_state(game_state, context)
 
         if not player.background:
             player.background = await_ask(
                 f"What is {player.name}'s backstory?", context
             )
-            context.chat_history.append_system_message(text=f"{player.name}'s backstory is: {player.background}", tags=[
-                Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.BACKGROUND)])
+            context.chat_history.append_system_message(
+                text=f"{player.name}'s backstory is: {player.background}",
+                tags=[
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.BACKGROUND)
+                ],
+            )
             save_game_state(game_state, context)
 
         if not player.description:
             player.description = await_ask(
                 f"What is {player.name}'s physical description?", context
             )
-            context.chat_history.append_system_message(text=f"{player.name}'s physical description is: {player.description}", tags=[
-                Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.DESCRIPTION)])
+            context.chat_history.append_system_message(
+                text=f"{player.name}'s physical description is: {player.description}",
+                tags=[
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.DESCRIPTION)
+                ],
+            )
             save_game_state(game_state, context)
 
-        # TODO: How can we do something like this:
-        # if not player.image_generation:
-        #    player.image_generation = generate(..)
-        #    save_game_state(game_state, context)
-        #
-        # But have that operation:
-        #    1) NOT WAIT!! for the generation to complete!
-        #    2) Result in game_state having data that contains, without ANY additional requirements by the web client,
-        #       the URL of the generation
-        #    3) Some kind of notification.. e.g. on the chat history, etc, of the asset being ready
-        #
-        # Ideally as soon as we:
-        #    1) Know the description, but
-        #    2) Realize we haven't made a character image
-        #
-        # We just kick off a generation loop.
-        #
+        if not game_state.image_generation_requested():
+            # TODO: should this move to after tone/genre are set?
+            svc = get_package_service(context)
+            task = svc.invoke_later(
+                method="generate_profile_image",
+                arguments={
+                    "context_id": _context_key_from_file(
+                        key="id", file=context.chat_history.file
+                    )
+                },
+            )
+            game_state.profile_image_task = task
+            save_game_state(game_state, context)
 
         if not player.inventory:
             name = await_ask(f"What is {player.name}'s starting item?", context)
@@ -80,8 +89,11 @@ class OnboardingAgent(InterruptiblePythonAgent):
                 f"What is {player.name} motivated to achieve?", context
             )
             context.chat_history.append_system_message(
-                text=f"{player.name}'s motivation is: {player.motivation}", tags=[
-                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.MOTIVATION)])
+                text=f"{player.name}'s motivation is: {player.motivation}",
+                tags=[
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.MOTIVATION)
+                ],
+            )
             save_game_state(game_state, context)
 
         if not game_state.genre:
@@ -90,8 +102,13 @@ class OnboardingAgent(InterruptiblePythonAgent):
                 context,
             )
             context.chat_history.append_system_message(
-                text=f"The genre of the story is: {game_state.genre}", tags=[
-                    Tag(kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.GENRE)])
+                text=f"The genre of the story is: {game_state.genre}",
+                tags=[
+                    Tag(
+                        kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.GENRE
+                    )
+                ],
+            )
             save_game_state(game_state, context)
 
         if not game_state.tone:
@@ -100,8 +117,11 @@ class OnboardingAgent(InterruptiblePythonAgent):
                 context,
             )
             context.chat_history.append_system_message(
-                text=f"The tone of the story is: {game_state.tone}", tags=[
-                    Tag(kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.TONE)])
+                text=f"The tone of the story is: {game_state.tone}",
+                tags=[
+                    Tag(kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.TONE)
+                ],
+            )
             save_game_state(game_state, context)
 
         raise RunNextAgentException(

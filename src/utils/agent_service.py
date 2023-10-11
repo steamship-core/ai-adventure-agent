@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, cast
 
 from steamship import Block, File, SteamshipError, Task
 from steamship.agents.llms.openai import ChatOpenAI
@@ -19,6 +19,7 @@ from utils.context_utils import (
     emit,
     get_game_state,
     with_game_state,
+    with_package_service,
 )
 
 
@@ -33,7 +34,7 @@ def build_context_appending_emit_func(
     EXTENSION NOTE:
     - Some blocks are generated and then emitted when Generation is complete.
     - Some blocks are streamed directly into the ChatHistory (for the web user) but we still want to emit them for users
-      of non-streaming clients: ship run local, AgentREPL, Telegram, etc.
+    of non-streaming clients: ship run local, AgentREPL, Telegram, etc.
 
     As a hack, this project adopts the following convention:
 
@@ -424,6 +425,10 @@ class AgentService(PackageService):
         # Now add in the Server Settings
         server_settings = ServerSettings()
         context = server_settings.add_to_agent_context(context, game_state)
+
+        context = with_package_service(
+            package_service=cast(PackageService, self), context=context
+        )
 
         self._agent_context = context
         return context
