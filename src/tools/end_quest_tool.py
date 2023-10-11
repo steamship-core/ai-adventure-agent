@@ -13,7 +13,7 @@ from utils.context_utils import (
     get_story_text_generator,
     save_game_state,
 )
-from utils.generation_utils import send_agent_status_message
+from utils.generation_utils import send_agent_status_message, generate_quest_summary
 from utils.tags import AgentStatusMessageTag
 
 
@@ -69,6 +69,7 @@ class EndQuestTool(Tool):
         player = game_state.player
 
         # Let's do some things to tidy up.
+        # TODO: incorporate chat history
         task = generator.generate(
             text=f"What object or item did {player.name} find during that story? It should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
         )
@@ -101,16 +102,8 @@ class EndQuestTool(Tool):
         if player.energy < 0:
             player.energy = 0
 
-        summary = (
-            # TODO: This is stateless.
-            generator.generate(
-                text="Summarize this quest in three sentences.",
-                options={"max_tokens": 200},
-            )
-            .wait()
-            .blocks[0]
-            .text
-        )
+        summary_block = generate_quest_summary(quest.name, context )
+        summary = summary_block.text
         quest.text_summary = summary
 
         # Finally.. close the quest.
@@ -121,7 +114,7 @@ class EndQuestTool(Tool):
         save_game_state(game_state, context)
 
         # This notifies the web UI that it is time to transition back to Camp
-        send_agent_status_message(AgentStatusMessageTag.QUEST_COMPLETE)
+        send_agent_status_message(AgentStatusMessageTag.QUEST_COMPLETE, context=context)
 
         return "You've finished the quest! TODO: Stream celebration."
 

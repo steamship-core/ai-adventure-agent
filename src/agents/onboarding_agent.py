@@ -69,10 +69,10 @@ class OnboardingAgent(InterruptiblePythonAgent):
         #
 
         if not player.inventory:
-            name = await_ask(f"What is {player.name}'s starting item?", context)
+            # name = await_ask(f"What is {player.name}'s starting item?", context)
             if player.inventory is None:
                 player.inventory = []
-            player.inventory.append(Item(name=name))
+            # player.inventory.append(Item(name=name))
             save_game_state(game_state, context)
 
         if not player.motivation:
