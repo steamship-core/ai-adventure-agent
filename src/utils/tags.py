@@ -14,6 +14,11 @@ class TagKindExtensions(str, Enum):
     QUEST = "quest"
 
 
+class AgentStatusMessageTag(str, Enum):
+    # The quest is complete
+    QUEST_COMPLETE = "quest-complete"
+
+
 class SceneTag(str, Enum):
     # A scene has started
     START = "start"

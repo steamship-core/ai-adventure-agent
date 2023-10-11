@@ -13,6 +13,8 @@ from utils.context_utils import (
     get_story_text_generator,
     save_game_state,
 )
+from utils.generation_utils import send_agent_status_message
+from utils.tags import AgentStatusMessageTag
 
 
 class EndQuestTool(Tool):
@@ -88,8 +90,16 @@ class EndQuestTool(Tool):
             player.inventory = []
         player.inventory.append(item)
 
-        # Increase the player's rank
+        # Going on a quest increases the player's rank
         player.rank += quest.rank_delta
+
+        # Going on a quest results in gold
+        player.gold += quest.gold_delta
+
+        # Going on a quest expends energy
+        player.energy -= quest.energy_delta
+        if player.energy < 0:
+            player.energy = 0
 
         summary = (
             # TODO: This is stateless.
@@ -109,6 +119,9 @@ class EndQuestTool(Tool):
         # TODO: Verify that python's pass-by-reference means all the above modifications are automatically
         # included in this.
         save_game_state(game_state, context)
+
+        # This notifies the web UI that it is time to transition back to Camp
+        send_agent_status_message(AgentStatusMessageTag.QUEST_COMPLETE)
 
         return "You've finished the quest! TODO: Stream celebration."
 

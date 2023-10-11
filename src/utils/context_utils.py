@@ -21,11 +21,10 @@ import json
 import logging
 from typing import List, Optional, Union
 
-from steamship import Block, PluginInstance, Tag
+from steamship import Block, PluginInstance
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
-from steamship.data import TagValueKey
 from steamship.utils.kv_store import KeyValueStore
 
 from schema.game_state import GameState
@@ -322,13 +321,7 @@ def await_ask(
 
         The FinishActionException is handled by the enclosing Agent.
     """
-    BASE_TAGS = [
-        Tag(
-            kind="request-id",
-            name=context.request_id,
-            value={TagValueKey.STRING_VALUE.value: context.request_id},
-        )
-    ]
+    BASE_TAGS = []
 
     # Make sure question is List[Block]
     if isinstance(question, str):

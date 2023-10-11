@@ -402,7 +402,6 @@ class AgentService(PackageService):
 
         context = AgentContext.get_or_create(
             client=self.client,
-            # request_id=self.client.config.request_id,
             context_keys={"id": f"{context_id}"},
             use_llm_cache=use_llm_cache,
             use_action_cache=use_action_cache,
@@ -418,14 +417,13 @@ class AgentService(PackageService):
         llm = ChatOpenAI(client=self.client)
         context = with_llm(context=context, llm=llm)
 
+        # Get the game state and add to context
+        game_state = get_game_state(context)
+        context = with_game_state(game_state, context)
+
         # Now add in the Server Settings
         server_settings = ServerSettings()
-        context = server_settings.add_to_agent_context(context)
-
-        # Now add in the Game State
-        game_state = get_game_state(context)
-
-        context = with_game_state(game_state, context)
+        context = server_settings.add_to_agent_context(context, game_state)
 
         self._agent_context = context
         return context
