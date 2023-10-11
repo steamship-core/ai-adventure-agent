@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from schema.camp import Camp
 from schema.characters import HumanCharacter
+from schema.preferences import Preferences
 from schema.quest import Quest
 
 
@@ -24,6 +25,10 @@ class GameState(BaseModel):
     # BEGIN ONBOARDING FIELDS
     player: HumanCharacter = Field(
         HumanCharacter(), description="The player of the game."
+    )
+
+    preferences: Preferences = Field(
+        Preferences(), description="Player's game preferences"
     )
 
     tone: Optional[str] = Field(None, description="The tone of the story being told.")
@@ -63,6 +68,8 @@ class GameState(BaseModel):
             self.tone = other.tone
         if other.player:
             self.player.update_from_web(other.player)
+        if other.preferences:
+            self.preferences.update_from_web(other.preferences)
 
     def is_onboarding_complete(self) -> bool:
         """Return True if the player onboarding has been completed.
