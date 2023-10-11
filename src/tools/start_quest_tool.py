@@ -1,12 +1,18 @@
 import uuid
 from typing import Any, List, Optional, Union
 
-from steamship import Block, MimeTypes, Task
+from steamship import Block, MimeTypes, SteamshipError, Task
 from steamship.agents.schema import AgentContext, FinishAction, Tool
 
 from schema.game_state import GameState
 from schema.quest import Quest
-from utils.context_utils import RunNextAgentException, get_game_state, save_game_state
+from schema.server_settings import ServerSettings
+from utils.context_utils import (
+    RunNextAgentException,
+    get_game_state,
+    get_server_settings,
+    save_game_state,
+)
 
 
 class StartQuestTool(Tool):
@@ -48,13 +54,23 @@ class StartQuestTool(Tool):
         context: AgentContext,
         purpose: Optional[str] = None,
     ) -> Quest:
+        server_settings: ServerSettings = get_server_settings(context)
+        player = game_state.player
+
+        if player.energy < server_settings.quest_cost:
+            raise SteamshipError(
+                message=f"Going on a quest costs {server_settings.quest_cost} energy, but you only have {player.energy}."
+            )
 
         # quest = Quest(chat_file_id=f"quest-{uuid.uuid4()}")
         chat_history = context.chat_history
 
-        quest = Quest(chat_file_id=chat_history.file.id)
+        quest = Quest(
+            chat_file_id=chat_history.file.id,
+            # For now a quest is a fixed cost, controlled by the server settings.
+            energy_delta=server_settings.quest_cost,
+        )
 
-        player = game_state.player
         quest_kickoff_messages = []
 
         quest_kickoff_messages.append(

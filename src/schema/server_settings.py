@@ -44,6 +44,9 @@ class ServerSettings(BaseModel):
     # Narration Generation Settings
     default_background_music_model: str = Field("music-generator", description="")
 
+    # Energy Management
+    quest_cost: int = Field(10, description="The cost of going on one quest")
+
     def _select_model(
         self,
         allowed: List[str],
