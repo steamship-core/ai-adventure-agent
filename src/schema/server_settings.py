@@ -62,15 +62,26 @@ class ServerSettings(BaseModel):
         self, client: Steamship, preferred_model: Optional[str] = None
     ) -> PluginInstance:
         """Return a plugin instance for the story generator."""
-        plugin_handle = self._select_model(
-            ["gpt-3.5-turbo", "gpt-4"],
+
+        open_ai_models = ["gpt-3.5-turbo", "gpt-4"]
+        replicate_models = ["dolly_v2", "llama_v2"]
+
+        model_name = self._select_model(
+            open_ai_models + replicate_models,
             default=self.default_story_model,
             preferred=preferred_model,
         )
+
+        plugin_handle = None
+        if model_name in open_ai_models:
+            plugin_handle = "gpt-4"
+        elif model_name in replicate_models:
+            plugin_handle = "replicate-llm"
+
         return client.use_plugin(
-            "gpt-4",  # TODO: Will need to change if Replicate
+            plugin_handle,
             config={
-                "model": plugin_handle,
+                "model": model_name,
                 "max_tokens": self.default_story_max_tokens,
                 "temperature": self.default_story_temperature,
             },
