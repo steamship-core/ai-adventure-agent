@@ -25,6 +25,7 @@ from utils.context_utils import (
     get_background_music_generator,
     get_story_text_generator,
 )
+from utils.tags import AgentStatusMessageTag
 
 
 def send_background_music(prompt: str, context: AgentContext) -> Optional[Block]:
@@ -72,6 +73,20 @@ def send_audio_narration(block: Block, context: AgentContext) -> Optional[Block]
     task.wait()
     block = task.output.blocks[0]
     emit(output=block, context=context)
+    return block
+
+
+def send_agent_status_message(
+    name: AgentStatusMessageTag, context: AgentContext, value: Optional[dict] = None
+) -> Optional[Block]:
+    block = Block(
+        text="",
+        tags=[
+            Tag(kind=TagKind.ROLE, name="status-message", value=value),
+            Tag(kind=TagKind.AGENT_STATUS_MESSAGE, name=name.value, value=value),
+        ],
+    )
+    emit(block, context=context)
     return block
 
 

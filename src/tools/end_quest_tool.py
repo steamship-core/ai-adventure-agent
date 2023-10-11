@@ -13,6 +13,8 @@ from utils.context_utils import (
     get_story_text_generator,
     save_game_state,
 )
+from utils.generation_utils import send_agent_status_message
+from utils.tags import AgentStatusMessageTag
 
 
 class EndQuestTool(Tool):
@@ -109,6 +111,9 @@ class EndQuestTool(Tool):
         # TODO: Verify that python's pass-by-reference means all the above modifications are automatically
         # included in this.
         save_game_state(game_state, context)
+
+        # This notifies the web UI that it is time to transition back to Camp
+        send_agent_status_message(AgentStatusMessageTag.QUEST_COMPLETE)
 
         return "You've finished the quest! TODO: Stream celebration."
 
