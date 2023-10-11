@@ -25,6 +25,7 @@ from steamship import Block, PluginInstance
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
+from steamship.invocable import PackageService
 from steamship.utils.kv_store import KeyValueStore
 
 from schema.characters import HumanCharacter
@@ -39,7 +40,15 @@ _BACKGROUND_IMAGE_GENERATOR_KEY = "background-image-generator"
 _PROFILE_IMAGE_GENERATOR_KEY = "profile-image-generator"
 _NARRATION_GENERATOR_KEY = "narration-generator"
 _SERVER_SETTINGS_KEY = "server-settings"
-_game_state_KEY = "user-settings"
+_GAME_STATE_KEY = "user-settings"
+_PACKAGE_SERVICE_KEY = "package-service"
+
+
+def with_package_service(
+    package_service: PackageService, context: AgentContext
+) -> AgentContext:
+    context.metadata[_PACKAGE_SERVICE_KEY] = package_service
+    return context
 
 
 def with_story_generator(
@@ -92,8 +101,14 @@ def with_server_settings(
 def with_game_state(
     game_state: "GameState", context: AgentContext  # noqa: F821
 ) -> "AgentContext":  # noqa: F821
-    context.metadata[_game_state_KEY] = game_state
+    context.metadata[_GAME_STATE_KEY] = game_state
     return context
+
+
+def get_package_service(
+    context: AgentContext, default: Optional[PackageService] = None
+) -> Optional[PackageService]:
+    return context.metadata.get(_PACKAGE_SERVICE_KEY, default)
 
 
 def get_story_text_generator(
@@ -142,8 +157,8 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
         },
     )
 
-    if _game_state_KEY in context.metadata:
-        return context.metadata.get(_game_state_KEY)
+    if _GAME_STATE_KEY in context.metadata:
+        return context.metadata.get(_GAME_STATE_KEY)
 
     # Get it from the KV Store
     key = "GameState"
@@ -154,11 +169,12 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
         print("Parsing game state from stored value")
         print(value)
         game_state = GameState.parse_obj(value)
-        context.metadata[_game_state_KEY] = game_state
+        context.metadata[_GAME_STATE_KEY] = game_state
         return game_state
     else:
         print("Creating new game state -- one didn't exist!")
         game_state = GameState()
+        context.metadata[_GAME_STATE_KEY] = game_state
 
         # FOR QUICK DEBUGGING
         # game_state.player = HumanCharacter()
@@ -170,7 +186,6 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
         # game_state.genre = "adventure"
         ####
 
-        context.metadata[_game_state_KEY] = game_state
         return game_state
 
 
@@ -184,9 +199,9 @@ def save_game_state(game_state, context: AgentContext):
     kv.set(key, value)
 
     # Also save it to the context
-    context.metadata[_game_state_KEY] = game_state
+    context.metadata[_GAME_STATE_KEY] = game_state
 
-    print("Just saved game state to", json.dumps(value, indent='\t'))
+    print("Just saved game state to", json.dumps(value, indent="\t"))
 
 
 def get_current_quest(context: AgentContext) -> Optional["Quest"]:  # noqa: F821
@@ -299,7 +314,7 @@ def _key_for_question(blocks: List[Block], key: Optional[str] = None) -> str:
     return ret
 
 
-class FinishActionException(Exception):
+class FinishActionException(Exception):  # noqa: N818
     """Thrown when a piece of code wishes to pop the stack all the way up to the enclosing Agent or AgentService.
 
     The intended result is that the agent treat teh Exception as a FinishAction, emitting the response.
@@ -333,11 +348,11 @@ def await_ask(
 
         The FinishActionException is handled by the enclosing Agent.
     """
-    BASE_TAGS = []
+    base_tags = []
 
     # Make sure question is List[Block]
     if isinstance(question, str):
-        output = [Block(text=question, tags=BASE_TAGS)]
+        output = [Block(text=question, tags=base_tags)]
     else:
         output = question
 
@@ -411,7 +426,7 @@ def emit(output: Union[str, Block, List[Block]], context: AgentContext):
         func(output, context.metadata)
 
 
-class RunNextAgentException(Exception):
+class RunNextAgentException(Exception):  # noqa: N818
     """Thrown when a piece of code, anywhere, wishes to pop the stack all the way up to the AgentService and
     activate the next agent.
 

@@ -95,26 +95,32 @@ class ServerSettings(BaseModel):
         return ChatOpenAI(client)
 
     def get_profile_image_generator(
-        self, client: Steamship, preferred_model: Optional[str] = None
+        self,
+        client: Steamship,
+        preferred_model: Optional[str] = None,
+        config: Optional[dict] = None,
     ) -> PluginInstance:
         """Return a plugin instance for the profile image generator."""
         plugin_handle = self._select_model(
-            ["dall-e"],
+            ["dall-e", "fal-sd-lora-image-generator"],
             default=self.default_profile_image_model,
             preferred=preferred_model,
         )
-        return client.use_plugin(plugin_handle)
+        return client.use_plugin(plugin_handle, config=config)
 
     def get_background_image_generator(
-        self, client: Steamship, preferred_model: Optional[str] = None
+        self,
+        client: Steamship,
+        preferred_model: Optional[str] = None,
+        config: Optional[dict] = None,
     ) -> PluginInstance:
         """Return a plugin instance for the background image generator."""
         plugin_handle = self._select_model(
-            ["dall-e"],
+            ["dall-e", "fal-sd-lora-image-generator"],
             default=self.default_background_image_model,
             preferred=preferred_model,
         )
-        return client.use_plugin(plugin_handle)
+        return client.use_plugin(plugin_handle, config=config)
 
     def get_narration_generator(
         self, client: Steamship, preferred_model: Optional[str] = None
@@ -167,14 +173,18 @@ class ServerSettings(BaseModel):
 
         context = with_profile_image_generator(
             self.get_profile_image_generator(
-                context.client, game_state.preferences.profile_image_model
+                client=context.client,
+                preferred_model=game_state.preferences.profile_image_model,
+                config=game_state.preferences.profile_image_config(),
             ),
             context,
         )
 
         context = with_background_image_generator(
             self.get_background_image_generator(
-                context.client, game_state.preferences.background_image_model
+                client=context.client,
+                preferred_model=game_state.preferences.background_image_model,
+                config=game_state.preferences.background_image_config(),
             ),
             context,
         )
