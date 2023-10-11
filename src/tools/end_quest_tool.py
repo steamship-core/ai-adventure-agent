@@ -92,6 +92,7 @@ class EndQuestTool(Tool):
 
         # Increase the player's rank
         player.rank += quest.rank_delta
+        player.gold += quest.gold_delta
 
         summary = (
             # TODO: This is stateless.
