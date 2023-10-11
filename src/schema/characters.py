@@ -97,6 +97,10 @@ class HumanCharacter(Character):
         100,
         description="The energy the player has. Going on a quest requires and expends energy. This is the unit of monetization for the game.",
     )
+    max_energy: Optional[int] = Field(
+        100,
+        description="The maximum energy the player can ever have.",
+    )
 
     def update_from_web(self, other: "HumanCharacter"):
         """Performs a gentle update so that the website doesn't accidentally blast over this if it diverges in structure."""

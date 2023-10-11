@@ -90,9 +90,16 @@ class EndQuestTool(Tool):
             player.inventory = []
         player.inventory.append(item)
 
-        # Increase the player's rank
+        # Going on a quest increases the player's rank
         player.rank += quest.rank_delta
+
+        # Going on a quest results in gold
         player.gold += quest.gold_delta
+
+        # Going on a quest expends energy
+        player.energy -= quest.energy_delta
+        if player.energy < 0:
+            player.energy = 0
 
         summary = (
             # TODO: This is stateless.

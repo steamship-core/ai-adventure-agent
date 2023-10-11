@@ -55,3 +55,6 @@ class Quest(BaseModel):
     gold_delta: Optional[int] = Field(
         25, description="The change in gold that resulted from this quest."
     )
+    energy_delta: Optional[int] = Field(
+        -10, description="The change in energy that resulted from this quest."
+    )
