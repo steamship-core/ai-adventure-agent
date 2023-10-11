@@ -27,6 +27,7 @@ from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
 from steamship.utils.kv_store import KeyValueStore
 
+from schema.characters import HumanCharacter
 from schema.game_state import GameState
 
 _STORY_GENERATOR_KEY = "story-generator"
@@ -158,6 +159,17 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
     else:
         print("Creating new game state -- one didn't exist!")
         game_state = GameState()
+
+        # FOR QUICK DEBUGGING
+        # game_state.player = HumanCharacter()
+        # game_state.player.name = "Dave"
+        # game_state.player.motivation = "Doing cool things"
+        # game_state.player.description = "he is tall"
+        # game_state.player.background = "he's a guy"
+        # game_state.tone = "funny"
+        # game_state.genre = "adventure"
+        ####
+
         context.metadata[_game_state_KEY] = game_state
         return game_state
 
