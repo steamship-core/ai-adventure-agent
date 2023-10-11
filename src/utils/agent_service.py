@@ -29,10 +29,34 @@ def build_context_appending_emit_func(
 
     NOTE: Messages will be tagged as ASSISTANT messages, as this assumes that agent output should be considered
     an assistant response to a USER.
+
+    EXTENSION NOTE:
+    - Some blocks are generated and then emitted when Generation is complete.
+    - Some blocks are streamed directly into the ChatHistory (for the web user) but we still want to emit them for users
+      of non-streaming clients: ship run local, AgentREPL, Telegram, etc.
+
+    As a hack, this project adopts the following convention:
+
+    - If a Block has the tag `kind=chat, name=streamed-to-chat-history` then it doesn't call emit here, since that
+      would be redundant.
     """
 
     def chat_history_append_func(blocks: List[Block], metadata: Metadata):
         for block in blocks:
+            # Check if this block was already streamed to ChatHistory
+            already_streamed_to_chat_history = False
+            for tag in block.tags or []:
+                if (
+                    tag.kind == TagKind.CHAT.value
+                    and tag.name == "streamed-to-chat-history"
+                ):
+                    already_streamed_to_chat_history = True
+                    break
+
+            # If this block was already streamed, skip emitting it here.
+            if already_streamed_to_chat_history:
+                continue
+
             block.set_public_data(make_blocks_public)
             if block.text:
                 context.chat_history.append_assistant_message(

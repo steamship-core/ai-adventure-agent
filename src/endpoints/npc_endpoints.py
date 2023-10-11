@@ -39,3 +39,14 @@ class NpcMixin(PackageMixin):
         tool = EndConversationTool()
         response = tool.end_conversation(game_state, context)
         return {"message": response}
+
+    # @post("/trade")
+    # def end_conversation(
+    #     self, sell: Optional[List[str]] = None, buy: Optional[List[str]] = None
+    # ) -> dict:
+    #     """Starts a conversation with the NPC by the provided name."""
+    #     context = self.agent_service.build_default_context()
+    #     game_state = get_game_state(context)
+    #     tool = EndConversationTool()
+    #     response = tool.end_conversation(game_state, context)
+    #     return {"message": response}

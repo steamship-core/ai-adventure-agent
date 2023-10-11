@@ -21,6 +21,19 @@ class Character(BaseModel):
         None, description="The motivation of the character."
     )
 
+    def update_from_web(self, other: "Character"):
+        """Performs a gentle update so that the website doesn't accidentally blast over this if it diverges in structure."""
+        if other.name:
+            self.name = other.name
+        if other.description:
+            self.description = other.description
+        if other.background:
+            self.background = other.background
+        if other.inventory:
+            self.inventory = other.inventory
+        if other.motivation:
+            self.motivation = other.motivation
+
     def is_onboarding_complete(self) -> bool:
         """Return True if the player onboarding has been completed.
 
@@ -80,3 +93,13 @@ class HumanCharacter(Character):
         100,
         description="The energy the player has. Going on a quest requires and expends energy. This is the unit of monetization for the game.",
     )
+
+    def update_from_web(self, other: "HumanCharacter"):
+        """Performs a gentle update so that the website doesn't accidentally blast over this if it diverges in structure."""
+        super().update_from_web(other)
+        if other.rank:
+            self.rank = other.rank
+        if other.gold:
+            self.gold = other.gold
+        if other.energy:
+            self.energy = other.energy

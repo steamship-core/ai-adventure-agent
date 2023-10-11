@@ -27,8 +27,9 @@ class GameStateMixin(PackageMixin):
         try:
             game_state = GameState.parse_obj(kwargs)
             context = self.agent_service.build_default_context()
-            # TODO: Do we want to update more softly rather than completely replace? That's pretty harsh.
-            save_game_state(game_state, context)
+            existing_state = get_game_state(context)
+            existing_state.update_from_web(game_state)
+            save_game_state(existing_state, context)
             return game_state.dict()
         except BaseException as e:
             logging.exception(e)

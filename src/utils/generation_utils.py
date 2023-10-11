@@ -13,8 +13,10 @@ doesn't need to know.
 import logging
 from typing import Optional
 
-from steamship import Block
+from steamship import Block, Tag
 from steamship.agents.schema import AgentContext
+from steamship.data import TagKind
+from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagValueKey
 
 from utils.context_utils import (
     emit,
@@ -81,24 +83,28 @@ def send_story_generation(prompt: str, context: AgentContext) -> Optional[Block]
 
     logging.warning("THIS ISN'T GOING TO USE THE WHOLE CHAT HISTORY!")
 
+    tags = [
+        Tag(
+            kind=TagKind.CHAT,
+            name=ChatTag.ROLE,
+            value={TagValueKey.STRING_VALUE: RoleTag.ASSISTANT},
+        ),
+        Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
+        Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
+        # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
+        Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
+    ]
+
     logging.warning(f"Generating: {prompt}")
     task = generator.generate(
         text=prompt,
-        # append_output_to_file=True,
-        # output_file_id=context.chat_history.file.id,
-        # streaming=True,
-        # options={"add_tags": [
-        #
-        # ]}
+        tags=tags,
+        append_output_to_file=True,
+        output_file_id=context.chat_history.file.id,
+        streaming=True,
     )
-
-    # TODO: Figure out how to do this in a way that's streaming friendly AND sync friendly
-    # TODO: Figure out how to stream narration in a way that's streaming friendly AND sync friendly
-
     task.wait()
-    block = task.output.blocks[0]
-
-    logging.warning(f"Story Block {block.text}")
+    blocks = task.output.blocks
+    block = blocks[0]
     emit(output=block, context=context)
-
     return block

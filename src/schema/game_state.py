@@ -55,6 +55,15 @@ class GameState(BaseModel):
         description="The key of the last question asked to the user via context_utils.await_ask.",
     )
 
+    def update_from_web(self, other: "GameState"):
+        """Performs a gentle update so that the website doesn't accidentally blast over this if it diverges in structure."""
+        if other.genre:
+            self.genre = other.genre
+        if other.tone:
+            self.tone = other.tone
+        if other.player:
+            self.player.update_from_web(other.player)
+
     def is_onboarding_complete(self) -> bool:
         """Return True if the player onboarding has been completed.
 
