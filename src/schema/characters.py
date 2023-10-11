@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
+from steamship import SteamshipError
 
 from schema.objects import Item
 
@@ -49,7 +50,7 @@ class Character(BaseModel):
             and self.background is not None
             and self.motivation is not None
             and self.inventory is not None
-            and len(self.inventory) > 0
+            # and len(self.inventory) > 0
         )
 
 
@@ -109,5 +110,11 @@ class HumanCharacter(Character):
             self.rank = other.rank
         if other.gold:
             self.gold = other.gold
+        if other.max_energy:
+            self.max_energy = other.max_energy
         if other.energy:
+            if other.energy > self.max_energy:
+                raise SteamshipError(
+                    message=f"Unable to update. New energy level of {other.energy} exceeds the player's maximum energy of {self.max_energy}."
+                )
             self.energy = other.energy

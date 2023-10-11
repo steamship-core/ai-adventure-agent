@@ -56,8 +56,9 @@ class TradeTool(Tool):
                 error_message=f"You're {total_cost - player_purchasing_power} Gold short on that trade.",
             )
 
-        # We can buy it!
-        gold_delta = -1 * total_cost - player_sales_proceeds
+        # Calculate the change in gold
+        gold_delta = int((-1 * total_cost) + player_sales_proceeds)
+
         player.inventory = [
             item
             for item in player.inventory or []
@@ -78,7 +79,7 @@ class TradeTool(Tool):
             player_gold=player.gold,
             player_gold_delta=gold_delta,
             player_bought=player_seeks_to_buy_items,
-            player_sold=player_seeks_to_sell,
+            player_sold=player_seeks_to_sell_items,
             player_inventory=player.inventory,
             counterparty_name=self.counter_party.name,
         )

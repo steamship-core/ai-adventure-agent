@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 from steamship import Tag
 from steamship.agents.logging import AgentLogging
@@ -92,11 +93,13 @@ class QuestAgent(InterruptiblePythonAgent):
 
             block = send_story_generation(
                 f"{game_state.player.name} is about to go on a mission. Describe the first few things they do in a few sentences",
+                quest_name=quest.name,
                 context=context,
             )
             await_streamed_block(block)
             problem_block = send_story_generation(
                 f"Oh no! {game_state.player.name} encounters a problem. Describe the problem.",
+                quest_name=quest.name,
                 context=context,
             )
             quest.sent_intro = True
@@ -119,8 +122,7 @@ class QuestAgent(InterruptiblePythonAgent):
                 context,
             )
             context.chat_history.append_user_message(
-                text=f"{player.name} solves the problem by: {quest.user_problem_solution}", tags=[
-                    Tag(kind=TagKindExtensions.QUEST, name=QuestTag.USER_SOLUTION)])
+                text=f"{player.name} solves the problem by: {quest.user_problem_solution}", tags=self.tags(QuestTag.USER_SOLUTION, quest))
             save_game_state(game_state, context)
 
         if not quest.sent_outro:
@@ -130,10 +132,19 @@ class QuestAgent(InterruptiblePythonAgent):
             # )
             send_story_generation(
                 f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
+                quest_name=quest.name,
                 context=context,
             )
             quest.sent_outro = True
             save_game_state(game_state, context)
 
+
         blocks = EndQuestTool().run([], context)
         return FinishAction(output=blocks)
+
+    def tags(self, part: QuestTag, quest: "Quest" ) -> List[Tag]:
+        return [
+            Tag(kind=TagKindExtensions.QUEST, name=part),
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id":quest.name})
+        ]
+

@@ -1,12 +1,18 @@
 import uuid
 from typing import Any, List, Optional, Union
 
-from steamship import Block, MimeTypes, Task
+from steamship import Block, MimeTypes, SteamshipError, Task
 from steamship.agents.schema import AgentContext, FinishAction, Tool
 
 from schema.game_state import GameState
 from schema.quest import Quest
-from utils.context_utils import RunNextAgentException, get_game_state, save_game_state
+from schema.server_settings import ServerSettings
+from utils.context_utils import (
+    RunNextAgentException,
+    get_game_state,
+    get_server_settings,
+    save_game_state,
+)
 
 
 class StartQuestTool(Tool):
@@ -48,58 +54,22 @@ class StartQuestTool(Tool):
         context: AgentContext,
         purpose: Optional[str] = None,
     ) -> Quest:
+        server_settings: ServerSettings = get_server_settings(context)
+        player = game_state.player
+
+        if player.energy < server_settings.quest_cost:
+            raise SteamshipError(
+                message=f"Going on a quest costs {server_settings.quest_cost} energy, but you only have {player.energy}."
+            )
 
         # quest = Quest(chat_file_id=f"quest-{uuid.uuid4()}")
         chat_history = context.chat_history
 
-        quest = Quest(chat_file_id=chat_history.file.id)
-
-        player = game_state.player
-        quest_kickoff_messages = []
-
-        quest_kickoff_messages.append(
-            f"We are writing a story about the adventure of a character named {player.name}."
+        quest = Quest(
+            chat_file_id=chat_history.file.id,
+            # For now a quest is a fixed cost, controlled by the server settings.
+            energy_delta=server_settings.quest_cost,
         )
-
-        if player.background:
-            quest_kickoff_messages.append(
-                f"{player.name} has the following background: {player.background}"
-            )
-
-        # Add in information about pinventory
-        if player.inventory:
-            items = []
-            for item in player.inventory or []:
-                items.append(item.name)
-            if len(items) > 0:
-                item_list = ",".join(items)
-                quest_kickoff_messages.append(
-                    f"{player.name} has the following things in their inventory: {item_list}"
-                )
-
-        if player.motivation:
-            quest_kickoff_messages.append(
-                f"{player.name}'s motivation is to {player.motivation}"
-            )
-
-        if game_state.tone:
-            quest_kickoff_messages.append(
-                f"The tone of this story is {game_state.tone}"
-            )
-
-        # Add in information about prior quests
-        prepared_mission_summaries = []
-        if game_state.quests:
-            for prior_quest in game_state.quests or []:
-                if prior_quest.text_summary is not None:
-                    prepared_mission_summaries.append(prior_quest.text_summary)
-
-            if len(prepared_mission_summaries) > 0:
-                quest_kickoff_messages.append(
-                    f"{player.name} has already been on previous missions: \n {prepared_mission_summaries}"
-                )
-
-        chat_history.append_system_message("\n".join(quest_kickoff_messages))
 
         # Now save the chat history file
         quest.chat_file_id = chat_history.file.id
