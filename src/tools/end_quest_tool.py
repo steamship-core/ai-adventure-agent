@@ -7,9 +7,11 @@ from steamship.agents.schema import AgentContext, Tool
 
 from schema.game_state import GameState
 from schema.objects import Item
+from utils.agent_service import _context_key_from_file
 from utils.context_utils import (
     get_current_quest,
     get_game_state,
+    get_package_service,
     get_story_text_generator,
     save_game_state,
 )
@@ -90,6 +92,21 @@ class EndQuestTool(Tool):
         if not player.inventory:
             player.inventory = []
         player.inventory.append(item)
+        save_game_state(game_state, context)
+
+        if svc := get_package_service(context=context):
+            # async generate an image for the inventory item
+            svc.invoke_later(
+                "generate_item_image",
+                arguments={
+                    "item_name": item.name,
+                    "item_description": item.description,
+                    "context_id": _context_key_from_file(
+                        key="id",
+                        file=context.chat_history.file,
+                    ),
+                },
+            )
 
         # Going on a quest increases the player's rank
         player.rank += quest.rank_delta

@@ -13,6 +13,9 @@ class TagKindExtensions(str, Enum):
 
     QUEST = "quest"
 
+    # This tag is of the kind "item" which contains information about an item.
+    ITEM = "item"
+
 
 class AgentStatusMessageTag(str, Enum):
     # The quest is complete
@@ -52,6 +55,7 @@ class CharacterTag(str, Enum):
 
     NAME = "name"
 
+
 class StoryContextTag(str, Enum):
 
     GENRE = "genre"
@@ -67,4 +71,6 @@ class QuestTag(str, Enum):
     QUEST_ID = "quest_id"
     QUEST_SUMMARY = "quest_summary"
 
-
+class ItemTag(str, Enum):
+    IMAGE = "image"
+    NAME = "name"
