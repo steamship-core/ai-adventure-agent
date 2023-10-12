@@ -39,6 +39,14 @@ class Character(BaseModel):
         if other.motivation:
             self.motivation = other.motivation
 
+
+    def inventory_description(self) -> str:
+        result = f"{self.name} has the following items in their inventory:"
+        for item in self.inventory:
+            result += f"\n\nname: {item.name}"
+            result += f"\ndescription: {item.description}"
+        return result
+
     def is_onboarding_complete(self) -> bool:
         """Return True if the player onboarding has been completed.
 

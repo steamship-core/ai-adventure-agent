@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List, Union
 
-from steamship import Block, Task
+from steamship import Block, Task, Tag
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, Tool
 
@@ -16,7 +16,7 @@ from utils.context_utils import (
     save_game_state,
 )
 from utils.generation_utils import send_agent_status_message, generate_quest_summary, generate_quest_item
-from utils.tags import AgentStatusMessageTag
+from utils.tags import AgentStatusMessageTag, TagKindExtensions, CharacterTag
 
 
 class EndQuestTool(Tool):
@@ -83,6 +83,10 @@ class EndQuestTool(Tool):
         if not player.inventory:
             player.inventory = []
         player.inventory.append(item)
+        context.chat_history.append_system_message(
+            text=player.inventory_description(),
+            tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INVENTORY)]
+        )
         save_game_state(game_state, context)
 
         if svc := get_package_service(context=context):
