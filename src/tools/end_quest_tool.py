@@ -128,11 +128,11 @@ class EndQuestTool(Tool):
         # This notifies the web UI that it is time to transition back to Camp
         send_agent_status_message(AgentStatusMessageTag.QUEST_COMPLETE, context=context)
 
-        return "You've finished the quest! TODO: Stream celebration."
+        return ""
 
     def run(
         self, tool_input: List[Block], context: AgentContext
     ) -> Union[List[Block], Task[Any]]:
         game_state = get_game_state(context)
         msg = self.end_quest(game_state, context)
-        return [Block(text=msg)]
+        return []
