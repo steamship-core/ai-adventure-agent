@@ -33,7 +33,7 @@ class Quest(BaseModel):
         False, description="Whether the intro of the quest was sent to the user."
     )
     user_problem_solution: Optional[str] = Field(
-        False, description="The user's solution to the problem."
+        None, description="The user's solution to the problem."
     )
     sent_outro: Optional[bool] = Field(
         False, description="Whether the outro of the quest was sent to the user."
