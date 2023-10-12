@@ -49,7 +49,7 @@ class OnboardingAgent(InterruptiblePythonAgent):
 
         if not game_state.image_generation_requested():
             # TODO: should this move to after tone/genre are set?
-            svc = get_package_service(context)
+            svc = get_package_service(context=context)
             task = svc.invoke_later(
                 method="generate_profile_image",
                 arguments={
