@@ -1,6 +1,7 @@
 import logging
+from typing import Optional
 
-from steamship import Steamship
+from steamship import Steamship, SteamshipError
 from steamship.agents.service.agent_service import AgentService
 from steamship.invocable import get, post
 from steamship.invocable.package_mixin import PackageMixin
@@ -40,3 +41,33 @@ class GameStateMixin(PackageMixin):
         """Get the game state."""
         context = self.agent_service.build_default_context()
         return get_game_state(context).dict()
+
+    @post("/add_energy")
+    def add_energy(
+        self, amount: int, fail_if_exceed_max: Optional[bool] = True
+    ) -> dict:
+        """Special endpoint to add energy to a character."""
+        context = self.agent_service.build_default_context()
+        gs: GameState = get_game_state(context)
+
+        if amount < 0:
+            raise SteamshipError(
+                message=f"Can only add a positive amount of energy. Got: {amount}"
+            )
+
+        new_energy = gs.player.energy + amount
+
+        if new_energy > gs.player.max_energy:
+            if fail_if_exceed_max:
+                raise SteamshipError(
+                    message=f"Unable to update. New energy level of {new_energy} exceeds the player's maximum energy of {gs.player.max_energy}."
+                )
+            else:
+                logging.warning(
+                    f"Tried to set energy to {new_energy} but player has a max or {gs.player.max_energy}. Using max."
+                )
+                new_energy = gs.player.max_energy
+
+        gs.player.energy = new_energy
+        save_game_state(gs, context)
+        return gs.dict()

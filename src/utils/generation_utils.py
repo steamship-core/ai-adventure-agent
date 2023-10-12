@@ -290,14 +290,13 @@ def filter_block_indices_for_quest_content(
         (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
         (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
         (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-        (TagKindExtensions.CHARACTER, CharacterTag.INVENTORY),
         (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
         (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
         (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
     ]
 
     result = []
-    print("Quest Content input ************")
+
     for block in chat_history_file.blocks:
         will_include = False
         matching_tag = None
@@ -317,6 +316,14 @@ def filter_block_indices_for_quest_content(
                 f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}"
             )
 
+    inventory_block_index = find_last_inventory_block(chat_history_file)
+    if inventory_block_index is not None:
+        result.append(inventory_block_index)
+        result.sort()
+    print("Quest Content input ************")
+    for i, block in enumerate(chat_history_file.blocks):
+        if i in result:
+            print(f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}")
     print("******************")
     return result
 
@@ -342,6 +349,14 @@ def filter_block_indices_for_quest_summary(
             )
 
     print("******************")
+    return result
+
+def find_last_inventory_block(chat_history_file: File) -> Optional[int]:
+    result = None
+    for i, block in enumerate(chat_history_file.blocks):
+        for tag in block.tags:
+            if tag.kind == TagKindExtensions.CHARACTER and tag.name == CharacterTag.INVENTORY:
+                result = i
     return result
 
 
