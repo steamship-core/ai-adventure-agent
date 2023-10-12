@@ -1,13 +1,7 @@
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
-from steamship import Steamship, SteamshipError
-from steamship.agents.llms.openai import ChatOpenAI
-from steamship.agents.schema import ChatLLM
-from steamship.agents.schema.agent import AgentContext
-
-from schema.game_state import GameState
-from utils.context_utils import with_function_capable_llm, with_server_settings
+from steamship import SteamshipError
 
 
 class ServerSettings(BaseModel):
@@ -53,22 +47,3 @@ class ServerSettings(BaseModel):
         raise SteamshipError(
             message=f"Invalid model selection (preferred={preferred}, default={default}). Only the following are allowed: {allowed}"
         )
-
-    def get_function_capable_llm(self, client: Steamship) -> ChatLLM:
-        """Return a plugin instance for the story generator."""
-        return ChatOpenAI(client)
-
-    def add_to_agent_context(
-        self, context: AgentContext, game_state: GameState
-    ) -> AgentContext:
-        # TODO: This feels like a great way to interact with AgentContext, but this is a LOT of loading that has to
-        # happen on EVERY call. Perhaps we move this to happen on-demand to speed things up if latency is bad.
-
-        # User can't pick function-calling model. That's too error-prone.
-        context = with_function_capable_llm(
-            self.get_function_capable_llm(context.client), context
-        )
-
-        context = with_server_settings(self, context)
-
-        return context

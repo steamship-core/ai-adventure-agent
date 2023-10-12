@@ -20,6 +20,7 @@ from utils.context_utils import (
     get_game_state,
     with_game_state,
     with_package_service,
+    with_server_settings,
 )
 
 
@@ -421,11 +422,7 @@ class AgentService(PackageService):
         # Get the game state and add to context
         game_state = get_game_state(context)
         context = with_game_state(game_state, context)
-
-        # Now add in the Server Settings
-        server_settings = ServerSettings()
-        context = server_settings.add_to_agent_context(context, game_state)
-
+        context = with_server_settings(ServerSettings(), context)
         context = with_package_service(
             package_service=cast(PackageService, self), context=context
         )

@@ -22,6 +22,7 @@ import logging
 from typing import List, Optional, Union
 
 from steamship import Block, PluginInstance
+from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
@@ -422,7 +423,12 @@ def switch_history_to_current_quest(
 def get_function_capable_llm(
     context: AgentContext, default: Optional[ChatLLM] = None  # noqa: F821
 ) -> Optional[ChatLLM]:  # noqa: F821
-    return context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
+    llm = context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
+    if not llm:
+        # Lazy create
+        llm = ChatOpenAI(context.client)
+        context.metadata[_FUNCTION_CAPABLE_LLM] = llm
+    return llm
 
 
 def _key_for_question(blocks: List[Block], key: Optional[str] = None) -> str:
