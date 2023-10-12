@@ -9,11 +9,12 @@ from steamship.invocable.package_mixin import PackageMixin
 
 from utils.agent_service import AgentService
 from utils.context_utils import (
+    get_background_image_generator,
     get_game_state,
     get_item_image_generator,
     get_profile_image_generator,
 )
-from utils.tags import CharacterTag, ItemTag, TagKindExtensions
+from utils.tags import CharacterTag, ItemTag, SceneTag, TagKindExtensions
 
 
 class ImageMixin(PackageMixin):
@@ -145,3 +146,38 @@ class ImageMixin(PackageMixin):
 
         logging.info(f"generated an item image: {item_block.id}")
         return item_block
+
+    @post("/generate_background_image")
+    def generate_background_image(
+        self,
+        description: str,
+        context_id: Optional[str] = None,
+        **kwargs,
+    ) -> Block:
+        """Generate an image for the background of a scene.
+
+        Image will be saved to the chat history of the agent context, as well as returned directly.
+        """
+        context = self.agent_service.build_default_context(context_id=context_id)
+        game_state = get_game_state(context)
+
+        scene_prompt = (
+            "(pixel art) background scene for a quest. \n"
+            "The scene being depicted is: \n"
+            f"{description}"
+        )
+
+        image_plugin = get_background_image_generator(context=context)
+        tags = [
+            Tag(kind=TagKindExtensions.SCENE, name=SceneTag.BACKGROUND),
+        ]
+        if quest_id := game_state.current_quest:
+            tags.append(Tag(kind=TagKindExtensions.QUEST, name=quest_id))
+
+        return self._generate_image(
+            prompt=scene_prompt,
+            plugin=image_plugin,
+            tags=tags,
+            context=context,
+            **kwargs,
+        )

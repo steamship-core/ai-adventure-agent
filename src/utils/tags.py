@@ -73,6 +73,7 @@ class QuestTag(str, Enum):
     ITEM_GENERATION_CONTENT = "item_generation_content"
     ITEM_GENERATION_PROMPT = "item_generation_prompt"
 
+
 class ItemTag(str, Enum):
     IMAGE = "image"
     NAME = "name"

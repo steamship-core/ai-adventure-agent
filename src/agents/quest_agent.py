@@ -7,15 +7,17 @@ from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
 from tools.end_quest_tool import EndQuestTool
+from utils.agent_service import _context_key_from_file
 from utils.context_utils import (
     await_ask,
     get_current_quest,
     get_game_state,
+    get_package_service,
     save_game_state,
 )
-from utils.generation_utils import send_story_generation, await_streamed_block
+from utils.generation_utils import await_streamed_block, send_story_generation
 from utils.interruptible_python_agent import InterruptiblePythonAgent
-from utils.tags import TagKindExtensions, QuestTag
+from utils.tags import QuestTag, TagKindExtensions
 
 
 class QuestAgent(InterruptiblePythonAgent):
@@ -89,8 +91,6 @@ class QuestAgent(InterruptiblePythonAgent):
             )
 
             # send_background_music(prompt="Guitar music", context=context)
-            # send_background_image(prompt="In a deep, dark forest", context=context)
-
             block = send_story_generation(
                 f"{game_state.player.name} is about to go on a mission. Describe the first few things they do in a few sentences",
                 quest_name=quest.name,
@@ -104,6 +104,16 @@ class QuestAgent(InterruptiblePythonAgent):
             )
             quest.sent_intro = True
             await_streamed_block(problem_block)
+            if svc := get_package_service(context=context):
+                svc.invoke_later(
+                    method="generate_background_image",
+                    arguments={
+                        "description": problem_block.text,
+                        "context_id": _context_key_from_file(
+                            key="id", file=context.chat_history.file
+                        ),
+                    },
+                )
             save_game_state(game_state, context)
         else:
             logging.info(
@@ -122,7 +132,9 @@ class QuestAgent(InterruptiblePythonAgent):
                 context,
             )
             context.chat_history.append_user_message(
-                text=f"{player.name} solves the problem by: {quest.user_problem_solution}", tags=self.tags(QuestTag.USER_SOLUTION, quest))
+                text=f"{player.name} solves the problem by: {quest.user_problem_solution}",
+                tags=self.tags(QuestTag.USER_SOLUTION, quest),
+            )
             save_game_state(game_state, context)
 
         if not quest.sent_outro:
@@ -139,13 +151,15 @@ class QuestAgent(InterruptiblePythonAgent):
             quest.sent_outro = True
             save_game_state(game_state, context)
 
-
         blocks = EndQuestTool().run([], context)
         return FinishAction(output=blocks)
 
-    def tags(self, part: QuestTag, quest: "Quest" ) -> List[Tag]:
+    def tags(self, part: QuestTag, quest: "Quest") -> List[Tag]:  # noqa: F821
         return [
             Tag(kind=TagKindExtensions.QUEST, name=part),
-            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id":quest.name})
+            Tag(
+                kind=TagKindExtensions.QUEST,
+                name=QuestTag.QUEST_ID,
+                value={"id": quest.name},
+            ),
         ]
-
