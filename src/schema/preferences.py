@@ -27,6 +27,11 @@ class Preferences(BaseModel):
         description="Model used for background image generation",
     )
 
+    item_image_model: str = Field(
+        "fal-sd-lora-image-generator",
+        description="Model used for item image generation",
+    )
+
     story_model: str = Field(
         "gpt-4", description="Model used for story generation (not function calling)"
     )
@@ -63,6 +68,16 @@ class Preferences(BaseModel):
         return {
             "seed": self.seed,
             "image_size": "portrait_4_3",
+            "loras": json.dumps(
+                [{"path": "https://civitai.com/api/download/models/135931"}]
+            ),
+        }
+
+    def item_image_config(self) -> Dict[str, Any]:
+        # TODO(doug): refactor for matching based on model name, or similar
+        return {
+            "seed": self.seed,
+            "image_size": "square",
             "loras": json.dumps(
                 [{"path": "https://civitai.com/api/download/models/135931"}]
             ),

@@ -11,6 +11,7 @@ from utils.context_utils import (
     with_background_image_generator,
     with_background_music_generator,
     with_function_capable_llm,
+    with_item_image_generator,
     with_narration_generator,
     with_profile_image_generator,
     with_server_settings,
@@ -27,6 +28,7 @@ class ServerSettings(BaseModel):
     # Image Generation Settings
     default_profile_image_model: str = Field("dall-e", description="")
     default_background_image_model: str = Field("dall-e", description="")
+    default_item_image_model: str = Field("dall-e", description="")
 
     # Language Generation Settings - Function calling
     default_function_capable_llm_model: str = Field("gpt-4", description="")
@@ -122,6 +124,22 @@ class ServerSettings(BaseModel):
         )
         return client.use_plugin(plugin_handle, config=config)
 
+    def get_item_image_generator(
+        self,
+        client: Steamship,
+        preferred_model: Optional[str] = None,
+        config: Optional[
+            dict
+        ] = None,  # TODO(doug): fix this here and above so "models" are paired with their config
+    ) -> PluginInstance:
+        """Return a plugin instance for the background image generator."""
+        plugin_handle = self._select_model(
+            ["dall-e", "fal-sd-lora-image-generator"],
+            default=self.default_item_image_model,
+            preferred=preferred_model,
+        )
+        return client.use_plugin(plugin_handle, config=config)
+
     def get_narration_generator(
         self, client: Steamship, preferred_model: Optional[str] = None
     ) -> PluginInstance:
@@ -187,6 +205,15 @@ class ServerSettings(BaseModel):
                 config=game_state.preferences.background_image_config(),
             ),
             context,
+        )
+
+        context = with_item_image_generator(
+            instance=self.get_item_image_generator(
+                client=context.client,
+                preferred_model=game_state.preferences.item_image_model,
+                config=game_state.preferences.item_image_config(),
+            ),
+            context=context,
         )
 
         # User can't pick function-calling model. That's too error-prone.

@@ -38,6 +38,7 @@ _FUNCTION_CAPABLE_LLM = (
 _BACKGROUND_MUSIC_GENERATOR_KEY = "background-music-generator"
 _BACKGROUND_IMAGE_GENERATOR_KEY = "background-image-generator"
 _PROFILE_IMAGE_GENERATOR_KEY = "profile-image-generator"
+_ITEM_IMAGE_GENERATOR_KEY = "item-image-generator"
 _NARRATION_GENERATOR_KEY = "narration-generator"
 _SERVER_SETTINGS_KEY = "server-settings"
 _GAME_STATE_KEY = "user-settings"
@@ -81,6 +82,13 @@ def with_profile_image_generator(
     instance: PluginInstance, context: AgentContext
 ) -> AgentContext:
     context.metadata[_PROFILE_IMAGE_GENERATOR_KEY] = instance
+    return context
+
+
+def with_item_image_generator(
+    instance: PluginInstance, context: AgentContext
+) -> AgentContext:
+    context.metadata[_ITEM_IMAGE_GENERATOR_KEY] = instance
     return context
 
 
@@ -133,6 +141,12 @@ def get_profile_image_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
     return context.metadata.get(_PROFILE_IMAGE_GENERATOR_KEY, default)
+
+
+def get_item_image_generator(
+    context: AgentContext, default: Optional[PluginInstance] = None
+) -> Optional[PluginInstance]:
+    return context.metadata.get(_ITEM_IMAGE_GENERATOR_KEY, default)
 
 
 def get_audio_narration_generator(
