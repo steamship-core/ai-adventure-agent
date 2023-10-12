@@ -1,11 +1,13 @@
 from typing import List, Optional
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Item(BaseModel):
     name: Optional[str]
     description: Optional[str]
+    id: str = Field(default_factory=lambda: str(uuid4()))
 
     is_one_time_use: Optional[bool]
     """Placeholder for the future"""
