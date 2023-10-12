@@ -13,7 +13,7 @@ from utils.context_utils import (
     get_story_text_generator,
     save_game_state,
 )
-from utils.generation_utils import send_agent_status_message, generate_quest_summary
+from utils.generation_utils import send_agent_status_message, generate_quest_summary, generate_quest_item
 from utils.tags import AgentStatusMessageTag
 
 
@@ -69,20 +69,11 @@ class EndQuestTool(Tool):
         player = game_state.player
 
         # Let's do some things to tidy up.
-        # TODO: incorporate chat history
-        task = generator.generate(
-            text=f"What object or item did {player.name} find during that story? It should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
-        )
-        task.wait()
-        response = task.output.blocks[0].text
+        item_name, item_description = generate_quest_item(quest.name, player, context)
 
         item = Item()
-        parts = response.split("ITEM DESCRIPTION:")
-        if len(parts) == 2:
-            item.name = parts[0].replace("ITEM NAME:", "").strip()
-            item.description = parts[1].strip()
-        else:
-            item.name = response.strip()
+        item.name = item_name
+        item.description = item_description
 
         if item.name:
             quest.new_items = [item]

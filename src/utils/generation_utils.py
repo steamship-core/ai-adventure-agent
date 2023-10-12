@@ -20,6 +20,7 @@ from steamship.data import TagKind
 from steamship.data.block import StreamState
 from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagValueKey
 
+from schema.characters import HumanCharacter
 from utils.context_utils import (
     emit,
     get_audio_narration_generator,
@@ -172,6 +173,56 @@ def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[B
     block = blocks[0]
     emit(output=block, context=context)
     return block
+
+def generate_quest_item(quest_name: str, player: HumanCharacter, context: AgentContext) -> (str, str):
+    """Generates a found item from a quest, returning a tuple of its name and description"""
+
+    generator = get_story_text_generator(context)
+
+    tags = [
+        Tag(
+            kind=TagKind.CHAT,
+            name=ChatTag.ROLE,
+            value={TagValueKey.STRING_VALUE: RoleTag.ASSISTANT},
+        ),
+        Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
+        # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
+        Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
+        Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ITEM_GENERATION_CONTENT),
+        Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id": quest_name})
+    ]
+
+    prompt = f"What object or item did {player.name} find during that story? It should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
+    context.chat_history.append_system_message(text=prompt,
+                                               tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ITEM_GENERATION_PROMPT),
+                                               Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id":quest_name})])
+    # Intentionally reuse the filtering for the quest summary
+    block_indices = filter_block_indices_for_quest_summary(context.chat_history.file, quest_name=quest_name)
+    # logging.warning(f"Generating: {prompt}")
+
+    task = generator.generate(
+        # text=prompt, # Don't want to pass this if we're passing blocks
+        tags=tags,
+        append_output_to_file=True,
+        input_file_id=context.chat_history.file.id,
+        output_file_id=context.chat_history.file.id,
+        streaming=False, # we need this back in the package
+        input_file_block_index_list=block_indices,
+    )
+    task.wait()
+    blocks = task.output.blocks
+    block = blocks[0]
+    emit(output=block, context=context)
+    parts = block.text.split("ITEM DESCRIPTION:")
+
+    if len(parts) == 2:
+        name = parts[0].replace("ITEM NAME:", "").strip()
+        description = parts[1].strip()
+    else:
+        name = block.text.strip()
+        description = ""
+    return name, description
+
 
 
 def filter_block_indices_for_quest_content(chat_history_file: File) -> [int]:

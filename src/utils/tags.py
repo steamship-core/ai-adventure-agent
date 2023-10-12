@@ -66,5 +66,7 @@ class QuestTag(str, Enum):
     USER_SOLUTION = "user_solution"
     QUEST_ID = "quest_id"
     QUEST_SUMMARY = "quest_summary"
+    ITEM_GENERATION_CONTENT = "item_generation_content"
+    ITEM_GENERATION_PROMPT = "item_generation_prompt"
 
 
