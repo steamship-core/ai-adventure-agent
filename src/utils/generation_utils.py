@@ -276,7 +276,7 @@ def generate_quest_item(
     return name, description
 
 
-def filter_block_indices_for_quest_content(
+def filter_block_indices_for_quest_content(  # noqa: C901
     quest_name: str, chat_history_file: File
 ) -> [int]:
     """When filtering content for quest content generation, we want:
@@ -323,7 +323,9 @@ def filter_block_indices_for_quest_content(
     print("Quest Content input ************")
     for i, block in enumerate(chat_history_file.blocks):
         if i in result:
-            print(f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}")
+            print(
+                f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}"
+            )
     print("******************")
     return result
 
@@ -351,16 +353,21 @@ def filter_block_indices_for_quest_summary(
     print("******************")
     return result
 
+
 def find_last_inventory_block(chat_history_file: File) -> Optional[int]:
     result = None
     for i, block in enumerate(chat_history_file.blocks):
         for tag in block.tags:
-            if tag.kind == TagKindExtensions.CHARACTER and tag.name == CharacterTag.INVENTORY:
+            if (
+                tag.kind == TagKindExtensions.CHARACTER
+                and tag.name == CharacterTag.INVENTORY
+            ):
                 result = i
     return result
 
 
-def await_streamed_block(block: Block):
-    while block.stream_state == StreamState.STARTED:
-        time.sleep(1)
+def await_streamed_block(block: Block) -> Block:
+    while block.stream_state not in [StreamState.COMPLETE, StreamState.ABORTED]:
+        time.sleep(0.4)
         block = Block.get(block.client, _id=block.id)
+    return block

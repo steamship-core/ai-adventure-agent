@@ -6,6 +6,7 @@ from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
+from endpoints.music_endpoints import MusicMixin
 from tools.end_quest_tool import EndQuestTool
 from utils.agent_service import _context_key_from_file
 from utils.context_utils import (
@@ -103,15 +104,23 @@ class QuestAgent(InterruptiblePythonAgent):
                 context=context,
             )
             quest.sent_intro = True
-            await_streamed_block(problem_block)
+            updated_problem_block = await_streamed_block(problem_block)
             if svc := get_package_service(context=context):
+                context_id = _context_key_from_file(
+                    key="id", file=context.chat_history.file
+                )
                 svc.invoke_later(
                     method="generate_background_image",
                     arguments={
-                        "description": problem_block.text,
-                        "context_id": _context_key_from_file(
-                            key="id", file=context.chat_history.file
-                        ),
+                        "description": updated_problem_block.text,
+                        "context_id": context_id,
+                    },
+                )
+                svc.invoke_later(
+                    method=MusicMixin.GENERATE_SCENE_PATH,
+                    arguments={
+                        "description": updated_problem_block.text,
+                        "context_id": context_id,
                     },
                 )
             save_game_state(game_state, context)

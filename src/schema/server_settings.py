@@ -152,7 +152,10 @@ class ServerSettings(BaseModel):
         return client.use_plugin(plugin_handle)
 
     def get_background_music_generator(
-        self, client: Steamship, preferred_model: Optional[str] = None
+        self,
+        client: Steamship,
+        preferred_model: Optional[str] = None,
+        config: Optional[dict] = None,
     ) -> PluginInstance:
         """Return a plugin instance for the background music."""
         plugin_handle = self._select_model(
@@ -160,7 +163,7 @@ class ServerSettings(BaseModel):
             default=self.default_narration_model,
             preferred=preferred_model,
         )
-        return client.use_plugin(plugin_handle)
+        return client.use_plugin(plugin_handle, config=config)
 
     def add_to_agent_context(
         self, context: AgentContext, game_state: GameState
@@ -184,7 +187,9 @@ class ServerSettings(BaseModel):
 
         context = with_background_music_generator(
             self.get_background_music_generator(
-                context.client, game_state.preferences.background_music_model
+                client=context.client,
+                preferred_model=game_state.preferences.background_music_model,
+                config=game_state.preferences.background_music_model_config(),
             ),
             context,
         )

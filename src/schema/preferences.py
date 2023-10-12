@@ -82,3 +82,8 @@ class Preferences(BaseModel):
                 [{"path": "https://civitai.com/api/download/models/135931"}]
             ),
         }
+
+    def background_music_model_config(self) -> Dict[str, Any]:
+        return {
+            "duration": 15,
+        }

@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List, Union
 
-from steamship import Block, Task, Tag
+from steamship import Block, Tag, Task
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, Tool
 
@@ -15,8 +15,12 @@ from utils.context_utils import (
     get_story_text_generator,
     save_game_state,
 )
-from utils.generation_utils import send_agent_status_message, generate_quest_summary, generate_quest_item
-from utils.tags import AgentStatusMessageTag, TagKindExtensions, CharacterTag
+from utils.generation_utils import (
+    generate_quest_item,
+    generate_quest_summary,
+    send_agent_status_message,
+)
+from utils.tags import AgentStatusMessageTag, CharacterTag, TagKindExtensions
 
 
 class EndQuestTool(Tool):
@@ -66,7 +70,7 @@ class EndQuestTool(Tool):
                 "You weren't currently in a quest.",
             )
 
-        generator = get_story_text_generator(context)
+        get_story_text_generator(context)
 
         player = game_state.player
 
@@ -85,13 +89,14 @@ class EndQuestTool(Tool):
         player.inventory.append(item)
         context.chat_history.append_system_message(
             text=player.inventory_description(),
-            tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INVENTORY)]
+            tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INVENTORY)],
         )
         save_game_state(game_state, context)
 
+        item_image_task = None
         if svc := get_package_service(context=context):
             # async generate an image for the inventory item
-            svc.invoke_later(
+            item_image_task = svc.invoke_later(
                 "generate_item_image",
                 arguments={
                     "item_name": item.name,
@@ -114,7 +119,7 @@ class EndQuestTool(Tool):
         if player.energy < 0:
             player.energy = 0
 
-        summary_block = generate_quest_summary(quest.name, context )
+        summary_block = generate_quest_summary(quest.name, context)
         summary = summary_block.text
         quest.text_summary = summary
 
@@ -126,6 +131,10 @@ class EndQuestTool(Tool):
         save_game_state(game_state, context)
 
         # This notifies the web UI that it is time to transition back to Camp
+        if item_image_task:
+            # if there is any pending item image task, wait until it is complete.
+            item_image_task.wait_until_completed()
+
         send_agent_status_message(AgentStatusMessageTag.QUEST_COMPLETE, context=context)
 
         return ""
@@ -134,5 +143,5 @@ class EndQuestTool(Tool):
         self, tool_input: List[Block], context: AgentContext
     ) -> Union[List[Block], Task[Any]]:
         game_state = get_game_state(context)
-        msg = self.end_quest(game_state, context)
+        self.end_quest(game_state, context)
         return []
