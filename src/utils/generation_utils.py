@@ -116,7 +116,7 @@ def send_story_generation(prompt: str, quest_name: str, context: AgentContext) -
     context.chat_history.append_system_message(text=prompt,
                                                tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT),
                                                Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id":quest_name})])
-    block_indices = filter_block_indices_for_quest_content(context.chat_history.file)
+    block_indices = filter_block_indices_for_quest_content(quest_name=quest_name, chat_history_file=context.chat_history.file)
     # logging.warning(f"Generating: {prompt}")
 
     task = generator.generate(
@@ -225,8 +225,13 @@ def generate_quest_item(quest_name: str, player: HumanCharacter, context: AgentC
 
 
 
-def filter_block_indices_for_quest_content(chat_history_file: File) -> [int]:
-
+def filter_block_indices_for_quest_content(quest_name: str, chat_history_file: File) -> [int]:
+    """ When filtering content for quest content generation, we want:
+        - background information
+        - TODO: Only most recent inventory
+        - Summaries of previous quests
+        - Content of the current quest
+        """
     allowed_kind_names = [
         (TagKindExtensions.CHARACTER, CharacterTag.NAME),
         (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
@@ -235,10 +240,7 @@ def filter_block_indices_for_quest_content(chat_history_file: File) -> [int]:
         (TagKindExtensions.CHARACTER, CharacterTag.INVENTORY),
         (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
         (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-        (TagKindExtensions.QUEST, QuestTag.QUEST_CONTENT),
-        (TagKindExtensions.QUEST, QuestTag.USER_SOLUTION),
-        (TagKindExtensions.QUEST, QuestTag.QUEST_PROMPT)
-
+        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
     ]
 
     result = []
@@ -251,6 +253,11 @@ def filter_block_indices_for_quest_content(chat_history_file: File) -> [int]:
                 if tag.kind == kind and tag.name == name:
                     will_include = True
                     matching_tag = tag
+            if tag.kind == TagKindExtensions.QUEST and tag.name == QuestTag.QUEST_ID:
+                if tag.value is not None:
+                    if tag.value.get('id') == quest_name:
+                        will_include = True
+                        matching_tag = tag
         if will_include:
             result.append(block.index_in_file)
             print(f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}")
