@@ -66,6 +66,11 @@ class GameState(BaseModel):
         description="Task for the generation of an initial profile image for the primary character.",
     )
 
+    chat_history_for_onboarding_complete: Optional[bool] = Field(
+        default=None,
+        description="Whether the onboarding profile has been written to the chat history"
+    )
+
     def update_from_web(self, other: "GameState"):
         """Perform a gentle update so that the website doesn't accidentally blast over this if it diverges in
         structure."""
@@ -88,6 +93,7 @@ class GameState(BaseModel):
             and self.player.is_onboarding_complete()
             and self.genre is not None
             and self.tone is not None
+            and self.chat_history_for_onboarding_complete
         )
 
     def image_generation_requested(self) -> bool:

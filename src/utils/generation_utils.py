@@ -108,7 +108,8 @@ def send_story_generation(prompt: str, quest_name: str, context: AgentContext) -
         Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
         # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
         Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
-        Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_CONTENT)
+        Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_CONTENT),
+        Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id": quest_name})
     ]
 
     context.chat_history.append_system_message(text=prompt,
@@ -147,7 +148,8 @@ def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[B
         Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
         # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
         Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
-        Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_SUMMARY)
+        Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_SUMMARY),
+        Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id": quest_name})
     ]
 
     context.chat_history.append_system_message(text="Please summarize the above quest in one to two sentences. ",

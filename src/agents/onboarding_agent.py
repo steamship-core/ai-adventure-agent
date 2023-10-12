@@ -33,33 +33,17 @@ class OnboardingAgent(InterruptiblePythonAgent):
 
         if not player.name:
             player.name = await_ask("What is your character's name?", context)
-            context.chat_history.append_system_message(
-                text=f"The character's name is {player.name}",
-                tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.NAME)],
-            )
             save_game_state(game_state, context)
 
         if not player.background:
             player.background = await_ask(
                 f"What is {player.name}'s backstory?", context
             )
-            context.chat_history.append_system_message(
-                text=f"{player.name}'s backstory is: {player.background}",
-                tags=[
-                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.BACKGROUND)
-                ],
-            )
             save_game_state(game_state, context)
 
         if not player.description:
             player.description = await_ask(
                 f"What is {player.name}'s physical description?", context
-            )
-            context.chat_history.append_system_message(
-                text=f"{player.name}'s physical description is: {player.description}",
-                tags=[
-                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.DESCRIPTION)
-                ],
             )
             save_game_state(game_state, context)
 
@@ -88,18 +72,44 @@ class OnboardingAgent(InterruptiblePythonAgent):
             player.motivation = await_ask(
                 f"What is {player.name} motivated to achieve?", context
             )
-            context.chat_history.append_system_message(
-                text=f"{player.name}'s motivation is: {player.motivation}",
-                tags=[
-                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.MOTIVATION)
-                ],
-            )
             save_game_state(game_state, context)
 
         if not game_state.genre:
             game_state.genre = await_ask(
                 "What is the genre of the story (Adventure, Fantasy, Thriller, Sci-Fi)?",
                 context,
+            )
+            save_game_state(game_state, context)
+
+        if not game_state.tone:
+            game_state.tone = await_ask(
+                "What is the tone of the story (Hollywood style, Dark, Funny, Romantic)?",
+                context,
+            )
+            save_game_state(game_state, context)
+
+        if not game_state.chat_history_for_onboarding_complete:
+            context.chat_history.append_system_message(
+                text=f"The character's name is {player.name}",
+                tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.NAME)],
+            )
+            context.chat_history.append_system_message(
+                text=f"{player.name}'s backstory is: {player.background}",
+                tags=[
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.BACKGROUND)
+                ],
+            )
+            context.chat_history.append_system_message(
+                text=f"{player.name}'s motivation is: {player.motivation}",
+                tags=[
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.MOTIVATION)
+                ],
+            )
+            context.chat_history.append_system_message(
+                text=f"{player.name}'s physical description is: {player.description}",
+                tags=[
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.DESCRIPTION)
+                ],
             )
             context.chat_history.append_system_message(
                 text=f"The genre of the story is: {game_state.genre}",
@@ -109,19 +119,13 @@ class OnboardingAgent(InterruptiblePythonAgent):
                     )
                 ],
             )
-            save_game_state(game_state, context)
-
-        if not game_state.tone:
-            game_state.tone = await_ask(
-                "What is the tone of the story (Hollywood style, Dark, Funny, Romantic)?",
-                context,
-            )
             context.chat_history.append_system_message(
                 text=f"The tone of the story is: {game_state.tone}",
                 tags=[
                     Tag(kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.TONE)
                 ],
             )
+            game_state.chat_history_for_onboarding_complete = True
             save_game_state(game_state, context)
 
         raise RunNextAgentException(

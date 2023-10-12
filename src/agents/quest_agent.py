@@ -130,11 +130,12 @@ class QuestAgent(InterruptiblePythonAgent):
             #     f"Explain how {player.name} solves things.",
             #     context=context,
             # )
-            send_story_generation(
+            story_end_block = send_story_generation(
                 f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
                 quest_name=quest.name,
                 context=context,
             )
+            await_streamed_block(story_end_block)
             quest.sent_outro = True
             save_game_state(game_state, context)
 
