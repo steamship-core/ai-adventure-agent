@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional, Type, cast
 
 from pydantic import Field
-from steamship import Steamship
+from steamship import Steamship, SteamshipError
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
 from steamship.agents.mixins.transports.slack import (
@@ -26,8 +26,10 @@ from agents.quest_agent import QuestAgent
 from endpoints.game_state_endpoints import GameStateMixin
 from endpoints.image_endpoints import ImageMixin
 from endpoints.npc_endpoints import NpcMixin
+from endpoints.onboarding_endpoints import OnboardingMixin
 from endpoints.quest_endpoints import QuestMixin
 from endpoints.server_endpoints import ServerSettingsMixin
+from schema.game_state import ActiveMode
 from utils.agent_service import AgentService
 from utils.context_utils import get_game_state
 
@@ -96,6 +98,7 @@ class AdventureGameService(AgentService):
         QuestMixin,  # Provides API Endpoints for Quest Management (used by the associated web app)
         NpcMixin,  # Provides API Endpoints for NPC Chat Management (used by the associated web app)
         ImageMixin,  # Provides API Endpoints for Image Generation
+        OnboardingMixin,
     ]
     """USED_MIXIN_CLASSES tells Steamship what additional HTTP endpoints to register on your AgentService."""
 
@@ -180,6 +183,10 @@ class AdventureGameService(AgentService):
             ImageMixin(client=self.client, agent_service=cast(AgentService, self))
         )
 
+        self.add_mixin(
+            OnboardingMixin(client=self.client, agent_service=cast(AgentService, self))
+        )
+
         # Instantiate the core game agents
         function_capable_llm = ChatOpenAI(self.client)
 
@@ -204,6 +211,7 @@ class AdventureGameService(AgentService):
         """
         context = self.build_default_context()
         game_state = get_game_state(context)
+        active_mode = game_state.active_mode
 
         logging.info(
             f"Game State: {json.dumps(game_state.dict())}.",
@@ -214,24 +222,16 @@ class AdventureGameService(AgentService):
             },
         )
 
-        if not game_state.is_onboarding_complete():
-            # Use the ONBOARDING AGENT if we still need to collect player/game information
+        if active_mode == ActiveMode.ONBOARDING:
             sub_agent = self.onboarding_agent
+        elif active_mode == ActiveMode.NPC_CONVERSATION:
+            sub_agent = self.npc_agent
+        elif active_mode == ActiveMode.QUEST:
+            sub_agent = self.quest_agent
+        elif active_mode == ActiveMode.CAMP:
+            sub_agent = self.camp_agent
         else:
-            if game_state.in_conversation_with:
-                # Use the NPC AGENT if we're currently in a conversation.
-                sub_agent = self.npc_agent
-                # DANGER: The below might mess with streaming.
-                # switch_history_to_current_conversant(context)
-
-            elif game_state.current_quest:
-                # Use the QUEST AGENT if we're currently on a quest.
-                sub_agent = self.quest_agent
-                # DANGER: The below might mess with streaming.
-                # switch_history_to_current_quest(context)
-            else:
-                # Use the CAMP AGENT as the default. This is like the home base router.
-                sub_agent = self.camp_agent
+            raise SteamshipError(message=f"Unknown mode: {active_mode}")
 
         logging.info(
             f"Selecting Agent: {sub_agent.__class__.__name__}.",

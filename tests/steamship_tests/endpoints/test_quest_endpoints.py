@@ -5,9 +5,68 @@ from steamship import Steamship, Task, TaskState
 from steamship.agents.schema import ChatHistory
 
 from api import AdventureGameService
-from schema.game_state import GameState
+from schema.game_state import ActiveMode, GameState
 from schema.quest import Quest
 from schema.server_settings import ServerSettings
+
+COMPLETED_ONBOARDING: GameState = GameState.parse_obj(
+    {
+        "tone": "Funny",
+        "genre": "Comedy",
+        "player": {
+            "name": "Mark The QA Man",
+            "description": "Has a funny shaped keyboard",
+            "background": "Good at QA",
+            "motivation": "To find bugs",
+            "inventory": [
+                {"name": "The magic keyboard", "description": "Always types bad input"}
+            ],
+        },
+    }
+)
+
+
+@pytest.mark.parametrize("invocable_handler", [AdventureGameService], indirect=True)
+def test_calling_start_quest_causes_active_quest(
+    invocable_handler: Callable[[str, str, Optional[dict]], dict]
+):
+
+    game_state: GameState = GameState.parse_obj(
+        invocable_handler("GET", "game_state", {}).get("data")
+    )
+    assert game_state.current_quest is None
+    assert game_state.active_mode == ActiveMode.ONBOARDING.value
+
+    invocable_handler("POST", "game_state", COMPLETED_ONBOARDING.dict())
+
+    invocable_handler("POST", "complete_onboarding", {})
+
+    start_state = invocable_handler("POST", "start_quest", {})
+    assert start_state.get("data")
+    quest: Quest = Quest.parse_obj(start_state.get("data"))
+    assert quest.name
+
+    game_state: GameState = GameState.parse_obj(
+        invocable_handler("GET", "game_state", {}).get("data")
+    )
+    assert game_state.tone
+    assert game_state.genre
+    assert game_state.player.name
+    assert game_state.player.description
+    assert game_state.player.background
+    assert game_state.player.motivation
+    assert game_state.player.inventory
+
+    assert game_state.tone == COMPLETED_ONBOARDING.tone
+    assert game_state.genre == COMPLETED_ONBOARDING.genre
+    assert game_state.player.name == COMPLETED_ONBOARDING.player.name
+    assert game_state.player.description == COMPLETED_ONBOARDING.player.description
+    assert game_state.player.background == COMPLETED_ONBOARDING.player.background
+    assert game_state.player.motivation == COMPLETED_ONBOARDING.player.motivation
+    assert game_state.player.inventory == COMPLETED_ONBOARDING.player.inventory
+
+    assert game_state.current_quest
+    assert game_state.active_mode.value == ActiveMode.QUEST.value
 
 
 @pytest.mark.parametrize("invocable_handler", [AdventureGameService], indirect=True)

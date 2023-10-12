@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -7,6 +8,13 @@ from schema.camp import Camp
 from schema.characters import HumanCharacter
 from schema.preferences import Preferences
 from schema.quest import Quest
+
+
+class ActiveMode(str, Enum):
+    ONBOARDING = "onboarding"
+    CAMP = "camp"
+    QUEST = "quest"
+    NPC_CONVERSATION = "npc-conversation"
 
 
 class GameState(BaseModel):
@@ -68,7 +76,7 @@ class GameState(BaseModel):
 
     chat_history_for_onboarding_complete: Optional[bool] = Field(
         default=None,
-        description="Whether the onboarding profile has been written to the chat history"
+        description="Whether the onboarding profile has been written to the chat history",
     )
 
     def update_from_web(self, other: "GameState"):
@@ -106,3 +114,19 @@ class GameState(BaseModel):
                 TaskState.running,
                 TaskState.waiting,
             ]
+
+    def dict(self, **kwargs) -> dict:
+        """Return the dict representation, making sure the computed properties are there."""
+        ret = super().dict(**kwargs)
+        ret["active_mode"] = self.active_mode.value
+        return ret
+
+    @property
+    def active_mode(self) -> ActiveMode:
+        if not self.is_onboarding_complete():
+            return ActiveMode.ONBOARDING
+        if self.in_conversation_with:
+            return ActiveMode.NPC_CONVERSATION
+        if self.current_quest:
+            return ActiveMode.QUEST
+        return ActiveMode.CAMP
