@@ -1,9 +1,10 @@
 import logging
 from typing import List, Optional
 
-from steamship import Block, PluginInstance, Steamship, Tag
+from steamship import Block, MimeTypes, PluginInstance, Steamship, SteamshipError, Tag
 from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
+from steamship.data.block import StreamState
 from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
 
@@ -180,4 +181,52 @@ class ImageMixin(PackageMixin):
             tags=tags,
             context=context,
             **kwargs,
+        )
+
+    @post("/generate_background_image_existing_block")
+    def generate_background_image_existing_block(
+        self,
+        block_id: str,
+        description: str,
+        context_id: Optional[str] = None,
+        **kwargs,
+    ) -> Block:
+        background_block = self.generate_background_image(
+            description=description, context_id=context_id, **kwargs
+        )
+        try:
+            streaming_block = Block.get(client=self.client, _id=block_id)
+            if not streaming_block:
+                raise SteamshipError("um, we are going to need a block here...")
+            if streaming_block.stream_state not in [StreamState.STARTED]:
+                raise SteamshipError("um, this block better set up for streaming yo")
+            streaming_block.append_stream(background_block.raw())
+            streaming_block.finish_stream()
+
+            # TODO: update block with tags
+            return streaming_block
+        except SteamshipError as e:
+            raise e
+        except Exception as e:
+            raise SteamshipError(f"could not generate image into block: {e}")
+
+    def preallocate_scene_block(
+        self, context_id: Optional[str] = None, **kwargs
+    ) -> Block:
+        context = self.agent_service.build_default_context(context_id=context_id)
+        game_state = get_game_state(context)
+
+        tags = [
+            Tag(kind=TagKindExtensions.SCENE, name=SceneTag.BACKGROUND),
+        ]
+        if quest_id := game_state.current_quest:
+            tags.append(Tag(kind=TagKindExtensions.QUEST, name=quest_id))
+
+        return Block.create(
+            client=self.client,
+            file_id=context.chat_history.file.id,
+            public_data=True,
+            mime_type=MimeTypes.PNG,  # this seems dangerous, but leave it for now...
+            tags=tags,
+            streaming=True,
         )
