@@ -7,12 +7,11 @@ from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
 from tools.end_quest_tool import EndQuestTool
-from utils.agent_service import _context_key_from_file
 from utils.context_utils import (
     await_ask,
     get_current_quest,
     get_game_state,
-    get_package_service,
+    get_image_generator,
     save_game_state,
 )
 from utils.generation_utils import await_streamed_block, send_story_generation
@@ -103,17 +102,12 @@ class QuestAgent(InterruptiblePythonAgent):
                 context=context,
             )
             quest.sent_intro = True
-            await_streamed_block(problem_block)
-            if svc := get_package_service(context=context):
-                svc.invoke_later(
-                    method="generate_background_image",
-                    arguments={
-                        "description": problem_block.text,
-                        "context_id": _context_key_from_file(
-                            key="id", file=context.chat_history.file
-                        ),
-                    },
+            updated_problem_block = await_streamed_block(problem_block)
+            if image_gen := get_image_generator(context):
+                image_gen.request_scene_image_generation(
+                    description=updated_problem_block.text, context=context
                 )
+
             save_game_state(game_state, context)
         else:
             logging.info(

@@ -23,8 +23,6 @@ from schema.characters import HumanCharacter
 from utils.context_utils import (
     emit,
     get_audio_narration_generator,
-    get_background_image_generator,
-    get_background_music_generator,
     get_story_text_generator,
 )
 from utils.tags import (
@@ -34,38 +32,6 @@ from utils.tags import (
     StoryContextTag,
     TagKindExtensions,
 )
-
-
-def send_background_music(prompt: str, context: AgentContext) -> Optional[Block]:
-    """Generates and sends background music to the player."""
-    generator = get_background_music_generator(context)
-    task = generator.generate(
-        text=prompt,
-        make_output_public=True,
-        # streaming=True,
-    )
-
-    # TODO: Figure out how to do this in a way that's treaming friendly AND sync friendly
-    task.wait()
-    block = task.output.blocks[0]
-    emit(output=block, context=context)
-    return block
-
-
-def send_background_image(prompt: str, context: AgentContext) -> Optional[Block]:
-    """Generates and sends a background image to the player."""
-    generator = get_background_image_generator(context)
-    task = generator.generate(
-        text=prompt,
-        make_output_public=True,
-        # streaming=True,
-    )
-
-    # TODO: Figure out how to do this in a way that's treaming friendly AND sync friendly
-    task.wait()
-    block = task.output.blocks[0]
-    emit(output=block, context=context)
-    return block
 
 
 def send_audio_narration(block: Block, context: AgentContext) -> Optional[Block]:
@@ -276,7 +242,7 @@ def generate_quest_item(
     return name, description
 
 
-def filter_block_indices_for_quest_content(
+def filter_block_indices_for_quest_content(  # noqa: C901
     quest_name: str, chat_history_file: File
 ) -> [int]:
     """When filtering content for quest content generation, we want:
@@ -323,7 +289,9 @@ def filter_block_indices_for_quest_content(
     print("Quest Content input ************")
     for i, block in enumerate(chat_history_file.blocks):
         if i in result:
-            print(f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}")
+            print(
+                f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}"
+            )
     print("******************")
     return result
 
@@ -351,16 +319,21 @@ def filter_block_indices_for_quest_summary(
     print("******************")
     return result
 
+
 def find_last_inventory_block(chat_history_file: File) -> Optional[int]:
     result = None
     for i, block in enumerate(chat_history_file.blocks):
         for tag in block.tags:
-            if tag.kind == TagKindExtensions.CHARACTER and tag.name == CharacterTag.INVENTORY:
+            if (
+                tag.kind == TagKindExtensions.CHARACTER
+                and tag.name == CharacterTag.INVENTORY
+            ):
                 result = i
     return result
 
 
-def await_streamed_block(block: Block):
+def await_streamed_block(block: Block) -> Block:
     while block.stream_state == StreamState.STARTED:
         time.sleep(1)
         block = Block.get(block.client, _id=block.id)
+    return block
