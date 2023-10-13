@@ -32,3 +32,38 @@ class Preferences(BaseModel):
             self.story_model = other.story_model
         if other.narration_model:
             self.narration_model = other.narration_model
+        if other.background_music_model:
+            self.background_music_model = other.background_music_model
+
+    def background_image_config(self) -> Dict[str, Any]:
+        return {
+            "seed": self.seed,
+            "image_size": "landscape_16_9",
+            "loras": json.dumps(
+                [{"path": "https://civitai.com/api/download/models/135931"}]
+            ),
+        }
+
+    def profile_image_config(self) -> Dict[str, Any]:
+        return {
+            "seed": self.seed,
+            "image_size": "portrait_4_3",
+            "loras": json.dumps(
+                [{"path": "https://civitai.com/api/download/models/135931"}]
+            ),
+        }
+
+    def item_image_config(self) -> Dict[str, Any]:
+        # TODO(doug): refactor for matching based on model name, or similar
+        return {
+            "seed": self.seed,
+            "image_size": "square",
+            "loras": json.dumps(
+                [{"path": "https://civitai.com/api/download/models/135931"}]
+            ),
+        }
+
+    def background_music_model_config(self) -> Dict[str, Any]:
+        return {
+            "duration": 15,
+        }

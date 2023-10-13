@@ -68,7 +68,7 @@ class EndQuestTool(Tool):
                 "You weren't currently in a quest.",
             )
 
-        # generator = get_story_text_generator(context)
+        get_story_text_generator(context)
 
         player = game_state.player
 
@@ -90,8 +90,21 @@ class EndQuestTool(Tool):
             tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INVENTORY)],
         )
         save_game_state(game_state, context)
-        if image_gen := get_image_generator(context):
-            image_gen.request_item_image_generation(item=item, context=context)
+
+        item_image_task = None
+        if svc := get_package_service(context=context):
+            # async generate an image for the inventory item
+            item_image_task = svc.invoke_later(
+                "generate_item_image",
+                arguments={
+                    "item_name": item.name,
+                    "item_description": item.description,
+                    "context_id": _context_key_from_file(
+                        key="id",
+                        file=context.chat_history.file,
+                    ),
+                },
+            )
 
         # Going on a quest increases the player's rank
         player.rank += quest.rank_delta
@@ -116,6 +129,10 @@ class EndQuestTool(Tool):
         save_game_state(game_state, context)
 
         # This notifies the web UI that it is time to transition back to Camp
+        if item_image_task:
+            # if there is any pending item image task, wait until it is complete.
+            item_image_task.wait_until_completed()
+
         send_agent_status_message(AgentStatusMessageTag.QUEST_COMPLETE, context=context)
 
         return ""

@@ -333,7 +333,7 @@ def find_last_inventory_block(chat_history_file: File) -> Optional[int]:
 
 
 def await_streamed_block(block: Block) -> Block:
-    while block.stream_state == StreamState.STARTED:
-        time.sleep(1)
+    while block.stream_state not in [StreamState.COMPLETE, StreamState.ABORTED]:
+        time.sleep(0.4)
         block = Block.get(block.client, _id=block.id)
     return block
