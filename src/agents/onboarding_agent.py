@@ -4,13 +4,11 @@ from steamship.agents.schema.action import FinishAction
 
 from schema.characters import HumanCharacter
 from schema.game_state import GameState
-from schema.objects import Item
-from utils.agent_service import _context_key_from_file
 from utils.context_utils import (
     RunNextAgentException,
     await_ask,
     get_game_state,
-    get_package_service,
+    get_image_generator,
     save_game_state,
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent
@@ -27,7 +25,7 @@ class OnboardingAgent(InterruptiblePythonAgent):
     the missing pieces of information are asked of the user in either chat or web mode.
     """
 
-    def run(self, context: AgentContext) -> Action:
+    def run(self, context: AgentContext) -> Action:  # noqa: C901
         game_state: GameState = get_game_state(context)
         player: HumanCharacter = game_state.player
 
@@ -48,18 +46,10 @@ class OnboardingAgent(InterruptiblePythonAgent):
             save_game_state(game_state, context)
 
         if not game_state.image_generation_requested():
-            # TODO: should this move to after tone/genre are set?
-            svc = get_package_service(context=context)
-            task = svc.invoke_later(
-                method="generate_profile_image",
-                arguments={
-                    "context_id": _context_key_from_file(
-                        key="id", file=context.chat_history.file
-                    )
-                },
-            )
-            game_state.profile_image_task = task
-            save_game_state(game_state, context)
+            if image_gen := get_image_generator(context):
+                task = image_gen.request_profile_image_generation(context=context)
+                game_state.profile_image_task = task
+                save_game_state(game_state, context)
 
         if not player.inventory:
             # name = await_ask(f"What is {player.name}'s starting item?", context)

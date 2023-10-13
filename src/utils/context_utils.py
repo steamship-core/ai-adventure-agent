@@ -26,9 +26,9 @@ from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
-from steamship.invocable import PackageService
 from steamship.utils.kv_store import KeyValueStore
 
+from generators.image_generator import ImageGenerator
 from schema.game_state import GameState
 
 _STORY_GENERATOR_KEY = "story-generator"
@@ -36,20 +36,10 @@ _FUNCTION_CAPABLE_LLM = (
     "function-capable-llm"  # This could be distinct from the one generating the story.
 )
 _BACKGROUND_MUSIC_GENERATOR_KEY = "background-music-generator"
-_BACKGROUND_IMAGE_GENERATOR_KEY = "background-image-generator"
-_PROFILE_IMAGE_GENERATOR_KEY = "profile-image-generator"
-_ITEM_IMAGE_GENERATOR_KEY = "item-image-generator"
+_IMAGE_GENERATOR_KEY = "image-generator"
 _NARRATION_GENERATOR_KEY = "narration-generator"
 _SERVER_SETTINGS_KEY = "server-settings"
 _GAME_STATE_KEY = "user-settings"
-_PACKAGE_SERVICE_KEY = "package-service"
-
-
-def with_package_service(
-    package_service: PackageService, context: AgentContext
-) -> AgentContext:
-    context.metadata[_PACKAGE_SERVICE_KEY] = package_service
-    return context
 
 
 def with_story_generator(
@@ -71,24 +61,10 @@ def with_background_music_generator(
     return context
 
 
-def with_background_image_generator(
-    instance: PluginInstance, context: AgentContext
+def with_image_generator(
+    image_generator: ImageGenerator, context: AgentContext
 ) -> AgentContext:
-    context.metadata[_BACKGROUND_IMAGE_GENERATOR_KEY] = instance
-    return context
-
-
-def with_profile_image_generator(
-    instance: PluginInstance, context: AgentContext
-) -> AgentContext:
-    context.metadata[_PROFILE_IMAGE_GENERATOR_KEY] = instance
-    return context
-
-
-def with_item_image_generator(
-    instance: PluginInstance, context: AgentContext
-) -> AgentContext:
-    context.metadata[_ITEM_IMAGE_GENERATOR_KEY] = instance
+    context.metadata[_IMAGE_GENERATOR_KEY] = image_generator
     return context
 
 
@@ -113,10 +89,8 @@ def with_game_state(
     return context
 
 
-def get_package_service(
-    context: AgentContext, default: Optional[PackageService] = None
-) -> Optional[PackageService]:
-    return context.metadata.get(_PACKAGE_SERVICE_KEY, default)
+def get_image_generator(context: AgentContext) -> Optional[ImageGenerator]:
+    return context.metadata.get(_IMAGE_GENERATOR_KEY, None)
 
 
 def get_story_text_generator(
@@ -177,73 +151,6 @@ def get_background_music_generator(
         )
         generator = context.client.use_plugin(plugin_handle)
         context.metadata[_BACKGROUND_MUSIC_GENERATOR_KEY] = generator
-
-    return generator
-
-
-def get_background_image_generator(
-    context: AgentContext, default: Optional[PluginInstance] = None
-) -> Optional[PluginInstance]:
-    generator = context.metadata.get(_BACKGROUND_IMAGE_GENERATOR_KEY, default)
-    if not generator:
-        # Lazily create
-        server_settings = get_server_settings(context)
-        game_state = get_game_state(context)
-        preferences = game_state.preferences
-
-        plugin_handle = server_settings._select_model(
-            ["dall-e", "fal-sd-lora-image-generator"],
-            default=server_settings.default_background_image_model,
-            preferred=preferences.background_image_model,
-        )
-        generator = context.client.use_plugin(
-            plugin_handle, config=preferences.background_image_config()
-        )
-        context.metadata[_BACKGROUND_IMAGE_GENERATOR_KEY] = generator
-
-    return generator
-
-
-def get_profile_image_generator(context: AgentContext) -> Optional[PluginInstance]:
-    generator = context.metadata.get(_PROFILE_IMAGE_GENERATOR_KEY)
-    if not generator:
-        # Lazily create
-        server_settings = get_server_settings(context)
-        game_state = get_game_state(context)
-        preferences = game_state.preferences
-
-        plugin_handle = server_settings._select_model(
-            ["dall-e", "fal-sd-lora-image-generator"],
-            default=server_settings.default_profile_image_model,
-            preferred=preferences.profile_image_model,
-        )
-        generator = context.client.use_plugin(
-            plugin_handle, config=preferences.profile_image_config()
-        )
-        context.metadata[_PROFILE_IMAGE_GENERATOR_KEY] = generator
-
-    return generator
-
-
-def get_item_image_generator(
-    context: AgentContext, default: Optional[PluginInstance] = None
-) -> Optional[PluginInstance]:
-    generator = context.metadata.get(_ITEM_IMAGE_GENERATOR_KEY, default)
-    if not generator:
-        # Lazily create
-        server_settings = get_server_settings(context)
-        game_state = get_game_state(context)
-        preferences = game_state.preferences
-
-        plugin_handle = server_settings._select_model(
-            ["dall-e", "fal-sd-lora-image-generator"],
-            default=server_settings.default_item_image_model,
-            preferred=preferences.item_image_model,
-        )
-        generator = context.client.use_plugin(
-            plugin_handle, config=preferences.item_image_config()
-        )
-        context.metadata[_ITEM_IMAGE_GENERATOR_KEY] = generator
 
     return generator
 

@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional, Tuple
 
 from steamship import Block, File, SteamshipError, Task
 from steamship.agents.llms.openai import ChatOpenAI
@@ -8,21 +8,26 @@ from steamship.agents.logging import AgentLogging, StreamingOpts
 from steamship.agents.schema import Action, Agent, FinishAction
 from steamship.agents.schema.context import AgentContext, EmitFunc, Metadata
 from steamship.agents.utils import with_llm
+
 # from steamship.base.client import API_TIMINGS
 from steamship.data import TagKind
 from steamship.data.tags.tag_constants import ChatTag
 from steamship.invocable import PackageService, post
 from steamship.invocable.invocable_response import StreamingResponse
 
+from generators.image_generators.stable_diffusion_with_loras import (
+    StableDiffusionWithLorasImageGenerator,
+)
 from schema.server_settings import ServerSettings
 from utils.context_utils import (
     RunNextAgentException,
     emit,
     get_game_state,
     with_game_state,
-    with_package_service,
+    with_image_generator,
     with_server_settings,
 )
+
 # from utils.timing_utils import pretty_print_timings
 
 
@@ -425,9 +430,11 @@ class AgentService(PackageService):
         # Get the game state and add to context
         game_state = get_game_state(context)
         context = with_game_state(game_state, context)
-        context = with_server_settings(ServerSettings(), context)
-        context = with_package_service(
-            package_service=cast(PackageService, self), context=context
+        server_settings = ServerSettings()
+        context = with_server_settings(server_settings, context)
+        # TODO(doug): figure out how to make this selectable.
+        context = with_image_generator(
+            StableDiffusionWithLorasImageGenerator(), context
         )
 
         self._agent_context = context
@@ -551,7 +558,6 @@ class AgentService(PackageService):
                     prompt = "Hi."
                     if e.action.input:
                         prompt = e.action.input[0].text
-
 
             # timings = API_TIMINGS
             # pretty_print_timings(timings)
