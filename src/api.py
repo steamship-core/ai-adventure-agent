@@ -225,7 +225,7 @@ class AdventureGameService(AgentService):
 
         if active_mode == ActiveMode.DIAGNOSTIC:
             sub_agent = DiagnosticAgent(game_state.diagnostic_mode)
-        if active_mode == ActiveMode.ONBOARDING:
+        elif active_mode == ActiveMode.ONBOARDING:
             sub_agent = self.onboarding_agent
         elif active_mode == ActiveMode.NPC_CONVERSATION:
             sub_agent = self.npc_agent

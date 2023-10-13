@@ -87,6 +87,10 @@ class GameState(BaseModel):
     def update_from_web(self, other: "GameState"):
         """Perform a gentle update so that the website doesn't accidentally blast over this if it diverges in
         structure."""
+
+        # Allow zeroing out even if it's None
+        self.diagnostic_mode = other.diagnostic_mode
+
         if other.genre:
             self.genre = other.genre
         if other.tone:
