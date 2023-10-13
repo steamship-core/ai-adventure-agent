@@ -52,7 +52,7 @@ class QuestMixin(PackageMixin):
                 if (
                     tag.kind == TagKindExtensions.QUEST
                     and tag.name == QuestTag.QUEST_ID
-                    and (tag.value or {}).get("id") == _quest_id
+                    and (tag.value or {}).get("id").lower() == _quest_id.lower()
                 ):
                     return True
             return False
