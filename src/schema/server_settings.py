@@ -11,9 +11,7 @@ class ServerSettings(BaseModel):
     """
 
     # Image Generation Settings
-    default_profile_image_model: str = Field("dall-e", description="")
-    default_background_image_model: str = Field("dall-e", description="")
-    default_item_image_model: str = Field("dall-e", description="")
+    # default_image_generator: str = Field("StableDiffusionWithLorasImageGenerator", description="")  # TODO(doug): fix
 
     # Language Generation Settings - Function calling
     default_function_capable_llm_model: str = Field("gpt-4", description="")
