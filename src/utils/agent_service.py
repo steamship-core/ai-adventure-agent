@@ -8,6 +8,7 @@ from steamship.agents.logging import AgentLogging, StreamingOpts
 from steamship.agents.schema import Action, Agent, FinishAction
 from steamship.agents.schema.context import AgentContext, EmitFunc, Metadata
 from steamship.agents.utils import with_llm
+# from steamship.base.client import API_TIMINGS
 from steamship.data import TagKind
 from steamship.data.tags.tag_constants import ChatTag
 from steamship.invocable import PackageService, post
@@ -22,6 +23,7 @@ from utils.context_utils import (
     with_package_service,
     with_server_settings,
 )
+# from utils.timing_utils import pretty_print_timings
 
 
 def build_context_appending_emit_func(
@@ -413,6 +415,7 @@ class AgentService(PackageService):
                 include_tool_messages=include_tool_messages,
             ),
             initial_system_message="",  # None necessary
+            searchable=False,
         )
 
         # Add a default LLM to the context, using the Agent's if it exists.
@@ -447,6 +450,7 @@ class AgentService(PackageService):
             self.client,
             context_keys={"id": f"{context_id}"},
             initial_system_message=self.get_default_agent().default_system_message(),
+            searchable=False,
         )
         return ctx.chat_history.file
 
@@ -547,6 +551,10 @@ class AgentService(PackageService):
                     prompt = "Hi."
                     if e.action.input:
                         prompt = e.action.input[0].text
+
+
+            # timings = API_TIMINGS
+            # pretty_print_timings(timings)
 
             # Return the response as a set of multi-modal blocks.
             return output_blocks
