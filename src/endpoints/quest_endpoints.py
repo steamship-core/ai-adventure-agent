@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from steamship import Block, Steamship, SteamshipError
 from steamship.agents.service.agent_service import AgentService
@@ -11,6 +11,7 @@ from tools.start_quest_tool import StartQuestTool
 
 # An instnace is a game instance.
 from utils.context_utils import get_audio_narration_generator, get_game_state
+from utils.tags import QuestTag, TagKindExtensions
 
 
 class QuestMixin(PackageMixin):
@@ -39,6 +40,33 @@ class QuestMixin(PackageMixin):
         game_state = get_game_state(context)
         quest_tool = EndQuestTool()
         return quest_tool.end_quest(game_state, context)
+
+    @post("/get_quest")
+    def get_quest(self, quest_id: str, **kwargs) -> List[dict]:
+        """Gets the blocks for an existing quest."""
+        context = self.agent_service.build_default_context()
+        blocks = []
+
+        def matches_quest(_block: Block, _quest_id: str) -> bool:
+            for tag in _block.tags or []:
+                if (
+                    tag.kind == TagKindExtensions.QUEST
+                    and tag.name == QuestTag.QUEST_ID
+                    and (tag.value or {}).get("id") == _quest_id
+                ):
+                    return True
+            return False
+
+        if (
+            context.chat_history
+            and context.chat_history.file
+            and context.chat_history.file.blocks
+        ):
+            for block in context.chat_history.file.blocks:
+                if matches_quest(block, quest_id):
+                    blocks.append(block)
+
+        return [block.dict() for block in blocks]
 
     @post("/narrate_block")
     def narrate_block(self, block_id: str, **kwargs) -> dict:
