@@ -21,35 +21,26 @@ import json
 import logging
 from typing import List, Optional, Union
 
-from steamship import Block, PluginInstance
+from steamship import Block, PluginInstance, Tag
+from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
-from steamship.invocable import PackageService
 from steamship.utils.kv_store import KeyValueStore
 
-from schema.characters import HumanCharacter
+from generators.image_generator import ImageGenerator
 from schema.game_state import GameState
+from utils.tags import QuestTag, TagKindExtensions
 
 _STORY_GENERATOR_KEY = "story-generator"
 _FUNCTION_CAPABLE_LLM = (
     "function-capable-llm"  # This could be distinct from the one generating the story.
 )
 _BACKGROUND_MUSIC_GENERATOR_KEY = "background-music-generator"
-_BACKGROUND_IMAGE_GENERATOR_KEY = "background-image-generator"
-_PROFILE_IMAGE_GENERATOR_KEY = "profile-image-generator"
-_ITEM_IMAGE_GENERATOR_KEY = "item-image-generator"
+_IMAGE_GENERATOR_KEY = "image-generator"
 _NARRATION_GENERATOR_KEY = "narration-generator"
 _SERVER_SETTINGS_KEY = "server-settings"
 _GAME_STATE_KEY = "user-settings"
-_PACKAGE_SERVICE_KEY = "package-service"
-
-
-def with_package_service(
-    package_service: PackageService, context: AgentContext
-) -> AgentContext:
-    context.metadata[_PACKAGE_SERVICE_KEY] = package_service
-    return context
 
 
 def with_story_generator(
@@ -71,24 +62,10 @@ def with_background_music_generator(
     return context
 
 
-def with_background_image_generator(
-    instance: PluginInstance, context: AgentContext
+def with_image_generator(
+    image_generator: ImageGenerator, context: AgentContext
 ) -> AgentContext:
-    context.metadata[_BACKGROUND_IMAGE_GENERATOR_KEY] = instance
-    return context
-
-
-def with_profile_image_generator(
-    instance: PluginInstance, context: AgentContext
-) -> AgentContext:
-    context.metadata[_PROFILE_IMAGE_GENERATOR_KEY] = instance
-    return context
-
-
-def with_item_image_generator(
-    instance: PluginInstance, context: AgentContext
-) -> AgentContext:
-    context.metadata[_ITEM_IMAGE_GENERATOR_KEY] = instance
+    context.metadata[_IMAGE_GENERATOR_KEY] = image_generator
     return context
 
 
@@ -113,46 +90,92 @@ def with_game_state(
     return context
 
 
-def get_package_service(
-    context: AgentContext, default: Optional[PackageService] = None
-) -> Optional[PackageService]:
-    return context.metadata.get(_PACKAGE_SERVICE_KEY, default)
+def get_image_generator(context: AgentContext) -> Optional[ImageGenerator]:
+    return context.metadata.get(_IMAGE_GENERATOR_KEY, None)
 
 
 def get_story_text_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_STORY_GENERATOR_KEY, default)
+    generator = context.metadata.get(_STORY_GENERATOR_KEY, default)
+
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        open_ai_models = ["gpt-3.5-turbo", "gpt-4"]
+        replicate_models = ["dolly_v2", "llama_v2"]
+
+        model_name = server_settings._select_model(
+            open_ai_models + replicate_models,
+            default=server_settings.default_story_model,
+            preferred=preferences.narration_model,
+        )
+
+        plugin_handle = None
+        if model_name in open_ai_models:
+            plugin_handle = "gpt-4"
+        elif model_name in replicate_models:
+            plugin_handle = "replicate-llm"
+
+        generator = context.client.use_plugin(
+            plugin_handle,
+            config={
+                "model": model_name,
+                "max_tokens": server_settings.default_story_max_tokens,
+                "temperature": server_settings.default_story_temperature,
+            },
+        )
+
+        context.metadata[_STORY_GENERATOR_KEY] = generator
+
+    return generator
 
 
 def get_background_music_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_BACKGROUND_MUSIC_GENERATOR_KEY, default)
+    generator = context.metadata.get(_BACKGROUND_MUSIC_GENERATOR_KEY, default)
 
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
 
-def get_background_image_generator(
-    context: AgentContext, default: Optional[PluginInstance] = None
-) -> Optional[PluginInstance]:
-    return context.metadata.get(_BACKGROUND_IMAGE_GENERATOR_KEY, default)
+        plugin_handle = server_settings._select_model(
+            ["music-generator"],  # Valid models
+            default=server_settings.default_narration_model,
+            preferred=preferences.background_music_model,
+        )
+        generator = context.client.use_plugin(plugin_handle)
+        context.metadata[_BACKGROUND_MUSIC_GENERATOR_KEY] = generator
 
-
-def get_profile_image_generator(
-    context: AgentContext, default: Optional[PluginInstance] = None
-) -> Optional[PluginInstance]:
-    return context.metadata.get(_PROFILE_IMAGE_GENERATOR_KEY, default)
-
-
-def get_item_image_generator(
-    context: AgentContext, default: Optional[PluginInstance] = None
-) -> Optional[PluginInstance]:
-    return context.metadata.get(_ITEM_IMAGE_GENERATOR_KEY, default)
+    return generator
 
 
 def get_audio_narration_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_NARRATION_GENERATOR_KEY, default)
+    generator = context.metadata.get(_NARRATION_GENERATOR_KEY, default)
+
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        plugin_handle = server_settings._select_model(
+            ["elevenlabs"],
+            default=server_settings.default_narration_model,
+            preferred=preferences.narration_model,
+        )
+        generator = context.client.use_plugin(plugin_handle)
+        context.metadata[_NARRATION_GENERATOR_KEY] = generator
+
+    return generator
 
 
 def get_server_settings(
@@ -308,7 +331,12 @@ def switch_history_to_current_quest(
 def get_function_capable_llm(
     context: AgentContext, default: Optional[ChatLLM] = None  # noqa: F821
 ) -> Optional[ChatLLM]:  # noqa: F821
-    return context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
+    llm = context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
+    if not llm:
+        # Lazy create
+        llm = ChatOpenAI(context.client)
+        context.metadata[_FUNCTION_CAPABLE_LLM] = llm
+    return llm
 
 
 def _key_for_question(blocks: List[Block], key: Optional[str] = None) -> str:
@@ -362,18 +390,32 @@ def await_ask(
 
         The FinishActionException is handled by the enclosing Agent.
     """
+    # Check if we have ALREADY asked about this key!
+    game_state = get_game_state(context)
+
     base_tags = []
+
+    if game_state.current_quest:
+        # Make sure we're tagging this for request rehydration
+        base_tags.append(
+            Tag(
+                kind=TagKindExtensions.QUEST,
+                name=QuestTag.QUEST_ID,
+                value={"id": game_state.current_quest},
+            ),
+        )
 
     # Make sure question is List[Block]
     if isinstance(question, str):
         output = [Block(text=question, tags=base_tags)]
     else:
+        for block in question:
+            if not block.tags:
+                block.tags = []
+            block.tags.extend(base_tags)
         output = question
 
     key = _key_for_question(output)
-
-    # Check if we have ALREADY asked about this key!
-    game_state = get_game_state(context)
 
     logging.info(
         f"Seeking input with await_ask key: {key}.",

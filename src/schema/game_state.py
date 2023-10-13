@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -7,6 +8,14 @@ from schema.camp import Camp
 from schema.characters import HumanCharacter
 from schema.preferences import Preferences
 from schema.quest import Quest
+
+
+class ActiveMode(str, Enum):
+    ONBOARDING = "onboarding"
+    CAMP = "camp"
+    QUEST = "quest"
+    NPC_CONVERSATION = "npc-conversation"
+    DIAGNOSTIC = "diagnostic"
 
 
 class GameState(BaseModel):
@@ -68,12 +77,20 @@ class GameState(BaseModel):
 
     chat_history_for_onboarding_complete: Optional[bool] = Field(
         default=None,
-        description="Whether the onboarding profile has been written to the chat history"
+        description="Whether the onboarding profile has been written to the chat history",
+    )
+
+    diagnostic_mode: Optional[str] = Field(
+        default=None, description="The name of the remote diagnostic test to run"
     )
 
     def update_from_web(self, other: "GameState"):
         """Perform a gentle update so that the website doesn't accidentally blast over this if it diverges in
         structure."""
+
+        # Allow zeroing out even if it's None
+        self.diagnostic_mode = other.diagnostic_mode
+
         if other.genre:
             self.genre = other.genre
         if other.tone:
@@ -106,3 +123,21 @@ class GameState(BaseModel):
                 TaskState.running,
                 TaskState.waiting,
             ]
+
+    def dict(self, **kwargs) -> dict:
+        """Return the dict representation, making sure the computed properties are there."""
+        ret = super().dict(**kwargs)
+        ret["active_mode"] = self.active_mode.value
+        return ret
+
+    @property
+    def active_mode(self) -> ActiveMode:
+        if self.diagnostic_mode is not None:
+            return ActiveMode.DIAGNOSTIC  # Diagnostic mode takes precedence
+        if not self.is_onboarding_complete():
+            return ActiveMode.ONBOARDING
+        if self.in_conversation_with:
+            return ActiveMode.NPC_CONVERSATION
+        if self.current_quest:
+            return ActiveMode.QUEST
+        return ActiveMode.CAMP

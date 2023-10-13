@@ -1,22 +1,7 @@
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
-from steamship import PluginInstance, Steamship, SteamshipError
-from steamship.agents.llms.openai import ChatOpenAI
-from steamship.agents.schema import ChatLLM
-from steamship.agents.schema.agent import AgentContext
-
-from schema.game_state import GameState
-from utils.context_utils import (
-    with_background_image_generator,
-    with_background_music_generator,
-    with_function_capable_llm,
-    with_item_image_generator,
-    with_narration_generator,
-    with_profile_image_generator,
-    with_server_settings,
-    with_story_generator,
-)
+from steamship import SteamshipError
 
 
 class ServerSettings(BaseModel):
@@ -26,9 +11,7 @@ class ServerSettings(BaseModel):
     """
 
     # Image Generation Settings
-    default_profile_image_model: str = Field("dall-e", description="")
-    default_background_image_model: str = Field("dall-e", description="")
-    default_item_image_model: str = Field("dall-e", description="")
+    # default_image_generator: str = Field("StableDiffusionWithLorasImageGenerator", description="")  # TODO(doug): fix
 
     # Language Generation Settings - Function calling
     default_function_capable_llm_model: str = Field("gpt-4", description="")

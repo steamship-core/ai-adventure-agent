@@ -8,12 +8,11 @@ from steamship.agents.schema.action import FinishAction
 
 from endpoints.music_endpoints import MusicMixin
 from tools.end_quest_tool import EndQuestTool
-from utils.agent_service import _context_key_from_file
 from utils.context_utils import (
     await_ask,
     get_current_quest,
     get_game_state,
-    get_package_service,
+    get_image_generator,
     save_game_state,
 )
 from utils.generation_utils import await_streamed_block, send_story_generation
@@ -66,21 +65,6 @@ class QuestAgent(InterruptiblePythonAgent):
         )
 
         if not quest.sent_intro:
-            # logging.info(
-            #     "[DEBUG] Sending Intro Part 1",
-            #     extra={
-            #         AgentLogging.IS_MESSAGE: True,
-            #         AgentLogging.MESSAGE_TYPE: AgentLogging.AGENT,
-            #         AgentLogging.MESSAGE_AUTHOR: AgentLogging.TOOL,
-            #         AgentLogging.AGENT_NAME: self.__class__.__name__,
-            #     },
-            # )
-            #
-            # send_story_generation(
-            #     f"Like the narrator of a movie, explain that {player.name} is embarking on a quest. Speak briefly. Use only a few sentences.",
-            #     context=context,
-            # )
-
             logging.info(
                 "[DEBUG] Sending Intro Part 2",
                 extra={
@@ -123,6 +107,7 @@ class QuestAgent(InterruptiblePythonAgent):
                         "context_id": context_id,
                     },
                 )
+
             save_game_state(game_state, context)
         else:
             logging.info(
@@ -140,25 +125,21 @@ class QuestAgent(InterruptiblePythonAgent):
                 f"What does {player.name} do next?",
                 context,
             )
+            save_game_state(game_state, context)
+
+        if not quest.sent_outro:
             context.chat_history.append_user_message(
                 text=f"{player.name} solves the problem by: {quest.user_problem_solution}",
                 tags=self.tags(QuestTag.USER_SOLUTION, quest),
             )
-            save_game_state(game_state, context)
-
-        if not quest.sent_outro:
-            # send_story_generation(
-            #     f"Explain how {player.name} solves things.",
-            #     context=context,
-            # )
             story_end_block = send_story_generation(
                 f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
                 quest_name=quest.name,
                 context=context,
             )
-            await_streamed_block(story_end_block)
             quest.sent_outro = True
             save_game_state(game_state, context)
+            await_streamed_block(story_end_block)
 
         blocks = EndQuestTool().run([], context)
         return FinishAction(output=blocks)

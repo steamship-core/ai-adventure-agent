@@ -79,7 +79,9 @@ def invocable_handler(request) -> Callable[[str, str, Optional[dict]], dict]:
             client_config=new_client.config,
             invocation=invocation,
             logging_config=logging_config,
-            invocation_context=InvocationContext(invocable_handle="foo"),
+            invocation_context=InvocationContext(
+                invocable_handle="foo", invocable_instance_handle="foo"
+            ),
         )
         event = invocable_request.dict(by_alias=True)
         return _handler(event, None)

@@ -7,12 +7,10 @@ from steamship.agents.schema import AgentContext, Tool
 
 from schema.game_state import GameState
 from schema.objects import Item
-from utils.agent_service import _context_key_from_file
 from utils.context_utils import (
     get_current_quest,
     get_game_state,
-    get_package_service,
-    get_story_text_generator,
+    get_image_generator,
     save_game_state,
 )
 from utils.generation_utils import (

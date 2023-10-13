@@ -1,26 +1,35 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional, Tuple
 
-from steamship import Block, File, SteamshipError, Task
+from steamship import Block, File, SteamshipError, Tag, Task
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging, StreamingOpts
 from steamship.agents.schema import Action, Agent, FinishAction
 from steamship.agents.schema.context import AgentContext, EmitFunc, Metadata
 from steamship.agents.utils import with_llm
+
+# from steamship.base.client import API_TIMINGS
 from steamship.data import TagKind
 from steamship.data.tags.tag_constants import ChatTag
 from steamship.invocable import PackageService, post
 from steamship.invocable.invocable_response import StreamingResponse
 
+from generators.image_generators.stable_diffusion_with_loras import (
+    StableDiffusionWithLorasImageGenerator,
+)
 from schema.server_settings import ServerSettings
 from utils.context_utils import (
     RunNextAgentException,
     emit,
     get_game_state,
     with_game_state,
-    with_package_service,
+    with_image_generator,
+    with_server_settings,
 )
+
+# from utils.timing_utils import pretty_print_timings
+from utils.tags import QuestTag, TagKindExtensions
 
 
 def build_context_appending_emit_func(
@@ -412,6 +421,7 @@ class AgentService(PackageService):
                 include_tool_messages=include_tool_messages,
             ),
             initial_system_message="",  # None necessary
+            searchable=False,
         )
 
         # Add a default LLM to the context, using the Agent's if it exists.
@@ -421,13 +431,11 @@ class AgentService(PackageService):
         # Get the game state and add to context
         game_state = get_game_state(context)
         context = with_game_state(game_state, context)
-
-        # Now add in the Server Settings
         server_settings = ServerSettings()
-        context = server_settings.add_to_agent_context(context, game_state)
-
-        context = with_package_service(
-            package_service=cast(PackageService, self), context=context
+        context = with_server_settings(server_settings, context)
+        # TODO(doug): figure out how to make this selectable.
+        context = with_image_generator(
+            StableDiffusionWithLorasImageGenerator(), context
         )
 
         self._agent_context = context
@@ -450,6 +458,7 @@ class AgentService(PackageService):
             self.client,
             context_keys={"id": f"{context_id}"},
             initial_system_message=self.get_default_agent().default_system_message(),
+            searchable=False,
         )
         return ctx.chat_history.file
 
@@ -484,7 +493,19 @@ class AgentService(PackageService):
         return StreamingResponse(task=task, file=history_file)
 
     def _prompt(self, prompt: str, context: AgentContext) -> List[Block]:
-        context.chat_history.append_user_message(prompt)
+        game_state = get_game_state(context)
+
+        base_tags = []
+        if game_state.current_quest:
+            base_tags.append(
+                Tag(
+                    kind=TagKindExtensions.QUEST,
+                    name=QuestTag.QUEST_ID,
+                    value={"id": game_state.current_quest},
+                ),
+            )
+
+        context.chat_history.append_user_message(prompt, tags=base_tags)
         agent: Optional[Agent] = self.get_default_agent()
         self.run_agent(agent, context)
 
@@ -550,6 +571,9 @@ class AgentService(PackageService):
                     prompt = "Hi."
                     if e.action.input:
                         prompt = e.action.input[0].text
+
+            # timings = API_TIMINGS
+            # pretty_print_timings(timings)
 
             # Return the response as a set of multi-modal blocks.
             return output_blocks
