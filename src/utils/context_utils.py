@@ -21,7 +21,7 @@ import json
 import logging
 from typing import List, Optional, Union
 
-from steamship import Block, PluginInstance
+from steamship import Block, PluginInstance, Tag
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
@@ -30,6 +30,7 @@ from steamship.invocable import PackageService
 from steamship.utils.kv_store import KeyValueStore
 
 from schema.game_state import GameState
+from utils.tags import QuestTag, TagKindExtensions
 
 _STORY_GENERATOR_KEY = "story-generator"
 _FUNCTION_CAPABLE_LLM = (
@@ -482,18 +483,32 @@ def await_ask(
 
         The FinishActionException is handled by the enclosing Agent.
     """
+    # Check if we have ALREADY asked about this key!
+    game_state = get_game_state(context)
+
     base_tags = []
+
+    if game_state.current_quest:
+        # Make sure we're tagging this for request rehydration
+        base_tags.append(
+            Tag(
+                kind=TagKindExtensions.QUEST,
+                name=QuestTag.QUEST_ID,
+                value={"id": game_state.current_quest},
+            ),
+        )
 
     # Make sure question is List[Block]
     if isinstance(question, str):
         output = [Block(text=question, tags=base_tags)]
     else:
+        for block in question:
+            if not block.tags:
+                block.tags = []
+            block.tags.extend(base_tags)
         output = question
 
     key = _key_for_question(output)
-
-    # Check if we have ALREADY asked about this key!
-    game_state = get_game_state(context)
 
     logging.info(
         f"Seeking input with await_ask key: {key}.",

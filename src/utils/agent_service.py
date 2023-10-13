@@ -2,12 +2,13 @@ import logging
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, cast
 
-from steamship import Block, File, SteamshipError, Task
+from steamship import Block, File, SteamshipError, Tag, Task
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging, StreamingOpts
 from steamship.agents.schema import Action, Agent, FinishAction
 from steamship.agents.schema.context import AgentContext, EmitFunc, Metadata
 from steamship.agents.utils import with_llm
+
 # from steamship.base.client import API_TIMINGS
 from steamship.data import TagKind
 from steamship.data.tags.tag_constants import ChatTag
@@ -23,7 +24,9 @@ from utils.context_utils import (
     with_package_service,
     with_server_settings,
 )
+
 # from utils.timing_utils import pretty_print_timings
+from utils.tags import QuestTag, TagKindExtensions
 
 
 def build_context_appending_emit_func(
@@ -485,7 +488,19 @@ class AgentService(PackageService):
         return StreamingResponse(task=task, file=history_file)
 
     def _prompt(self, prompt: str, context: AgentContext) -> List[Block]:
-        context.chat_history.append_user_message(prompt)
+        game_state = get_game_state(context)
+
+        base_tags = []
+        if game_state.current_quest:
+            base_tags.append(
+                Tag(
+                    kind=TagKindExtensions.QUEST,
+                    name=QuestTag.QUEST_ID,
+                    value={"id": game_state.current_quest},
+                ),
+            )
+
+        context.chat_history.append_user_message(prompt, tags=base_tags)
         agent: Optional[Agent] = self.get_default_agent()
         self.run_agent(agent, context)
 
@@ -551,7 +566,6 @@ class AgentService(PackageService):
                     prompt = "Hi."
                     if e.action.input:
                         prompt = e.action.input[0].text
-
 
             # timings = API_TIMINGS
             # pretty_print_timings(timings)
