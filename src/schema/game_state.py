@@ -15,6 +15,7 @@ class ActiveMode(str, Enum):
     CAMP = "camp"
     QUEST = "quest"
     NPC_CONVERSATION = "npc-conversation"
+    DIAGNOSTIC = "diagnostic"
 
 
 class GameState(BaseModel):
@@ -79,9 +80,17 @@ class GameState(BaseModel):
         description="Whether the onboarding profile has been written to the chat history",
     )
 
+    diagnostic_mode: Optional[str] = Field(
+        default=None, description="The name of the remote diagnostic test to run"
+    )
+
     def update_from_web(self, other: "GameState"):
         """Perform a gentle update so that the website doesn't accidentally blast over this if it diverges in
         structure."""
+
+        # Allow zeroing out even if it's None
+        self.diagnostic_mode = other.diagnostic_mode
+
         if other.genre:
             self.genre = other.genre
         if other.tone:
@@ -123,6 +132,8 @@ class GameState(BaseModel):
 
     @property
     def active_mode(self) -> ActiveMode:
+        if self.diagnostic_mode is not None:
+            return ActiveMode.DIAGNOSTIC  # Diagnostic mode takes precedence
         if not self.is_onboarding_complete():
             return ActiveMode.ONBOARDING
         if self.in_conversation_with:

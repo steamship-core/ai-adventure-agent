@@ -22,13 +22,13 @@ import logging
 from typing import List, Optional, Union
 
 from steamship import Block, PluginInstance
+from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
 from steamship.invocable import PackageService
 from steamship.utils.kv_store import KeyValueStore
 
-from schema.characters import HumanCharacter
 from schema.game_state import GameState
 
 _STORY_GENERATOR_KEY = "story-generator"
@@ -122,37 +122,152 @@ def get_package_service(
 def get_story_text_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_STORY_GENERATOR_KEY, default)
+    generator = context.metadata.get(_STORY_GENERATOR_KEY, default)
+
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        open_ai_models = ["gpt-3.5-turbo", "gpt-4"]
+        replicate_models = ["dolly_v2", "llama_v2"]
+
+        model_name = server_settings._select_model(
+            open_ai_models + replicate_models,
+            default=server_settings.default_story_model,
+            preferred=preferences.narration_model,
+        )
+
+        plugin_handle = None
+        if model_name in open_ai_models:
+            plugin_handle = "gpt-4"
+        elif model_name in replicate_models:
+            plugin_handle = "replicate-llm"
+
+        generator = context.client.use_plugin(
+            plugin_handle,
+            config={
+                "model": model_name,
+                "max_tokens": server_settings.default_story_max_tokens,
+                "temperature": server_settings.default_story_temperature,
+            },
+        )
+
+        context.metadata[_STORY_GENERATOR_KEY] = generator
+
+    return generator
 
 
 def get_background_music_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_BACKGROUND_MUSIC_GENERATOR_KEY, default)
+    generator = context.metadata.get(_BACKGROUND_MUSIC_GENERATOR_KEY, default)
+
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        plugin_handle = server_settings._select_model(
+            ["music-generator"],  # Valid models
+            default=server_settings.default_narration_model,
+            preferred=preferences.background_music_model,
+        )
+        generator = context.client.use_plugin(plugin_handle)
+        context.metadata[_BACKGROUND_MUSIC_GENERATOR_KEY] = generator
+
+    return generator
 
 
 def get_background_image_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_BACKGROUND_IMAGE_GENERATOR_KEY, default)
+    generator = context.metadata.get(_BACKGROUND_IMAGE_GENERATOR_KEY, default)
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        plugin_handle = server_settings._select_model(
+            ["dall-e", "fal-sd-lora-image-generator"],
+            default=server_settings.default_background_image_model,
+            preferred=preferences.background_image_model,
+        )
+        generator = context.client.use_plugin(
+            plugin_handle, config=preferences.background_image_config()
+        )
+        context.metadata[_BACKGROUND_IMAGE_GENERATOR_KEY] = generator
+
+    return generator
 
 
-def get_profile_image_generator(
-    context: AgentContext, default: Optional[PluginInstance] = None
-) -> Optional[PluginInstance]:
-    return context.metadata.get(_PROFILE_IMAGE_GENERATOR_KEY, default)
+def get_profile_image_generator(context: AgentContext) -> Optional[PluginInstance]:
+    generator = context.metadata.get(_PROFILE_IMAGE_GENERATOR_KEY)
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        plugin_handle = server_settings._select_model(
+            ["dall-e", "fal-sd-lora-image-generator"],
+            default=server_settings.default_profile_image_model,
+            preferred=preferences.profile_image_model,
+        )
+        generator = context.client.use_plugin(
+            plugin_handle, config=preferences.profile_image_config()
+        )
+        context.metadata[_PROFILE_IMAGE_GENERATOR_KEY] = generator
+
+    return generator
 
 
 def get_item_image_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_ITEM_IMAGE_GENERATOR_KEY, default)
+    generator = context.metadata.get(_ITEM_IMAGE_GENERATOR_KEY, default)
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        plugin_handle = server_settings._select_model(
+            ["dall-e", "fal-sd-lora-image-generator"],
+            default=server_settings.default_item_image_model,
+            preferred=preferences.item_image_model,
+        )
+        generator = context.client.use_plugin(
+            plugin_handle, config=preferences.item_image_config()
+        )
+        context.metadata[_ITEM_IMAGE_GENERATOR_KEY] = generator
+
+    return generator
 
 
 def get_audio_narration_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_NARRATION_GENERATOR_KEY, default)
+    generator = context.metadata.get(_NARRATION_GENERATOR_KEY, default)
+
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        plugin_handle = server_settings._select_model(
+            ["elevenlabs"],
+            default=server_settings.default_narration_model,
+            preferred=preferences.narration_model,
+        )
+        generator = context.client.use_plugin(plugin_handle)
+        context.metadata[_NARRATION_GENERATOR_KEY] = generator
+
+    return generator
 
 
 def get_server_settings(
@@ -308,7 +423,12 @@ def switch_history_to_current_quest(
 def get_function_capable_llm(
     context: AgentContext, default: Optional[ChatLLM] = None  # noqa: F821
 ) -> Optional[ChatLLM]:  # noqa: F821
-    return context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
+    llm = context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
+    if not llm:
+        # Lazy create
+        llm = ChatOpenAI(context.client)
+        context.metadata[_FUNCTION_CAPABLE_LLM] = llm
+    return llm
 
 
 def _key_for_question(blocks: List[Block], key: Optional[str] = None) -> str:

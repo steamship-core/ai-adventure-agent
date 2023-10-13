@@ -20,6 +20,7 @@ from steamship.invocable import Config
 from steamship.utils.repl import AgentREPL
 
 from agents.camp_agent import CampAgent
+from agents.diagnostic_agent import DiagnosticAgent
 from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
@@ -222,7 +223,9 @@ class AdventureGameService(AgentService):
             },
         )
 
-        if active_mode == ActiveMode.ONBOARDING:
+        if active_mode == ActiveMode.DIAGNOSTIC:
+            sub_agent = DiagnosticAgent(game_state.diagnostic_mode)
+        elif active_mode == ActiveMode.ONBOARDING:
             sub_agent = self.onboarding_agent
         elif active_mode == ActiveMode.NPC_CONVERSATION:
             sub_agent = self.npc_agent

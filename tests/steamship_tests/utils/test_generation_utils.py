@@ -2,6 +2,7 @@ from steamship import File, Steamship
 from steamship.agents.schema import AgentContext
 
 from schema.server_settings import ServerSettings
+from utils.context_utils import with_server_settings
 from utils.generation_utils import send_story_generation
 
 
@@ -14,9 +15,7 @@ def test_send_story_generation(
         ctx = AgentContext.get_or_create(
             client=client, context_keys=ctx_keys, searchable=False
         )
-
-        server_settings = ServerSettings()
-        ctx = server_settings.add_to_agent_context(ctx)
+        ctx = with_server_settings(ServerSettings(), ctx)
 
         _block = send_story_generation(
             "Tell me a knock-knock joke.",
