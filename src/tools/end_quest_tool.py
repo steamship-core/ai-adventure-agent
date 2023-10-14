@@ -94,7 +94,9 @@ class EndQuestTool(Tool):
 
         item_image_task = None
         if image_gen := get_image_generator(context):
-            image_gen.request_item_image_generation(item=item, context=context)
+            item_image_task = image_gen.request_item_image_generation(
+                item=item, context=context
+            )
 
         # Going on a quest increases the player's rank
         player.rank += quest.rank_delta
