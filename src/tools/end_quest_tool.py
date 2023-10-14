@@ -92,11 +92,8 @@ class EndQuestTool(Tool):
         )
         save_game_state(game_state, context)
 
-        item_image_task = None
         if image_gen := get_image_generator(context):
-            item_image_task = image_gen.request_item_image_generation(
-                item=item, context=context
-            )
+            image_gen.request_item_image_generation(item=item, context=context)
 
         # Going on a quest increases the player's rank
         player.rank += quest.rank_delta
@@ -119,11 +116,6 @@ class EndQuestTool(Tool):
         # TODO: Verify that python's pass-by-reference means all the above modifications are automatically
         # included in this.
         save_game_state(game_state, context)
-
-        # This notifies the web UI that it is time to transition back to Camp
-        if item_image_task:
-            # if there is any pending item image task, wait until it is complete.
-            item_image_task.wait_until_completed()
 
         send_agent_status_message(AgentStatusMessageTag.QUEST_COMPLETE, context=context)
 
