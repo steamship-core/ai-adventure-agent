@@ -25,7 +25,6 @@ from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
 from endpoints.game_state_endpoints import GameStateMixin
-from endpoints.image_endpoints import ImageMixin
 from endpoints.music_endpoints import MusicMixin
 from endpoints.npc_endpoints import NpcMixin
 from endpoints.onboarding_endpoints import OnboardingMixin
@@ -99,9 +98,8 @@ class AdventureGameService(AgentService):
         ServerSettingsMixin,  # Provides API Endpoints for Server Management (used by the associated web app)
         QuestMixin,  # Provides API Endpoints for Quest Management (used by the associated web app)
         NpcMixin,  # Provides API Endpoints for NPC Chat Management (used by the associated web app)
-        ImageMixin,  # Provides API Endpoints for Image Generation
         MusicMixin,  # Provides API Endpoints for Music Generation
-        OnboardingMixin, # Provide API Endpoints for Onboarding
+        OnboardingMixin,  # Provide API Endpoints for Onboarding
     ]
     """USED_MIXIN_CLASSES tells Steamship what additional HTTP endpoints to register on your AgentService."""
 

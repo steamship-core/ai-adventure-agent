@@ -2,13 +2,13 @@ from steamship import Block, MimeTypes, Tag
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
+from generators.generator_context_utils import get_image_generator
 from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from utils.context_utils import (
     RunNextAgentException,
     await_ask,
     get_game_state,
-    get_image_generator,
     save_game_state,
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent

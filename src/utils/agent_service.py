@@ -15,16 +15,12 @@ from steamship.data.tags.tag_constants import ChatTag
 from steamship.invocable import PackageService, post
 from steamship.invocable.invocable_response import StreamingResponse
 
-from generators.image_generators.stable_diffusion_with_loras import (
-    StableDiffusionWithLorasImageGenerator,
-)
 from schema.server_settings import ServerSettings
 from utils.context_utils import (
     RunNextAgentException,
     emit,
     get_game_state,
     with_game_state,
-    with_image_generator,
     with_server_settings,
 )
 
@@ -434,9 +430,6 @@ class AgentService(PackageService):
         server_settings = ServerSettings()
         context = with_server_settings(server_settings, context)
         # TODO(doug): figure out how to make this selectable.
-        context = with_image_generator(
-            StableDiffusionWithLorasImageGenerator(), context
-        )
 
         self._agent_context = context
         return context
