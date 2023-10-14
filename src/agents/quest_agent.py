@@ -113,7 +113,9 @@ class QuestAgent(InterruptiblePythonAgent):
             save_game_state(game_state, context)
 
         if not quest.sent_outro:
-            context.chat_history.append_user_message(
+            # TODO: Dave I switched this to a system message so it wouldn't be played back to the user on top of the answer
+            # they gave -- does that mess with anything from your perspective?
+            context.chat_history.append_system_message(
                 text=f"{player.name} solves the problem by: {quest.user_problem_solution}",
                 tags=self.tags(QuestTag.USER_SOLUTION, quest),
             )
