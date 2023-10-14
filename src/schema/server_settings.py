@@ -27,7 +27,7 @@ class ServerSettings(BaseModel):
     default_narration_model: str = Field("elevenlabs", description="")
 
     # Narration Generation Settings
-    default_background_music_model: str = Field("music-generator", description="")
+    # default_background_music_model: str = Field("music-generator", description="")  # TODO(doug): fix
 
     # Energy Management
     quest_cost: int = Field(10, description="The cost of going on one quest")

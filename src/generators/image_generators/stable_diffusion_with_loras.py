@@ -1,22 +1,15 @@
 import json
-import time
 from typing import Final
 
-from steamship import Tag, Task, TaskState
+from steamship import Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
 
+from generators import utils
 from generators.image_generator import ImageGenerator
 from schema.objects import Item
 from utils.context_utils import get_game_state
 from utils.tags import CharacterTag, ItemTag, SceneTag, TagKindExtensions
-
-
-def _await_task_running(task: Task) -> Task:
-    while task.state in [TaskState.waiting]:
-        time.sleep(0.1)
-        task.refresh()
-    return task
 
 
 class StableDiffusionWithLorasImageGenerator(ImageGenerator):
@@ -56,16 +49,20 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             ),
         }
 
-        return _await_task_running(
-            sd.generate(
-                text=item_prompt,
-                tags=tags,
-                streaming=True,
-                append_output_to_file=True,
-                output_file_id=context.chat_history.file.id,
-                make_output_public=True,
-                options=options,
-            )
+        num_existing_blocks = len(context.chat_history.file.blocks)
+        task = sd.generate(
+            text=item_prompt,
+            tags=tags,
+            streaming=True,
+            append_output_to_file=True,
+            output_file_id=context.chat_history.file.id,
+            make_output_public=True,
+            options=options,
+        )
+
+        # this has obvious flaw but hopefully that corner case is small enough
+        return utils.await_blocks_created_and_task_started(
+            num_existing_blocks, context.chat_history.file, task
         )
 
     def request_profile_image_generation(self, context: AgentContext) -> Task:
@@ -105,16 +102,20 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             ),
         }
 
-        return _await_task_running(
-            sd.generate(
-                text=profile_prompt,
-                tags=tags,
-                streaming=True,
-                append_output_to_file=True,
-                output_file_id=context.chat_history.file.id,
-                make_output_public=True,
-                options=options,
-            )
+        num_existing_blocks = len(context.chat_history.file.blocks)
+        task = sd.generate(
+            text=profile_prompt,
+            tags=tags,
+            streaming=True,
+            append_output_to_file=True,
+            output_file_id=context.chat_history.file.id,
+            make_output_public=True,
+            options=options,
+        )
+
+        # this has obvious flaw but hopefully that corner case is small enough
+        return utils.await_blocks_created_and_task_started(
+            num_existing_blocks, context.chat_history.file, task
         )
 
     def request_scene_image_generation(
@@ -146,14 +147,18 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             ),
         }
 
-        return _await_task_running(
-            sd.generate(
-                text=scene_prompt,
-                tags=tags,
-                streaming=True,
-                append_output_to_file=True,
-                output_file_id=context.chat_history.file.id,
-                make_output_public=True,
-                options=options,
-            )
+        num_existing_blocks = len(context.chat_history.file.blocks)
+        task = sd.generate(
+            text=scene_prompt,
+            tags=tags,
+            streaming=True,
+            append_output_to_file=True,
+            output_file_id=context.chat_history.file.id,
+            make_output_public=True,
+            options=options,
+        )
+
+        # this has obvious flaw but hopefully that corner case is small enough
+        return utils.await_blocks_created_and_task_started(
+            num_existing_blocks, context.chat_history.file, task
         )
