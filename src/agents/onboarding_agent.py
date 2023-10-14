@@ -80,6 +80,7 @@ class OnboardingAgent(InterruptiblePythonAgent):
             save_game_state(game_state, context)
 
         if not game_state.chat_history_for_onboarding_complete:
+            # TODO: We could save a lot of round trips by appending all these blocks at once.
             context.chat_history.append_system_message(
                 text=f"The character's name is {player.name}",
                 tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.NAME)],

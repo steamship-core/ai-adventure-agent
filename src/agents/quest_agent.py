@@ -64,6 +64,9 @@ class QuestAgent(InterruptiblePythonAgent):
         )
 
         if not quest.sent_intro:
+            quest.sent_intro = True
+            save_game_state(game_state, context)
+
             logging.info(
                 "[DEBUG] Sending Intro Part 2",
                 extra={
@@ -74,7 +77,6 @@ class QuestAgent(InterruptiblePythonAgent):
                 },
             )
 
-            # send_background_music(prompt="Guitar music", context=context)
             block = send_story_generation(
                 f"{game_state.player.name} is about to go on a mission. Describe the first few things they do in a few sentences",
                 quest_name=quest.name,
@@ -86,8 +88,8 @@ class QuestAgent(InterruptiblePythonAgent):
                 quest_name=quest.name,
                 context=context,
             )
-            quest.sent_intro = True
             updated_problem_block = await_streamed_block(problem_block)
+
             if image_gen := get_image_generator(context):
                 image_gen.request_scene_image_generation(
                     description=updated_problem_block.text, context=context
@@ -117,7 +119,12 @@ class QuestAgent(InterruptiblePythonAgent):
             save_game_state(game_state, context)
 
         if not quest.sent_outro:
-            context.chat_history.append_user_message(
+            quest.sent_outro = True
+            save_game_state(game_state, context)
+
+            # TODO: Dave I switched this to a system message so it wouldn't be played back to the user on top of the answer
+            # they gave -- does that mess with anything from your perspective?
+            context.chat_history.append_system_message(
                 text=f"{player.name} solves the problem by: {quest.user_problem_solution}",
                 tags=self.tags(QuestTag.USER_SOLUTION, quest),
             )
@@ -126,8 +133,6 @@ class QuestAgent(InterruptiblePythonAgent):
                 quest_name=quest.name,
                 context=context,
             )
-            quest.sent_outro = True
-            save_game_state(game_state, context)
             await_streamed_block(story_end_block)
 
         blocks = EndQuestTool().run([], context)

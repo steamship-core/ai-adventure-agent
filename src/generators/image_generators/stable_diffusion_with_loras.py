@@ -9,7 +9,7 @@ from generators import utils
 from generators.image_generator import ImageGenerator
 from schema.objects import Item
 from utils.context_utils import get_game_state
-from utils.tags import CharacterTag, ItemTag, SceneTag, TagKindExtensions
+from utils.tags import CharacterTag, ItemTag, QuestTag, SceneTag, TagKindExtensions
 
 
 class StableDiffusionWithLorasImageGenerator(ImageGenerator):
@@ -39,7 +39,13 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             ),
         ]
         if quest_id := game_state.current_quest:
-            tags.append(Tag(kind=TagKindExtensions.QUEST, name=quest_id))
+            tags.append(
+                Tag(
+                    kind=TagKindExtensions.QUEST,
+                    name=QuestTag.QUEST_ID,
+                    value={"id": quest_id},
+                )
+            )
 
         options = {
             "seed": game_state.preferences.seed,
@@ -92,7 +98,13 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             ),
         ]
         if quest_id := game_state.current_quest:
-            tags.append(Tag(kind=TagKindExtensions.QUEST, name=quest_id))
+            tags.append(
+                Tag(
+                    kind=TagKindExtensions.QUEST,
+                    name=QuestTag.QUEST_ID,
+                    value={"id": quest_id},
+                )
+            )
 
         options = {
             "seed": game_state.preferences.seed,
@@ -137,7 +149,13 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             Tag(kind=TagKindExtensions.SCENE, name=SceneTag.BACKGROUND),
         ]
         if quest_id := game_state.current_quest:
-            tags.append(Tag(kind=TagKindExtensions.QUEST, name=quest_id))
+            tags.append(
+                Tag(
+                    kind=TagKindExtensions.QUEST,
+                    name=QuestTag.QUEST_ID,
+                    value={"id": quest_id},
+                )
+            )
 
         options = {
             "seed": game_state.preferences.seed,
