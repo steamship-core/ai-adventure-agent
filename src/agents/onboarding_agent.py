@@ -47,8 +47,9 @@ class OnboardingAgent(InterruptiblePythonAgent):
 
         if not game_state.image_generation_requested():
             if image_gen := get_image_generator(context):
-                task = image_gen.request_profile_image_generation(context=context)
-                game_state.profile_image_task = task
+                game_state.profile_image_task = (
+                    image_gen.request_profile_image_generation(context=context)
+                )
                 save_game_state(game_state, context)
 
         if not player.inventory:

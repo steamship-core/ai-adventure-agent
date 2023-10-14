@@ -6,7 +6,7 @@ from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
-from generators.generator_context_utils import get_image_generator
+from generators.generator_context_utils import get_image_generator, get_music_generator
 from tools.end_quest_tool import EndQuestTool
 from utils.context_utils import (
     await_ask,
@@ -94,6 +94,12 @@ class QuestAgent(InterruptiblePythonAgent):
                 image_gen.request_scene_image_generation(
                     description=updated_problem_block.text, context=context
                 )
+            if music_gen := get_music_generator(context):
+                music_gen.request_scene_music_generation(
+                    description=updated_problem_block.text, context=context
+                )
+
+            save_game_state(game_state, context)
         else:
             logging.info(
                 "[DEBUG] First Quest Story Block Skipped",

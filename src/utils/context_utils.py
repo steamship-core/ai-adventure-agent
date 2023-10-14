@@ -17,7 +17,6 @@ layered on top to boot.
 
 That reduces the need of the game code to perform verbose plumbing operations.
 """
-import json
 import logging
 from typing import List, Optional, Union
 
@@ -196,6 +195,15 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
 def save_game_state(game_state, context: AgentContext):
     """Save GameState to the KeyValue store."""
 
+    logging.info(
+        f"Saving Game State from workspace {context.client.config.workspace_handle}.",
+        extra={
+            AgentLogging.IS_MESSAGE: True,
+            AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+            AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+        },
+    )
+
     # Save it to the KV Store
     key = "GameState"
     value = game_state.dict()
@@ -204,8 +212,6 @@ def save_game_state(game_state, context: AgentContext):
 
     # Also save it to the context
     context.metadata[_GAME_STATE_KEY] = game_state
-
-    print("Just saved game state to", json.dumps(value, indent="\t"))
 
 
 def get_current_quest(context: AgentContext) -> Optional["Quest"]:  # noqa: F821

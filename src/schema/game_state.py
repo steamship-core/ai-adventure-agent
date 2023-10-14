@@ -70,7 +70,9 @@ class GameState(BaseModel):
         description="The key of the last question asked to the user via context_utils.await_ask.",
     )
 
-    profile_image_task: Optional[Task] = Field(
+    profile_image_task: Optional[
+        Task
+    ] = Field(  # TODO(doug): should this be a Task ID to reduce game state size, etc.?
         default=None,
         description="Task for the generation of an initial profile image for the primary character.",
     )
