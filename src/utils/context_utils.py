@@ -27,6 +27,7 @@ from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
 from steamship.utils.kv_store import KeyValueStore
 
+# from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from schema.server_settings import ServerSettings
 from utils.tags import QuestTag, TagKindExtensions
@@ -345,7 +346,7 @@ class FinishActionException(Exception):  # noqa: N818
 
 
 def await_ask(
-    question: Union[str, List[Block]], context: AgentContext, key: Optional[str] = None
+    question: Union[str, List[Block]], context: AgentContext, key_suffix: str = ""
 ):
     """Asks the user a question. Can be used like `input` in Python.
 
@@ -388,7 +389,7 @@ def await_ask(
             block.tags.extend(base_tags)
         output = question
 
-    key = _key_for_question(output)
+    key = _key_for_question(output) + key_suffix
 
     logging.info(
         f"Seeking input with await_ask key: {key}.",
