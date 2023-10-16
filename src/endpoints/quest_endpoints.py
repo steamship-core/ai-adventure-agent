@@ -31,6 +31,7 @@ class QuestMixin(PackageMixin):
         game_state = get_game_state(context)
         quest_tool = StartQuestTool()
         quest = quest_tool.start_quest(game_state, context, purpose)
+
         return quest.dict()
 
     @post("/end_quest")
@@ -66,7 +67,7 @@ class QuestMixin(PackageMixin):
                 if matches_quest(block, quest_id):
                     blocks.append(block)
 
-        return [block.dict() for block in blocks]
+        return [block.dict(by_alias=True) for block in blocks]
 
     @post("/narrate_block")
     def narrate_block(self, block_id: str, **kwargs) -> dict:
