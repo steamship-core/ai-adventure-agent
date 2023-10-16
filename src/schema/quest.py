@@ -58,3 +58,7 @@ class Quest(BaseModel):
     energy_delta: Optional[int] = Field(
         -10, description="The change in energy that resulted from this quest."
     )
+
+    completed_timestamp: Optional[str] = Field(
+        None, description="The timestamp at which the quest was completed"
+    )

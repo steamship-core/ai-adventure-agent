@@ -17,6 +17,7 @@ from utils.context_utils import (
 from utils.generation_utils import await_streamed_block, send_story_generation
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 from utils.tags import QuestTag, TagKindExtensions
+from datetime import datetime, timezone
 
 
 class QuestAgent(InterruptiblePythonAgent):
@@ -134,6 +135,8 @@ class QuestAgent(InterruptiblePythonAgent):
                 context=context,
             )
             await_streamed_block(story_end_block)
+
+        quest.completed_timestamp = datetime.now(timezone.utc).isoformat()
 
         blocks = EndQuestTool().run([], context)
         return FinishAction(output=blocks)
