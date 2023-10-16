@@ -16,6 +16,8 @@ class TagKindExtensions(str, Enum):
     # This tag is of the kind "item" which contains information about an item.
     ITEM = "item"
 
+    MERCHANT = "merchant"
+
 
 class AgentStatusMessageTag(str, Enum):
     # The quest is complete
@@ -77,3 +79,7 @@ class QuestTag(str, Enum):
 class ItemTag(str, Enum):
     IMAGE = "image"
     NAME = "name"
+
+class MerchantTag(str, Enum):
+    INVENTORY = "inventory"
+    INVENTORY_GENERATION_PROMPT = "inventory_generation_prompt"

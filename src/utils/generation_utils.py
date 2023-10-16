@@ -11,7 +11,7 @@ functions whose mechanics can change under the hood as we discover better ways t
 doesn't need to know.
 """
 import time
-from typing import Optional
+from typing import Optional, List, Tuple
 
 from steamship import Block, File, Tag
 from steamship.agents.schema import AgentContext
@@ -30,7 +30,7 @@ from utils.tags import (
     CharacterTag,
     QuestTag,
     StoryContextTag,
-    TagKindExtensions,
+    TagKindExtensions, MerchantTag,
 )
 
 
@@ -241,13 +241,70 @@ def generate_quest_item(
         description = ""
     return name, description
 
+def generate_merchant_inventory(
+    quest_name: str, player: HumanCharacter, context: AgentContext
+) -> List[Tuple[str, str]]:
+    """Generates the inventory for a merchant"""
+
+    generator = get_story_text_generator(context)
+
+    tags = [
+        Tag(
+            kind=TagKind.CHAT,
+            name=ChatTag.ROLE,
+            value={TagValueKey.STRING_VALUE: RoleTag.ASSISTANT},
+        ),
+        Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
+        # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
+        Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
+        Tag(kind=TagKindExtensions.MERCHANT, name=MerchantTag.INVENTORY),
+    ]
+
+    prompt = f"Please list 5 objects that a merchant might sell {player.name} in a shop. They should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
+    context.chat_history.append_system_message(
+        text=prompt,
+        tags=[
+            Tag(kind=TagKindExtensions.MERCHANT, name=MerchantTag.INVENTORY_GENERATION_PROMPT),
+        ],
+    )
+    # Intentionally reuse the filtering for the quest CONTENT
+    block_indices = filter_block_indices_for_merchant_inventory(
+        context.chat_history.file
+    )
+
+    task = generator.generate(
+        tags=tags,
+        append_output_to_file=True,
+        input_file_id=context.chat_history.file.id,
+        output_file_id=context.chat_history.file.id,
+        streaming=False,  # we need this back in the package
+        input_file_block_index_list=block_indices,
+    )
+    task.wait()
+    blocks = task.output.blocks
+    block = blocks[0]
+    emit(output=block, context=context)
+    result = []
+    items = block.text.split("ITEM NAME:")
+    for item in items:
+        if len(item.strip()) > 0:
+            parts = item.split("ITEM DESCRIPTION:")
+            if len(parts) == 2:
+                name = parts[0].replace("ITEM NAME:", "").strip()
+                description = parts[1].strip()
+            else:
+                name = item.strip()
+                description = ""
+            result.append((name, description))
+    return result
+
 
 def filter_block_indices_for_quest_content(  # noqa: C901
     quest_name: str, chat_history_file: File
 ) -> [int]:
     """When filtering content for quest content generation, we want:
     - background information
-    - TODO: Only most recent inventory
+    - Only most recent inventory
     - Summaries of previous quests
     - Content of the current quest
     """
@@ -291,6 +348,53 @@ def filter_block_indices_for_quest_content(  # noqa: C901
         if i in result:
             print(
                 f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}"
+            )
+    print("******************")
+    return result
+
+def filter_block_indices_for_merchant_inventory(  # noqa: C901
+    chat_history_file: File
+) -> [int]:
+    """When filtering content for merchant inventory generation, we want:
+    - background information
+    - Summaries of previous quests
+    """
+    allowed_kind_names = [
+        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
+        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
+        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
+        (TagKindExtensions.MERCHANT, MerchantTag.INVENTORY_GENERATION_PROMPT),
+    ]
+
+    result = []
+
+    for block in chat_history_file.blocks:
+        will_include = False
+        matching_tag = None
+        for tag in block.tags:
+            for (kind, name) in allowed_kind_names:
+                if tag.kind == kind and tag.name == name:
+                    will_include = True
+                    matching_tag = tag
+        if will_include:
+            result.append(block.index_in_file)
+            print(
+                f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}"
+            )
+
+    inventory_block_index = find_last_inventory_block(chat_history_file)
+    if inventory_block_index is not None:
+        result.append(inventory_block_index)
+        result.sort()
+    print("Merchant inventory input ************")
+    for i, block in enumerate(chat_history_file.blocks):
+        if i in result:
+            print(
+                f"{block.index_in_file} {block.text}"
             )
     print("******************")
     return result
