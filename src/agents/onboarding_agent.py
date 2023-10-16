@@ -3,6 +3,7 @@ from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
 from generators.generator_context_utils import get_image_generator
+from generators.utils import find_new_block
 from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from utils.context_utils import (
@@ -47,9 +48,17 @@ class OnboardingAgent(InterruptiblePythonAgent):
 
         if not game_state.image_generation_requested():
             if image_gen := get_image_generator(context):
+                num_known_blocks = len(context.chat_history.file.blocks)
                 game_state.profile_image_task = (
                     image_gen.request_profile_image_generation(context=context)
                 )
+                context.chat_history.file.refresh()
+                character_image_block = find_new_block(
+                    file=context.chat_history.file,
+                    num_known_blocks=num_known_blocks,
+                    new_block_tag_kind=TagKindExtensions.CHARACTER,
+                    new_block_tag_name=CharacterTag.IMAGE )
+                game_state.profile_image_url = character_image_block.raw_data_url
                 save_game_state(game_state, context)
 
         if not player.inventory:

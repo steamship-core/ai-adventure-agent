@@ -77,6 +77,11 @@ class GameState(BaseModel):
         description="Task for the generation of an initial profile image for the primary character.",
     )
 
+    profile_image_url: Optional[str] = Field(
+        default=None,
+        description="The URL for the character image"
+    )
+
     chat_history_for_onboarding_complete: Optional[bool] = Field(
         default=None,
         description="Whether the onboarding profile has been written to the chat history",

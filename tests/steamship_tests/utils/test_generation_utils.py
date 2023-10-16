@@ -70,7 +70,6 @@ def create_test_game_state(context: AgentContext) -> GameState:
     game_state = GameState()
     context.metadata[_GAME_STATE_KEY] = game_state
 
-    # FOR QUICK DEBUGGING
     game_state.player = HumanCharacter()
     game_state.player.name = "Dave"
     game_state.player.motivation = "Doing cool things"

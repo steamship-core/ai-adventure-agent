@@ -68,7 +68,9 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
         # this has obvious flaw but hopefully that corner case is small enough
         return utils.await_blocks_created_and_task_started(
-            num_existing_blocks, context.chat_history.file, task
+            num_existing_blocks, context.chat_history.file, task,
+            new_block_tag_kind=TagKindExtensions.ITEM,
+            new_block_tag_name=CharacterTag.IMAGE
         )
 
     def request_profile_image_generation(self, context: AgentContext) -> Task:
@@ -126,9 +128,12 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         )
 
         # this has obvious flaw but hopefully that corner case is small enough
-        return utils.await_blocks_created_and_task_started(
-            num_existing_blocks, context.chat_history.file, task
+        updated_task = utils.await_blocks_created_and_task_started(
+            num_existing_blocks, context.chat_history.file, task,
+            new_block_tag_kind=TagKindExtensions.CHARACTER,
+            new_block_tag_name=CharacterTag.IMAGE
         )
+        return updated_task
 
     def request_scene_image_generation(
         self, description: str, context: AgentContext
@@ -178,5 +183,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
         # this has obvious flaw but hopefully that corner case is small enough
         return utils.await_blocks_created_and_task_started(
-            num_existing_blocks, context.chat_history.file, task
+            num_existing_blocks, context.chat_history.file, task,
+            new_block_tag_kind=TagKindExtensions.SCENE,
+            new_block_tag_name=CharacterTag.BACKGROUND
         )
