@@ -7,6 +7,8 @@ from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
 from generators.generator_context_utils import get_image_generator, get_music_generator
+from schema.game_state import GameState
+from schema.quest import Quest
 from tools.end_quest_tool import EndQuestTool
 from utils.context_utils import (
     await_ask,
@@ -84,21 +86,8 @@ class QuestAgent(InterruptiblePythonAgent):
                 context=context,
             )
             await_streamed_block(block)
-            problem_block = send_story_generation(
-                f"Oh no! {game_state.player.name} encounters a problem. Describe the problem.",
-                quest_name=quest.name,
-                context=context,
-            )
-            updated_problem_block = await_streamed_block(problem_block)
 
-            if image_gen := get_image_generator(context):
-                image_gen.request_scene_image_generation(
-                    description=updated_problem_block.text, context=context
-                )
-            if music_gen := get_music_generator(context):
-                music_gen.request_scene_music_generation(
-                    description=updated_problem_block.text, context=context
-                )
+            self.create_problem(game_state, context, quest)
 
             save_game_state(game_state, context)
         else:
@@ -112,23 +101,28 @@ class QuestAgent(InterruptiblePythonAgent):
                 },
             )
 
-        if not quest.user_problem_solution:
-            quest.user_problem_solution = await_ask(
+        if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
+            quest.user_problem_solutions.append(await_ask(
                 f"What does {player.name} do next?",
                 context,
-            )
+                key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}"
+            ))
             save_game_state(game_state, context)
+            self.generate_solution(game_state, context, quest)
+            if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
+                self.create_problem(game_state, context, quest)
+                quest.user_problem_solutions.append(await_ask(
+                    f"What does {player.name} do next?",
+                    context,
+                    key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}"
+                ))
+
 
         if not quest.sent_outro:
             quest.sent_outro = True
             save_game_state(game_state, context)
 
-            # TODO: Dave I switched this to a system message so it wouldn't be played back to the user on top of the answer
-            # they gave -- does that mess with anything from your perspective?
-            context.chat_history.append_system_message(
-                text=f"{player.name} solves the problem by: {quest.user_problem_solution}",
-                tags=self.tags(QuestTag.USER_SOLUTION, quest),
-            )
+            self.generate_solution(game_state, context, quest)
             story_end_block = send_story_generation(
                 f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
                 quest_name=quest.name,
@@ -150,3 +144,31 @@ class QuestAgent(InterruptiblePythonAgent):
                 value={"id": quest.name},
             ),
         ]
+
+    def create_problem(self, game_state: GameState, context: AgentContext, quest: Quest):
+        problem_block = send_story_generation(
+            f"Oh no! {game_state.player.name} encounters a new problem. Describe the problem.",
+            quest_name=quest.name,
+            context=context,
+        )
+        updated_problem_block = await_streamed_block(problem_block)
+
+        if image_gen := get_image_generator(context):
+            image_gen.request_scene_image_generation(
+                description=updated_problem_block.text, context=context
+            )
+        if music_gen := get_music_generator(context):
+            music_gen.request_scene_music_generation(
+                description=updated_problem_block.text, context=context
+            )
+
+    def generate_solution(self,  game_state: GameState, context: AgentContext, quest: Quest):
+        context.chat_history.append_system_message(
+            text=f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}",
+            tags=self.tags(QuestTag.USER_SOLUTION, quest),
+        )
+        problem_solution_block = send_story_generation(
+            f"What happens next? Does it work?",
+            quest_name=quest.name,
+            context=context,
+        )

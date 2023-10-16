@@ -32,8 +32,13 @@ class Quest(BaseModel):
     sent_intro: Optional[bool] = Field(
         False, description="Whether the intro of the quest was sent to the user."
     )
-    user_problem_solution: Optional[str] = Field(
-        None, description="The user's solution to the problem."
+
+    num_problems_to_encounter: int = Field(
+        default=3, description="How many problems will the user encounter during the quest?"
+    )
+
+    user_problem_solutions: Optional[List[str]] = Field(
+        default_factory=list, description="The user's solutions to the problems."
     )
     sent_outro: Optional[bool] = Field(
         False, description="Whether the outro of the quest was sent to the user."
