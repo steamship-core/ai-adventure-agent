@@ -18,6 +18,9 @@ class TagKindExtensions(str, Enum):
 
     MERCHANT = "merchant"
 
+    # This tag is of the kind "camp" which contains information about camp.
+    CAMP = "camp"
+
 
 class AgentStatusMessageTag(str, Enum):
     # The quest is complete
@@ -61,8 +64,8 @@ class CharacterTag(str, Enum):
 class StoryContextTag(str, Enum):
 
     GENRE = "genre"
-
     TONE = "tone"
+    CAMP = "camp"
 
 
 class QuestTag(str, Enum):
@@ -80,6 +83,12 @@ class ItemTag(str, Enum):
     IMAGE = "image"
     NAME = "name"
 
+
 class MerchantTag(str, Enum):
     INVENTORY = "inventory"
     INVENTORY_GENERATION_PROMPT = "inventory_generation_prompt"
+
+
+class CampTag(str, Enum):
+    AUDIO = "audio"
+    IMAGE = "image"
