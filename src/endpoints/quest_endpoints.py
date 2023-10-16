@@ -11,7 +11,7 @@ from tools.start_quest_tool import StartQuestTool
 
 # An instnace is a game instance.
 from utils.context_utils import get_audio_narration_generator, get_game_state
-from utils.tags import QuestTag, TagKindExtensions
+from utils.tags import QuestIdTag
 
 
 class QuestMixin(PackageMixin):
@@ -50,11 +50,7 @@ class QuestMixin(PackageMixin):
 
         def matches_quest(_block: Block, _quest_id: str) -> bool:
             for tag in _block.tags or []:
-                if (
-                    tag.kind == TagKindExtensions.QUEST
-                    and tag.name == QuestTag.QUEST_ID
-                    and (tag.value or {}).get("id").lower() == _quest_id.lower()
-                ):
+                if QuestIdTag.matches(tag, _quest_id):
                     return True
             return False
 

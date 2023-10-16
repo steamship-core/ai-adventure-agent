@@ -10,7 +10,7 @@ from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagValueKey
 from utils.context_utils import emit
 from utils.generation_utils import send_story_generation
 from utils.interruptible_python_agent import InterruptiblePythonAgent
-from utils.tags import QuestTag, TagKindExtensions
+from utils.tags import QuestIdTag, QuestTag, TagKindExtensions
 
 
 class DiagnosticMode(str, Enum):
@@ -38,11 +38,7 @@ class DiagnosticAgent(InterruptiblePythonAgent):
             # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
             Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
             Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_CONTENT),
-            Tag(
-                kind=TagKindExtensions.QUEST,
-                name=QuestTag.QUEST_ID,
-                value={"id": context_id},
-            ),
+            QuestIdTag(context_id),
         ]
 
     def run(self, context: AgentContext) -> Action:

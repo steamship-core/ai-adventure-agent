@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from typing import List
 
 from steamship import Tag
@@ -18,8 +19,7 @@ from utils.context_utils import (
 )
 from utils.generation_utils import await_streamed_block, send_story_generation
 from utils.interruptible_python_agent import InterruptiblePythonAgent
-from utils.tags import QuestTag, TagKindExtensions
-from datetime import datetime, timezone
+from utils.tags import QuestIdTag, QuestTag, TagKindExtensions
 
 
 class QuestAgent(InterruptiblePythonAgent):
@@ -102,21 +102,24 @@ class QuestAgent(InterruptiblePythonAgent):
             )
 
         if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
-            quest.user_problem_solutions.append(await_ask(
-                f"What does {player.name} do next?",
-                context,
-                key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}"
-            ))
+            quest.user_problem_solutions.append(
+                await_ask(
+                    f"What does {player.name} do next?",
+                    context,
+                    key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
+                )
+            )
             save_game_state(game_state, context)
             self.generate_solution(game_state, context, quest)
             if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
                 self.create_problem(game_state, context, quest)
-                quest.user_problem_solutions.append(await_ask(
-                    f"What does {player.name} do next?",
-                    context,
-                    key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}"
-                ))
-
+                quest.user_problem_solutions.append(
+                    await_ask(
+                        f"What does {player.name} do next?",
+                        context,
+                        key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
+                    )
+                )
 
         if not quest.sent_outro:
             quest.sent_outro = True
@@ -136,16 +139,11 @@ class QuestAgent(InterruptiblePythonAgent):
         return FinishAction(output=blocks)
 
     def tags(self, part: QuestTag, quest: "Quest") -> List[Tag]:  # noqa: F821
-        return [
-            Tag(kind=TagKindExtensions.QUEST, name=part),
-            Tag(
-                kind=TagKindExtensions.QUEST,
-                name=QuestTag.QUEST_ID,
-                value={"id": quest.name},
-            ),
-        ]
+        return [Tag(kind=TagKindExtensions.QUEST, name=part), QuestIdTag(quest.name)]
 
-    def create_problem(self, game_state: GameState, context: AgentContext, quest: Quest):
+    def create_problem(
+        self, game_state: GameState, context: AgentContext, quest: Quest
+    ):
         problem_block = send_story_generation(
             f"Oh no! {game_state.player.name} encounters a new problem. Describe the problem.",
             quest_name=quest.name,
@@ -162,13 +160,15 @@ class QuestAgent(InterruptiblePythonAgent):
                 description=updated_problem_block.text, context=context
             )
 
-    def generate_solution(self,  game_state: GameState, context: AgentContext, quest: Quest):
+    def generate_solution(
+        self, game_state: GameState, context: AgentContext, quest: Quest
+    ):
         context.chat_history.append_system_message(
             text=f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}",
             tags=self.tags(QuestTag.USER_SOLUTION, quest),
         )
-        problem_solution_block = send_story_generation(
-            f"What happens next? Does it work?",
+        send_story_generation(
+            "What happens next? Does it work?",
             quest_name=quest.name,
             context=context,
         )

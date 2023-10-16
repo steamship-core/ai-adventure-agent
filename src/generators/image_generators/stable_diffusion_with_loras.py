@@ -13,7 +13,7 @@ from utils.tags import (
     CampTag,
     CharacterTag,
     ItemTag,
-    QuestTag,
+    QuestIdTag,
     SceneTag,
     StoryContextTag,
     TagKindExtensions,
@@ -47,13 +47,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             ),
         ]
         if quest_id := game_state.current_quest:
-            tags.append(
-                Tag(
-                    kind=TagKindExtensions.QUEST,
-                    name=QuestTag.QUEST_ID,
-                    value={"id": quest_id},
-                )
-            )
+            tags.append(QuestIdTag(quest_id))
 
         options = {
             "seed": game_state.preferences.seed,
@@ -110,13 +104,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             ),
         ]
         if quest_id := game_state.current_quest:
-            tags.append(
-                Tag(
-                    kind=TagKindExtensions.QUEST,
-                    name=QuestTag.QUEST_ID,
-                    value={"id": quest_id},
-                )
-            )
+            tags.append(QuestIdTag(quest_id))
 
         options = {
             "seed": game_state.preferences.seed,
@@ -166,13 +154,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             Tag(kind=TagKindExtensions.SCENE, name=SceneTag.BACKGROUND),
         ]
         if quest_id := game_state.current_quest:
-            tags.append(
-                Tag(
-                    kind=TagKindExtensions.QUEST,
-                    name=QuestTag.QUEST_ID,
-                    value={"id": quest_id},
-                )
-            )
+            tags.append(QuestIdTag(quest_id))
 
         options = {
             "seed": game_state.preferences.seed,

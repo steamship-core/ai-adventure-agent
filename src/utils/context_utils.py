@@ -20,7 +20,7 @@ That reduces the need of the game code to perform verbose plumbing operations.
 import logging
 from typing import List, Optional, Union
 
-from steamship import Block, PluginInstance, Tag
+from steamship import Block, PluginInstance
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
@@ -30,7 +30,7 @@ from steamship.utils.kv_store import KeyValueStore
 # from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from schema.server_settings import ServerSettings
-from utils.tags import QuestTag, TagKindExtensions
+from utils.tags import QuestIdTag
 
 _STORY_GENERATOR_KEY = "story-generator"
 _FUNCTION_CAPABLE_LLM = (
@@ -371,13 +371,7 @@ def await_ask(
 
     if game_state.current_quest:
         # Make sure we're tagging this for request rehydration
-        base_tags.append(
-            Tag(
-                kind=TagKindExtensions.QUEST,
-                name=QuestTag.QUEST_ID,
-                value={"id": game_state.current_quest},
-            ),
-        )
+        base_tags.append(QuestIdTag(game_state.current_quest))
 
     # Make sure question is List[Block]
     if isinstance(question, str):
