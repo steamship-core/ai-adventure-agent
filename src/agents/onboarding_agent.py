@@ -2,7 +2,7 @@ from steamship import Block, MimeTypes, Tag
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
-from generators.generator_context_utils import get_image_generator
+from generators.generator_context_utils import get_image_generator, get_music_generator
 from generators.utils import find_new_block
 from schema.characters import HumanCharacter
 from schema.game_state import GameState
@@ -13,7 +13,7 @@ from utils.context_utils import (
     save_game_state,
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent
-from utils.tags import CharacterTag, StoryContextTag, TagKindExtensions
+from utils.tags import CampTag, CharacterTag, StoryContextTag, TagKindExtensions
 
 
 class OnboardingAgent(InterruptiblePythonAgent):
@@ -57,7 +57,8 @@ class OnboardingAgent(InterruptiblePythonAgent):
                     file=context.chat_history.file,
                     num_known_blocks=num_known_blocks,
                     new_block_tag_kind=TagKindExtensions.CHARACTER,
-                    new_block_tag_name=CharacterTag.IMAGE )
+                    new_block_tag_name=CharacterTag.IMAGE,
+                )
                 game_state.profile_image_url = character_image_block.raw_data_url
                 save_game_state(game_state, context)
 
@@ -87,6 +88,38 @@ class OnboardingAgent(InterruptiblePythonAgent):
                 context,
             )
             save_game_state(game_state, context)
+
+        if not game_state.camp_image_requested() and (
+            game_state.tone and game_state.genre
+        ):
+            if image_gen := get_image_generator(context):
+                num_known_blocks = len(context.chat_history.file.blocks)
+                image_gen.request_camp_image_generation(context=context)
+                context.chat_history.file.refresh()
+                camp_image_block = find_new_block(
+                    file=context.chat_history.file,
+                    num_known_blocks=num_known_blocks,
+                    new_block_tag_kind=TagKindExtensions.CAMP,
+                    new_block_tag_name=CampTag.IMAGE,
+                )
+                game_state.camp.image_block_url = camp_image_block.raw_data_url
+                save_game_state(game_state, context)
+
+        if not game_state.camp_audio_requested() and (
+            game_state.tone and game_state.genre
+        ):
+            if music_gen := get_music_generator(context):
+                num_known_blocks = len(context.chat_history.file.blocks)
+                music_gen.request_camp_music_generation(context=context)
+                context.chat_history.file.refresh()
+                camp_audio_block = find_new_block(
+                    file=context.chat_history.file,
+                    num_known_blocks=num_known_blocks,
+                    new_block_tag_kind=TagKindExtensions.CAMP,
+                    new_block_tag_name=CampTag.AUDIO,
+                )
+                game_state.camp.audio_block_url = camp_audio_block.raw_data_url
+                save_game_state(game_state, context)
 
         if not game_state.chat_history_for_onboarding_complete:
             # TODO: We could save a lot of round trips by appending all these blocks at once.

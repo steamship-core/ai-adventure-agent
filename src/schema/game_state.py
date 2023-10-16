@@ -131,6 +131,12 @@ class GameState(BaseModel):
                 TaskState.waiting,
             ]
 
+    def camp_image_requested(self) -> bool:
+        return True if self.camp.image_block_url else False
+
+    def camp_audio_requested(self) -> bool:
+        return True if self.camp.audio_block_url else False
+
     def dict(self, **kwargs) -> dict:
         """Return the dict representation, making sure the computed properties are there."""
         ret = super().dict(**kwargs)

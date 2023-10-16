@@ -6,6 +6,7 @@ from generators.image_generator import ImageGenerator
 from generators.image_generators.stable_diffusion_with_loras import (
     StableDiffusionWithLorasImageGenerator,
 )
+from generators.music_generator import MusicGenerator
 from generators.music_generators.meta_music_generator import MetaMusicGenerator
 
 _IMAGE_GENERATOR_KEY = "image-generator"
@@ -22,7 +23,7 @@ def get_image_generator(context: AgentContext) -> Optional[ImageGenerator]:
     return generator
 
 
-def get_music_generator(context: AgentContext) -> Optional[ImageGenerator]:
+def get_music_generator(context: AgentContext) -> Optional[MusicGenerator]:
     generator = context.metadata.get(_MUSIC_GENERATOR_KEY)
     if not generator:
         # Lazily create

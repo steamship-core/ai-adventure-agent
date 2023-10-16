@@ -29,5 +29,11 @@ class Camp(BaseModel):
     chat_file_id: Optional[str] = Field(
         None, description="The chat file ID for the camp."
     )
-    # TODO: Generate an image of the camp?
-    # TODO: Generate background audio for the camp?
+    image_block_url: Optional[str] = Field(
+        None,
+        description="Public URL of a block containing a generated (or generating) image of camp",
+    )
+    audio_block_url: Optional[str] = Field(
+        None,
+        description="Public URL of a block containing a generated (or generating) background music of camp",
+    )
