@@ -49,7 +49,7 @@ def test_send_story_generation(
 def test_merchant_inventory():
     with Steamship.temporary_workspace() as client:
         context, game_state = prepare_state(client)
-        inventory = generate_merchant_inventory(quest_name="test-quest", player=game_state.player, context=context)
+        inventory = generate_merchant_inventory(player=game_state.player, context=context)
 
         assert len(inventory) == 5
         for item in inventory:

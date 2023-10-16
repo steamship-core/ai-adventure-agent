@@ -242,7 +242,7 @@ def generate_quest_item(
     return name, description
 
 def generate_merchant_inventory(
-    quest_name: str, player: HumanCharacter, context: AgentContext
+    player: HumanCharacter, context: AgentContext
 ) -> List[Tuple[str, str]]:
     """Generates the inventory for a merchant"""
 

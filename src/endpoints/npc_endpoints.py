@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 
 from steamship import Steamship
@@ -5,13 +6,14 @@ from steamship.agents.service.agent_service import AgentService
 from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
 
-from schema.objects import TradeResult
+from schema.objects import TradeResult, Item
 from tools.end_conversation_tool import EndConversationTool
 from tools.start_conversation_tool import StartConversationTool
 
 # An instnace is a game instance.
 from tools.trade_tool import TradeTool
 from utils.context_utils import get_game_state
+from utils.generation_utils import generate_merchant_inventory
 
 
 class NpcMixin(PackageMixin):
@@ -52,13 +54,7 @@ class NpcMixin(PackageMixin):
         context = self.agent_service.build_default_context()
         game_state = get_game_state(context)
 
-        npc = None
-
-        if game_state.camp and game_state.camp.npcs:
-            for _npc in game_state.camp.npcs:
-                if _npc.name == counter_party:
-                    npc = _npc
-                    break
+        npc = game_state.find_npc(counter_party)
 
         if not npc:
             return TradeResult(
@@ -77,3 +73,26 @@ class NpcMixin(PackageMixin):
             player_seeks_to_buy=buy,
         )
         return result.dict()
+
+    @post("/refresh_inventory")
+    def trade(
+            self, npc_name: str
+    ) -> List[Item]:
+        """Starts a conversation with the NPC by the provided name."""
+        context = self.agent_service.build_default_context()
+        game_state = get_game_state(context)
+
+        generated_items = generate_merchant_inventory(game_state.player, context=context)
+        # refresh game state directly before altering
+        game_state = get_game_state(context)
+        npc = game_state.find_npc(npc_name)
+        npc.inventory = []
+        for item in generated_items:
+            npc.inventory.append(Item(
+                name=item[0],
+                description=item[1],
+                id=str(uuid.uuid4())
+            ))
+        return npc.inventory
+
+

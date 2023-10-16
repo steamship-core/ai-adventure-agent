@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from steamship import Task, TaskState
 
 from schema.camp import Camp
-from schema.characters import HumanCharacter
+from schema.characters import HumanCharacter, NpcCharacter
 from schema.preferences import Preferences
 from schema.quest import Quest
 
@@ -143,3 +143,10 @@ class GameState(BaseModel):
         if self.current_quest:
             return ActiveMode.QUEST
         return ActiveMode.CAMP
+
+    def find_npc(self, npc_name: str) -> Optional[NpcCharacter]:
+        if self.camp and self.camp.npcs:
+            for npc in self.camp.npcs:
+                if npc.name == npc_name:
+                    return npc
+        return None
