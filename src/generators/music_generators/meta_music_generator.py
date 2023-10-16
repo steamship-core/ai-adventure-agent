@@ -36,5 +36,11 @@ class MetaMusicGenerator(MusicGenerator):
             tags=tags,
         )
         # this has obvious flaw but hopefully that corner case is small enough
-        return utils.await_blocks_created_and_task_started(num_existing_blocks, context.chat_history.file, task)
+        return utils.await_blocks_created_and_task_started(
+            num_existing_blocks,
+            context.chat_history.file,
+            task,
+            new_block_tag_kind=TagKindExtensions.SCENE,
+            new_block_tag_name=SceneTag.AUDIO
+               )
 
