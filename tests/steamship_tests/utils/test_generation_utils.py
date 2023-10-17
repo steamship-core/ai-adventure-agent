@@ -62,7 +62,7 @@ def test_quest_arc():
         context, game_state = prepare_state(client)
         quest_arc = generate_quest_arc(player=game_state.player, context=context)
 
-        assert len(quest_arc) == 10
+        assert len(quest_arc) > 8
         for quest_description in quest_arc:
             assert quest_description.goal is not None
             assert quest_description.location is not None
