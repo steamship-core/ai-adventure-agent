@@ -208,7 +208,7 @@ class AdventureGameService(AgentService):
         game_state = get_game_state(context)
         active_mode = game_state.active_mode
 
-        logging.info(
+        logging.debug(
             f"Game State: {json.dumps(game_state.dict())}.",
             extra={
                 AgentLogging.IS_MESSAGE: True,

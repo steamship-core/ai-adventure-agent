@@ -14,9 +14,9 @@ class ServerSettings(BaseModel):
     # default_image_generator: str = Field("StableDiffusionWithLorasImageGenerator", description="")  # TODO(doug): fix
 
     # Language Generation Settings - Function calling
-    default_function_capable_llm_model: str = Field("gpt-4", description="")
+    default_function_capable_llm_model: str = Field("gpt-3.5-turbo", description="")
     default_function_capable_llm_temperature: float = Field(0.4, description="")
-    default_function_capable_llm_max_tokens: int = Field(256, description="")
+    default_function_capable_llm_max_tokens: int = Field(512, description="")
 
     # Language Generation Settings - Story telling
     default_story_model: str = Field("gpt-4", description="")

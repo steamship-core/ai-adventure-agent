@@ -16,7 +16,8 @@ class Preferences(BaseModel):
     )
 
     story_model: str = Field(
-        "gpt-4", description="Model used for story generation (not function calling)"
+        "gpt-3.5-turbo",
+        description="Model used for story generation (not function calling)",
     )
     narration_model: str = Field(
         "elevenlabs", description="Model used for audio narration"
