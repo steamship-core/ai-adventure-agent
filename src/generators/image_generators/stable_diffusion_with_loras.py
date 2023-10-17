@@ -51,7 +51,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
         options = {
             "seed": game_state.preferences.seed,
-            "image_size": "square",
+            "image_size": "square_hd",
             "loras": json.dumps(
                 [{"path": "https://civitai.com/api/download/models/135931"}]
             ),
@@ -158,7 +158,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
         options = {
             "seed": game_state.preferences.seed,
-            "image_size": "square_hd",
+            "image_size": "landscape_16_9",
             "loras": json.dumps(
                 [{"path": "https://civitai.com/api/download/models/135931"}]
             ),
@@ -200,7 +200,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
         options = {
             "seed": game_state.preferences.seed,
-            "image_size": "square_hd",
+            "image_size": "landscape_16_9",
             "loras": json.dumps(
                 [{"path": "https://civitai.com/api/download/models/135931"}]
             ),
