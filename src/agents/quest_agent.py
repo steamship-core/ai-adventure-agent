@@ -85,7 +85,7 @@ class QuestAgent(InterruptiblePythonAgent):
                 quest_name=quest.name,
                 context=context,
             )
-            await_streamed_block(block)
+            await_streamed_block(block, context)
 
             self.create_problem(game_state, context, quest)
 
@@ -130,7 +130,7 @@ class QuestAgent(InterruptiblePythonAgent):
                 quest_name=quest.name,
                 context=context,
             )
-            await_streamed_block(story_end_block)
+            await_streamed_block(story_end_block, context)
 
         quest.completed_timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -148,7 +148,7 @@ class QuestAgent(InterruptiblePythonAgent):
             quest_name=quest.name,
             context=context,
         )
-        updated_problem_block = await_streamed_block(problem_block)
+        updated_problem_block = await_streamed_block(problem_block, context)
 
         if image_gen := get_image_generator(context):
             image_gen.request_scene_image_generation(

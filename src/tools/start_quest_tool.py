@@ -105,7 +105,7 @@ class StartQuestTool(Tool):
             action=FinishAction(
                 input=[
                     Block(
-                        text=f"{player.name} gathers his items and prepares to embark on a quest..",
+                        text=f"", # Empty string here to not interfere with prompts in quest_agent
                         mime_type=MimeTypes.MKD,
                     )
                 ],

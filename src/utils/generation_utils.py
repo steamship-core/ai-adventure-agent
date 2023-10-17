@@ -217,12 +217,14 @@ def do_generation(
     task.wait()
     blocks = task.output.blocks
     block = blocks[0]
+    block = Block.get(block.client, _id=block.id)
     emit(output=block, context=context)
     return block
 
 
-def await_streamed_block(block: Block) -> Block:
+def await_streamed_block(block: Block, context: AgentContext) -> Block:
     while block.stream_state not in [StreamState.COMPLETE, StreamState.ABORTED]:
         time.sleep(0.4)
         block = Block.get(block.client, _id=block.id)
+    context.chat_history.file.refresh()
     return block
