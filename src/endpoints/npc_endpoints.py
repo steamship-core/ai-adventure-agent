@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from typing import List
 
 from steamship import Steamship
@@ -12,7 +13,7 @@ from tools.start_conversation_tool import StartConversationTool
 
 # An instnace is a game instance.
 from tools.trade_tool import TradeTool
-from utils.context_utils import get_game_state
+from utils.context_utils import get_game_state, save_game_state
 from utils.generation_utils import generate_merchant_inventory
 
 
@@ -87,12 +88,14 @@ class NpcMixin(PackageMixin):
         game_state = get_game_state(context)
         npc = game_state.find_npc(npc_name)
         npc.inventory = []
+        npc.inventory_last_updated = datetime.now(timezone.utc).isoformat()
         for item in generated_items:
             npc.inventory.append(Item(
                 name=item[0],
                 description=item[1],
                 id=str(uuid.uuid4())
             ))
+        save_game_state(game_state, context)
         return npc.inventory
 
 

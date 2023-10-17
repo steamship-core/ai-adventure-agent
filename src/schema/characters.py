@@ -18,6 +18,9 @@ class Character(BaseModel):
     inventory: Optional[List[Item]] = Field(
         [], description="The inventory of the character."
     )
+    inventory_last_updated: Optional[str] = Field(
+        None, description="The timestamp of the last update of the inventory"
+    )
     motivation: Optional[str] = Field(
         None, description="The motivation of the character."
     )

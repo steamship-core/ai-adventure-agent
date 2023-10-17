@@ -17,7 +17,7 @@ from utils.context_utils import (
     get_game_state,
     save_game_state,
 )
-from utils.generation_utils import await_streamed_block, send_story_generation
+from utils.generation_utils import await_streamed_block, send_story_generation, generate_quest_arc
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 from utils.tags import QuestIdTag, QuestTag, TagKindExtensions
 
@@ -70,6 +70,9 @@ class QuestAgent(InterruptiblePythonAgent):
             quest.sent_intro = True
             save_game_state(game_state, context)
 
+            if not game_state.quest_arc:
+                game_state.quest_arc = generate_quest_arc(game_state.player, context)
+
             logging.debug(
                 "Sending Intro Part 2",
                 extra={
@@ -80,8 +83,14 @@ class QuestAgent(InterruptiblePythonAgent):
                 },
             )
 
+            if len(game_state.quest_arc) >= len(game_state.quests):
+                quest_description = game_state.quest_arc[len(game_state.quests)-1]
+                prompt = f"{game_state.player.name} is about to go on a mission to {quest_description.goal} at {quest_description.location}. Describe the first few things they do in a few sentences"
+            else:
+                # here as a fallback
+                prompt = f"{game_state.player.name} is about to go on a mission. Describe the first few things they do in a few sentences"
             block = send_story_generation(
-                f"{game_state.player.name} is about to go on a mission. Describe the first few things they do in a few sentences",
+                prompt=prompt,
                 quest_name=quest.name,
                 context=context,
             )
