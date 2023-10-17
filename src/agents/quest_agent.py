@@ -56,8 +56,8 @@ class QuestAgent(InterruptiblePythonAgent):
         player = game_state.player
         quest = get_current_quest(context)
 
-        logging.info(
-            "[DEBUG] Running Quest Agent",
+        logging.debug(
+            "Running Quest Agent",
             extra={
                 AgentLogging.IS_MESSAGE: True,
                 AgentLogging.MESSAGE_TYPE: AgentLogging.AGENT,
@@ -70,8 +70,8 @@ class QuestAgent(InterruptiblePythonAgent):
             quest.sent_intro = True
             save_game_state(game_state, context)
 
-            logging.info(
-                "[DEBUG] Sending Intro Part 2",
+            logging.debug(
+                "Sending Intro Part 2",
                 extra={
                     AgentLogging.IS_MESSAGE: True,
                     AgentLogging.MESSAGE_TYPE: AgentLogging.AGENT,
@@ -91,8 +91,8 @@ class QuestAgent(InterruptiblePythonAgent):
 
             save_game_state(game_state, context)
         else:
-            logging.info(
-                "[DEBUG] First Quest Story Block Skipped",
+            logging.debug(
+                "First Quest Story Block Skipped",
                 extra={
                     AgentLogging.IS_MESSAGE: True,
                     AgentLogging.MESSAGE_TYPE: AgentLogging.AGENT,

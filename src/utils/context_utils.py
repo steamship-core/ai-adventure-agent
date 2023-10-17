@@ -152,7 +152,7 @@ def get_server_settings(
 
 
 def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F821
-    logging.info(
+    logging.debug(
         f"Refreshing Game State from workspace {context.client.config.workspace_handle}.",
         extra={
             AgentLogging.IS_MESSAGE: True,
@@ -196,7 +196,7 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
 def save_game_state(game_state, context: AgentContext):
     """Save GameState to the KeyValue store."""
 
-    logging.info(
+    logging.debug(
         f"Saving Game State from workspace {context.client.config.workspace_handle}.",
         extra={
             AgentLogging.IS_MESSAGE: True,
