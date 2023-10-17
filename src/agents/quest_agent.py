@@ -122,7 +122,6 @@ class QuestAgent(InterruptiblePythonAgent):
             quest.sent_outro = True
             save_game_state(game_state, context)
 
-            self.generate_solution(game_state, context, quest)
             story_end_block = send_story_generation(
                 f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
                 quest_name=quest.name,
