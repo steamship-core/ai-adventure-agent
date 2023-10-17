@@ -10,7 +10,8 @@ from tools.end_quest_tool import EndQuestTool
 from tools.start_quest_tool import StartQuestTool
 
 # An instnace is a game instance.
-from utils.context_utils import get_audio_narration_generator, get_game_state
+from utils.context_utils import get_audio_narration_generator, get_game_state, save_game_state
+from utils.generation_utils import generate_quest_arc
 from utils.tags import QuestIdTag
 
 
@@ -23,6 +24,16 @@ class QuestMixin(PackageMixin):
     def __init__(self, client: Steamship, agent_service: AgentService):
         self.client = client
         self.agent_service = agent_service
+
+
+    @post("/generate_quest_arc")
+    def generate_quest_arc(self) -> List[dict]:
+        context = self.agent_service.build_default_context()
+        game_state = get_game_state(context)
+        quest_arc = generate_quest_arc(player=game_state.player, context=context)
+        game_state.quest_arc = quest_arc
+        save_game_state(game_state, context)
+        return [quest_description.dict() for quest_description in quest_arc]
 
     @post("/start_quest")
     def start_quest(self, purpose: Optional[str] = None, **kwargs) -> dict:

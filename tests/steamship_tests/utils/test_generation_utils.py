@@ -6,7 +6,7 @@ from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from schema.server_settings import ServerSettings
 from utils.context_utils import with_server_settings, _GAME_STATE_KEY, save_game_state, RunNextAgentException
-from utils.generation_utils import send_story_generation, generate_merchant_inventory
+from utils.generation_utils import send_story_generation, generate_merchant_inventory, generate_quest_arc
 
 
 # @pytest.mark.usefixtures("client")
@@ -56,6 +56,17 @@ def test_merchant_inventory():
             # name length is less than description length
             assert len(item[0]) < len(item[1])
 
+
+def test_quest_arc():
+    with Steamship.temporary_workspace() as client:
+        context, game_state = prepare_state(client)
+        quest_arc = generate_quest_arc(player=game_state.player, context=context)
+
+        assert len(quest_arc) == 10
+        for quest_description in quest_arc:
+            assert quest_description.goal is not None
+            assert quest_description.location is not None
+
 def prepare_state(client: Steamship) -> (AgentContext, GameState):
     ctx_keys = {"id": "testing-foo"}
     ctx = AgentContext.get_or_create(
@@ -72,7 +83,7 @@ def create_test_game_state(context: AgentContext) -> GameState:
 
     game_state.player = HumanCharacter()
     game_state.player.name = "Dave"
-    game_state.player.motivation = "Doing cool things"
+    game_state.player.motivation = "Going to space"
     game_state.player.description = "he is tall"
     game_state.player.background = "he's a guy"
     game_state.tone = "funny"

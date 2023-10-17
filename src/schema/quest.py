@@ -5,6 +5,17 @@ from pydantic import BaseModel, Field
 from schema.characters import Item
 
 
+class QuestDescription(BaseModel):
+    """The sketch of a quest the user will go on"""
+
+    goal: str = Field(
+        description="The goal of the quest"
+    )
+
+    location: str = Field(
+        description="The location of the quest"
+    )
+
 class Quest(BaseModel):
     """Information about a quest."""
 

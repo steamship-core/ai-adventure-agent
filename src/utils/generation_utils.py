@@ -20,6 +20,7 @@ from steamship.data.block import StreamState
 from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagValueKey
 
 from schema.characters import HumanCharacter
+from schema.quest import QuestDescription
 from utils.ChatHistoryFilter import QuestNameFilter, UnionFilter, TagFilter, LastInventoryFilter, ChatHistoryFilter
 from utils.context_utils import (
     emit,
@@ -33,7 +34,7 @@ from utils.tags import (
     QuestIdTag,
     QuestTag,
     StoryContextTag,
-    TagKindExtensions,
+    TagKindExtensions, QuestArcTag,
 )
 
 
@@ -138,7 +139,7 @@ def generate_merchant_inventory(
     player: HumanCharacter, context: AgentContext
 ) -> List[Tuple[str, str]]:
     """Generates the inventory for a merchant"""
-    prompt = f"Please list 5 objects that a merchant might sell {player.name} in a shop. They should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
+    prompt = f"Please list 5 objects that a merchant might sell {player.name} in a shop. They should fit the setting of the story and help {player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
     block = do_generation(
         context,
         prompt,
@@ -175,6 +176,41 @@ def generate_merchant_inventory(
             result.append((name, description))
     return result
 
+def generate_quest_arc(
+        player: HumanCharacter,
+        context: AgentContext
+) -> List[QuestDescription]:
+    prompt = f"Please list 10 quests of increasing difficulty that {player.name} will go in to achieve their overall goal of {player.motivation}. They should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location>"
+    block = do_generation(
+        context,
+        prompt,
+        prompt_tags=[Tag(
+            kind=TagKindExtensions.QUEST_ARC,
+            name=QuestArcTag.PROMPT,
+        )],
+        output_tags=[Tag(kind=TagKindExtensions.QUEST_ARC, name=QuestArcTag.RESULT)],
+        filter= TagFilter([
+                (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT)
+            ]),
+        generation_for="Quest Arc"
+    )
+    result: List[QuestDescription] = []
+    items = block.text.split("QUEST GOAL:")
+    for item in items:
+        if len(item.strip()) > 0 and "QUEST LOCATION" in item:
+            parts = item.split("QUEST LOCATION:")
+            if len(parts) == 2:
+                goal = parts[0].strip()
+                location = parts[1].strip()
+                if "\n" in location:
+                    location = location[:location.index("\n")]
+                result.append(QuestDescription(goal=goal, location = location))
+    return result
 
 def do_generation(
     context: AgentContext,

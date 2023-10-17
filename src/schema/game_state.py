@@ -7,7 +7,7 @@ from steamship import Task, TaskState
 from schema.camp import Camp
 from schema.characters import HumanCharacter, NpcCharacter
 from schema.preferences import Preferences
-from schema.quest import Quest
+from schema.quest import Quest, QuestDescription
 
 
 class ActiveMode(str, Enum):
@@ -53,6 +53,11 @@ class GameState(BaseModel):
     camp: Optional[Camp] = Field(
         Camp(),
         description="The player's camp. This is where they are then not on a quest.",
+    )
+
+    quest_arc: Optional[List[QuestDescription]] = Field(
+        default= None,
+        description="The list of stages of quest that a player will go through"
     )
 
     current_quest: Optional[str] = Field(

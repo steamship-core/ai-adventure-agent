@@ -23,6 +23,8 @@ class TagKindExtensions(str, Enum):
     # This tag is of the kind "camp" which contains information about camp.
     CAMP = "camp"
 
+    QUEST_ARC = "quest_arc"
+
 
 class AgentStatusMessageTag(str, Enum):
     # The quest is complete
@@ -109,3 +111,8 @@ class QuestIdTag(Tag):
         super().__init__(
             kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id": quest_id}
         )
+
+
+class QuestArcTag(str, Enum):
+    PROMPT = "prompt"
+    RESULT = "result"
