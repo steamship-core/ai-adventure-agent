@@ -13,7 +13,7 @@ doesn't need to know.
 import time
 from typing import List, Optional, Tuple
 
-from steamship import Block, File, Tag
+from steamship import Block, Tag
 from steamship.agents.schema import AgentContext
 from steamship.data import TagKind
 from steamship.data.block import StreamState
@@ -21,7 +21,13 @@ from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagValueKey
 
 from schema.characters import HumanCharacter
 from schema.quest import QuestDescription
-from utils.ChatHistoryFilter import QuestNameFilter, UnionFilter, TagFilter, LastInventoryFilter, ChatHistoryFilter
+from utils.ChatHistoryFilter import (
+    ChatHistoryFilter,
+    LastInventoryFilter,
+    QuestNameFilter,
+    TagFilter,
+    UnionFilter,
+)
 from utils.context_utils import (
     emit,
     get_audio_narration_generator,
@@ -75,22 +81,33 @@ def send_story_generation(
     block = do_generation(
         context,
         prompt,
-        prompt_tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT), QuestIdTag(quest_name)],
-        output_tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_CONTENT), QuestIdTag(quest_name)],
+        prompt_tags=[
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT),
+            QuestIdTag(quest_name),
+        ],
+        output_tags=[
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_CONTENT),
+            QuestIdTag(quest_name),
+        ],
         filter=UnionFilter(
-            [TagFilter(tag_types = [
-                (TagKindExtensions.CHARACTER, CharacterTag.NAME),
-                (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
-                (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
-                (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
-                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-                (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
-            ]),
-            QuestNameFilter(quest_name=quest_name),
-            LastInventoryFilter()
-            ]),
-        generation_for="Quest Content"
+            [
+                TagFilter(
+                    tag_types=[
+                        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
+                    ]
+                ),
+                QuestNameFilter(quest_name=quest_name),
+                LastInventoryFilter(),
+            ]
+        ),
+        generation_for="Quest Content",
+        stop_tokens=["\n"],
     )
     return block
 
@@ -101,10 +118,17 @@ def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[B
     block = do_generation(
         context,
         prompt,
-        prompt_tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT), QuestIdTag(quest_name)],
-        output_tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_SUMMARY), QuestIdTag(quest_name)],
+        prompt_tags=[
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT),
+            QuestIdTag(quest_name),
+        ],
+        output_tags=[
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_SUMMARY),
+            QuestIdTag(quest_name),
+        ],
         filter=QuestNameFilter(quest_name=quest_name),
-        generation_for="Quest Summary"
+        generation_for="Quest Summary",
+        stop_tokens=["\n"],
     )
     return block
 
@@ -117,13 +141,18 @@ def generate_quest_item(
     block = do_generation(
         context,
         prompt,
-        prompt_tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ITEM_GENERATION_PROMPT),QuestIdTag(quest_name)],
-        output_tags=[Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ITEM_GENERATION_CONTENT),QuestIdTag(quest_name)],
-        filter=UnionFilter([
-            QuestNameFilter(quest_name=quest_name),
-            LastInventoryFilter()
-            ]),
-        generation_for="Quest Item"
+        prompt_tags=[
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ITEM_GENERATION_PROMPT),
+            QuestIdTag(quest_name),
+        ],
+        output_tags=[
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ITEM_GENERATION_CONTENT),
+            QuestIdTag(quest_name),
+        ],
+        filter=UnionFilter(
+            [QuestNameFilter(quest_name=quest_name), LastInventoryFilter()]
+        ),
+        generation_for="Quest Item",
     )
     parts = block.text.split("ITEM DESCRIPTION:")
     if len(parts) == 2:
@@ -143,24 +172,34 @@ def generate_merchant_inventory(
     block = do_generation(
         context,
         prompt,
-        prompt_tags=[Tag(
+        prompt_tags=[
+            Tag(
                 kind=TagKindExtensions.MERCHANT,
                 name=MerchantTag.INVENTORY_GENERATION_PROMPT,
-            )],
+            )
+        ],
         output_tags=[Tag(kind=TagKindExtensions.MERCHANT, name=MerchantTag.INVENTORY)],
-        filter=UnionFilter([
-            TagFilter([
-            (TagKindExtensions.CHARACTER, CharacterTag.NAME),
-            (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
-            (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
-            (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-            (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
-            (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-            (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
-            (TagKindExtensions.MERCHANT, MerchantTag.INVENTORY_GENERATION_PROMPT),
-            ]), LastInventoryFilter()
-        ]),
-        generation_for="Merchant Inventory"
+        filter=UnionFilter(
+            [
+                TagFilter(
+                    [
+                        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
+                        (
+                            TagKindExtensions.MERCHANT,
+                            MerchantTag.INVENTORY_GENERATION_PROMPT,
+                        ),
+                    ]
+                ),
+                LastInventoryFilter(),
+            ]
+        ),
+        generation_for="Merchant Inventory",
     )
     result = []
     items = block.text.split("ITEM NAME:")
@@ -218,29 +257,38 @@ def do_generation(
     prompt_tags: List[Tag],
     output_tags: List[Tag],
     filter: ChatHistoryFilter,
-    generation_for: str, # For debugging output
+    generation_for: str,  # For debugging output
+    stop_tokens: Optional[List[str]] = None,
 ) -> Block:
     """Generates the inventory for a merchant"""
 
     generator = get_story_text_generator(context)
 
-    output_tags.extend([
-        Tag(
-            kind=TagKind.CHAT,
-            name=ChatTag.ROLE,
-            value={TagValueKey.STRING_VALUE: RoleTag.ASSISTANT},
-        ),
-        Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
-        # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
-        Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
-    ])
+    output_tags.extend(
+        [
+            Tag(
+                kind=TagKind.CHAT,
+                name=ChatTag.ROLE,
+                value={TagValueKey.STRING_VALUE: RoleTag.ASSISTANT},
+            ),
+            Tag(kind=TagKind.CHAT, name=ChatTag.MESSAGE),
+            # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
+            Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
+        ]
+    )
 
     context.chat_history.append_system_message(
         text=prompt,
         tags=prompt_tags,
     )
     # Intentionally reuse the filtering for the quest CONTENT
-    block_indices = filter.filter_chat_history(chat_history_file=context.chat_history.file, filter_for=generation_for)
+    block_indices = filter.filter_chat_history(
+        chat_history_file=context.chat_history.file, filter_for=generation_for
+    )
+
+    options = {}
+    if stop_tokens:
+        options["stop"] = stop_tokens
 
     task = generator.generate(
         tags=output_tags,
@@ -249,6 +297,7 @@ def do_generation(
         output_file_id=context.chat_history.file.id,
         streaming=True,
         input_file_block_index_list=block_indices,
+        options=options,
     )
     task.wait()
     blocks = task.output.blocks
