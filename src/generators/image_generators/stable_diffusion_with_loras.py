@@ -74,7 +74,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             context.chat_history.file,
             task,
             new_block_tag_kind=TagKindExtensions.ITEM,
-            new_block_tag_name=CharacterTag.IMAGE,
+            new_block_tag_name=ItemTag.IMAGE,
         )
 
     def request_profile_image_generation(self, context: AgentContext) -> Task:
@@ -181,7 +181,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             context.chat_history.file,
             task,
             new_block_tag_kind=TagKindExtensions.SCENE,
-            new_block_tag_name=CharacterTag.BACKGROUND,
+            new_block_tag_name=SceneTag.BACKGROUND,
         )
 
     def request_camp_image_generation(self, context: AgentContext) -> Task:
