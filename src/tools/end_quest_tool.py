@@ -6,6 +6,7 @@ from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, Tool
 
 from generators.generator_context_utils import get_image_generator
+from generators.utils import find_new_block
 from schema.game_state import GameState
 from schema.objects import Item
 from utils.context_utils import (
@@ -19,7 +20,7 @@ from utils.generation_utils import (
     generate_quest_summary,
     send_agent_status_message,
 )
-from utils.tags import AgentStatusMessageTag, CharacterTag, TagKindExtensions
+from utils.tags import AgentStatusMessageTag, CharacterTag, ItemTag, TagKindExtensions
 
 
 class EndQuestTool(Tool):
@@ -93,7 +94,17 @@ class EndQuestTool(Tool):
         save_game_state(game_state, context)
 
         if image_gen := get_image_generator(context):
+            num_known_blocks = len(context.chat_history.file.blocks)
             image_gen.request_item_image_generation(item=item, context=context)
+            context.chat_history.file.refresh()
+            item_image_block = find_new_block(
+                file=context.chat_history.file,
+                num_known_blocks=num_known_blocks,
+                new_block_tag_kind=TagKindExtensions.ITEM,
+                new_block_tag_name=ItemTag.IMAGE,
+            )
+            item.picture_url = item_image_block.raw_data_url
+            save_game_state(game_state=game_state, context=context)
 
         # Going on a quest increases the player's rank
         player.rank += quest.rank_delta
