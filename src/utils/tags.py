@@ -1,5 +1,7 @@
 from enum import Enum
 
+from steamship import Tag
+
 
 class TagKindExtensions(str, Enum):
     # This tag is of the kind "scene" which contains information about a media scene.
@@ -92,3 +94,18 @@ class MerchantTag(str, Enum):
 class CampTag(str, Enum):
     AUDIO = "audio"
     IMAGE = "image"
+
+
+class QuestIdTag(Tag):
+    @staticmethod
+    def matches(tag: Tag, quest_id: str):
+        if tag.kind == TagKindExtensions.QUEST and tag.name == QuestTag.QUEST_ID:
+            if tag.value is not None:
+                if tag.value.get("id").lower() == quest_id.lower():
+                    return True
+        return False
+
+    def __init__(self, quest_id: str):
+        super().__init__(
+            kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_ID, value={"id": quest_id}
+        )

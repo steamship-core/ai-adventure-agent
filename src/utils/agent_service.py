@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
-from steamship import Block, File, SteamshipError, Tag, Task
+from steamship import Block, File, SteamshipError, Task
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging, StreamingOpts
 from steamship.agents.schema import Action, Agent, FinishAction
@@ -25,7 +25,7 @@ from utils.context_utils import (
 )
 
 # from utils.timing_utils import pretty_print_timings
-from utils.tags import QuestTag, TagKindExtensions
+from utils.tags import QuestIdTag
 
 
 def build_context_appending_emit_func(
@@ -490,13 +490,7 @@ class AgentService(PackageService):
 
         base_tags = []
         if game_state.current_quest:
-            base_tags.append(
-                Tag(
-                    kind=TagKindExtensions.QUEST,
-                    name=QuestTag.QUEST_ID,
-                    value={"id": game_state.current_quest},
-                ),
-            )
+            base_tags.append(QuestIdTag(game_state.current_quest))
 
         context.chat_history.append_user_message(prompt, tags=base_tags)
         agent: Optional[Agent] = self.get_default_agent()

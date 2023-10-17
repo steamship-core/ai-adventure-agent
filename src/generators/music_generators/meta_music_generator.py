@@ -6,7 +6,7 @@ from steamship.agents.schema import AgentContext
 from generators import utils
 from generators.music_generator import MusicGenerator
 from utils.context_utils import get_game_state
-from utils.tags import CampTag, SceneTag, StoryContextTag, TagKindExtensions
+from utils.tags import CampTag, QuestIdTag, SceneTag, StoryContextTag, TagKindExtensions
 
 
 class MetaMusicGenerator(MusicGenerator):
@@ -26,7 +26,7 @@ class MetaMusicGenerator(MusicGenerator):
             Tag(kind=TagKindExtensions.SCENE, name=SceneTag.AUDIO),
         ]
         if quest_id := game_state.current_quest:
-            tags.append(Tag(kind=TagKindExtensions.QUEST, name=quest_id))
+            tags.append(QuestIdTag(quest_id))
 
         num_existing_blocks = len(context.chat_history.file.blocks)
         task = music_gen.generate(
@@ -59,7 +59,7 @@ class MetaMusicGenerator(MusicGenerator):
             Tag(kind=TagKindExtensions.CAMP, name=CampTag.AUDIO),
         ]
         if quest_id := game_state.current_quest:
-            tags.append(Tag(kind=TagKindExtensions.QUEST, name=quest_id))
+            tags.append(QuestIdTag(quest_id))
 
         num_existing_blocks = len(context.chat_history.file.blocks)
         task = music_gen.generate(

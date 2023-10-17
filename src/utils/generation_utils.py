@@ -11,7 +11,7 @@ functions whose mechanics can change under the hood as we discover better ways t
 doesn't need to know.
 """
 import time
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 
 from steamship import Block, File, Tag
 from steamship.agents.schema import AgentContext
@@ -28,9 +28,11 @@ from utils.context_utils import (
 from utils.tags import (
     AgentStatusMessageTag,
     CharacterTag,
+    MerchantTag,
+    QuestIdTag,
     QuestTag,
     StoryContextTag,
-    TagKindExtensions, MerchantTag,
+    TagKindExtensions,
 )
 
 
@@ -82,22 +84,14 @@ def send_story_generation(
         # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
         Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
         Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_CONTENT),
-        Tag(
-            kind=TagKindExtensions.QUEST,
-            name=QuestTag.QUEST_ID,
-            value={"id": quest_name},
-        ),
+        QuestIdTag(quest_name),
     ]
 
     context.chat_history.append_system_message(
         text=prompt,
         tags=[
             Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT),
-            Tag(
-                kind=TagKindExtensions.QUEST,
-                name=QuestTag.QUEST_ID,
-                value={"id": quest_name},
-            ),
+            QuestIdTag(quest_name),
         ],
     )
     block_indices = filter_block_indices_for_quest_content(
@@ -137,22 +131,14 @@ def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[B
         # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
         Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
         Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_SUMMARY),
-        Tag(
-            kind=TagKindExtensions.QUEST,
-            name=QuestTag.QUEST_ID,
-            value={"id": quest_name},
-        ),
+        QuestIdTag(quest_name),
     ]
 
     context.chat_history.append_system_message(
         text="Please summarize the above quest in one to two sentences. ",
         tags=[
             Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT),
-            Tag(
-                kind=TagKindExtensions.QUEST,
-                name=QuestTag.QUEST_ID,
-                value={"id": quest_name},
-            ),
+            QuestIdTag(quest_name),
         ],
     )
     block_indices = filter_block_indices_for_quest_summary(
@@ -193,11 +179,7 @@ def generate_quest_item(
         # See agent_service.py::chat_history_append_func for the duplication prevention this tag results in
         Tag(kind=TagKind.CHAT, name="streamed-to-chat-history"),
         Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ITEM_GENERATION_CONTENT),
-        Tag(
-            kind=TagKindExtensions.QUEST,
-            name=QuestTag.QUEST_ID,
-            value={"id": quest_name},
-        ),
+        QuestIdTag(quest_name),
     ]
 
     prompt = f"What object or item did {player.name} find during that story? It should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
@@ -205,11 +187,7 @@ def generate_quest_item(
         text=prompt,
         tags=[
             Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ITEM_GENERATION_PROMPT),
-            Tag(
-                kind=TagKindExtensions.QUEST,
-                name=QuestTag.QUEST_ID,
-                value={"id": quest_name},
-            ),
+            QuestIdTag(quest_name),
         ],
     )
     # Intentionally reuse the filtering for the quest summary
@@ -241,6 +219,7 @@ def generate_quest_item(
         description = ""
     return name, description
 
+
 def generate_merchant_inventory(
     player: HumanCharacter, context: AgentContext
 ) -> List[Tuple[str, str]]:
@@ -264,7 +243,10 @@ def generate_merchant_inventory(
     context.chat_history.append_system_message(
         text=prompt,
         tags=[
-            Tag(kind=TagKindExtensions.MERCHANT, name=MerchantTag.INVENTORY_GENERATION_PROMPT),
+            Tag(
+                kind=TagKindExtensions.MERCHANT,
+                name=MerchantTag.INVENTORY_GENERATION_PROMPT,
+            ),
         ],
     )
     # Intentionally reuse the filtering for the quest CONTENT
@@ -328,11 +310,9 @@ def filter_block_indices_for_quest_content(  # noqa: C901
                 if tag.kind == kind and tag.name == name:
                     will_include = True
                     matching_tag = tag
-            if tag.kind == TagKindExtensions.QUEST and tag.name == QuestTag.QUEST_ID:
-                if tag.value is not None:
-                    if tag.value.get("id") == quest_name:
-                        will_include = True
-                        matching_tag = tag
+            if QuestIdTag.matches(tag, quest_name):
+                will_include = True
+                matching_tag = tag
         if will_include:
             result.append(block.index_in_file)
             print(
@@ -352,8 +332,9 @@ def filter_block_indices_for_quest_content(  # noqa: C901
     print("******************")
     return result
 
+
 def filter_block_indices_for_merchant_inventory(  # noqa: C901
-    chat_history_file: File
+    chat_history_file: File,
 ) -> [int]:
     """When filtering content for merchant inventory generation, we want:
     - background information
@@ -393,9 +374,7 @@ def filter_block_indices_for_merchant_inventory(  # noqa: C901
     print("Merchant inventory input ************")
     for i, block in enumerate(chat_history_file.blocks):
         if i in result:
-            print(
-                f"{block.index_in_file} {block.text}"
-            )
+            print(f"{block.index_in_file} {block.text}")
     print("******************")
     return result
 
@@ -409,11 +388,9 @@ def filter_block_indices_for_quest_summary(
         will_include = False
         matching_tag = None
         for tag in block.tags:
-            if tag.kind == TagKindExtensions.QUEST and tag.name == QuestTag.QUEST_ID:
-                if tag.value is not None:
-                    if tag.value.get("id") == quest_name:
-                        will_include = True
-                        matching_tag = tag
+            if QuestIdTag.matches(tag, quest_name):
+                will_include = True
+                matching_tag = tag
         if will_include:
             result.append(block.index_in_file)
             print(
