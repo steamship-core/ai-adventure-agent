@@ -20,6 +20,7 @@ from steamship.data.block import StreamState
 from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagValueKey
 
 from schema.characters import HumanCharacter
+from utils.ChatHistoryFilter import QuestNameFilter, UnionFilter, TagFilter, LastInventoryFilter
 from utils.context_utils import (
     emit,
     get_audio_narration_generator,
@@ -94,13 +95,21 @@ def send_story_generation(
             QuestIdTag(quest_name),
         ],
     )
-    block_indices = filter_block_indices_for_quest_content(
-        quest_name=quest_name, chat_history_file=context.chat_history.file
-    )
-    # logging.warning(f"Generating: {prompt}")
+    block_indices = UnionFilter(
+        [TagFilter(tag_types = [
+            (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+            (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
+            (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+            (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+            (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
+            (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+            (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
+        ]),
+        QuestNameFilter(quest_name=quest_name),
+        LastInventoryFilter()],
+    ).filter_chat_history(context.chat_history.file, filter_for="Quest Content Generation")
 
     task = generator.generate(
-        # text=prompt, # Don't want to pass this if we're passing blocks
         tags=tags,
         append_output_to_file=True,
         input_file_id=context.chat_history.file.id,
@@ -141,8 +150,8 @@ def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[B
             QuestIdTag(quest_name),
         ],
     )
-    block_indices = filter_block_indices_for_quest_summary(
-        context.chat_history.file, quest_name=quest_name
+    block_indices = QuestNameFilter(quest_name=quest_name).filter_chat_history(
+        context.chat_history.file, filter_for="Item Generation"
     )
     # logging.warning(f"Generating: {prompt}")
 
@@ -190,9 +199,8 @@ def generate_quest_item(
             QuestIdTag(quest_name),
         ],
     )
-    # Intentionally reuse the filtering for the quest summary
-    block_indices = filter_block_indices_for_quest_summary(
-        context.chat_history.file, quest_name=quest_name
+    block_indices = QuestNameFilter(quest_name=quest_name).filter_chat_history(
+        context.chat_history.file, filter_for="Item Generation"
     )
     # logging.warning(f"Generating: {prompt}")
 
@@ -250,9 +258,18 @@ def generate_merchant_inventory(
         ],
     )
     # Intentionally reuse the filtering for the quest CONTENT
-    block_indices = filter_block_indices_for_merchant_inventory(
-        context.chat_history.file
-    )
+    block_indices = UnionFilter([
+        TagFilter([
+        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
+        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
+        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
+        (TagKindExtensions.MERCHANT, MerchantTag.INVENTORY_GENERATION_PROMPT),
+        ]), LastInventoryFilter()
+    ]).filter_chat_history(chat_history_file=context.chat_history.file, filter_for="Merchant Inventory")
 
     task = generator.generate(
         tags=tags,
@@ -278,138 +295,6 @@ def generate_merchant_inventory(
                 name = item.strip()
                 description = ""
             result.append((name, description))
-    return result
-
-
-def filter_block_indices_for_quest_content(  # noqa: C901
-    quest_name: str, chat_history_file: File
-) -> [int]:
-    """When filtering content for quest content generation, we want:
-    - background information
-    - Only most recent inventory
-    - Summaries of previous quests
-    - Content of the current quest
-    """
-    allowed_kind_names = [
-        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
-        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
-        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
-        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
-        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
-    ]
-
-    result = []
-
-    for block in chat_history_file.blocks:
-        will_include = False
-        matching_tag = None
-        for tag in block.tags:
-            for (kind, name) in allowed_kind_names:
-                if tag.kind == kind and tag.name == name:
-                    will_include = True
-                    matching_tag = tag
-            if QuestIdTag.matches(tag, quest_name):
-                will_include = True
-                matching_tag = tag
-        if will_include:
-            result.append(block.index_in_file)
-            print(
-                f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}"
-            )
-
-    inventory_block_index = find_last_inventory_block(chat_history_file)
-    if inventory_block_index is not None:
-        result.append(inventory_block_index)
-        result.sort()
-    print("Quest Content input ************")
-    for i, block in enumerate(chat_history_file.blocks):
-        if i in result:
-            print(
-                f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}"
-            )
-    print("******************")
-    return result
-
-
-def filter_block_indices_for_merchant_inventory(  # noqa: C901
-    chat_history_file: File,
-) -> [int]:
-    """When filtering content for merchant inventory generation, we want:
-    - background information
-    - Summaries of previous quests
-    """
-    allowed_kind_names = [
-        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
-        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
-        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
-        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
-        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
-        (TagKindExtensions.MERCHANT, MerchantTag.INVENTORY_GENERATION_PROMPT),
-    ]
-
-    result = []
-
-    for block in chat_history_file.blocks:
-        will_include = False
-        matching_tag = None
-        for tag in block.tags:
-            for (kind, name) in allowed_kind_names:
-                if tag.kind == kind and tag.name == name:
-                    will_include = True
-                    matching_tag = tag
-        if will_include:
-            result.append(block.index_in_file)
-            print(
-                f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}"
-            )
-
-    inventory_block_index = find_last_inventory_block(chat_history_file)
-    if inventory_block_index is not None:
-        result.append(inventory_block_index)
-        result.sort()
-    print("Merchant inventory input ************")
-    for i, block in enumerate(chat_history_file.blocks):
-        if i in result:
-            print(f"{block.index_in_file} {block.text}")
-    print("******************")
-    return result
-
-
-def filter_block_indices_for_quest_summary(
-    chat_history_file: File, quest_name: str
-) -> [int]:
-    result = []
-    print("Summary input ************")
-    for block in chat_history_file.blocks:
-        will_include = False
-        matching_tag = None
-        for tag in block.tags:
-            if QuestIdTag.matches(tag, quest_name):
-                will_include = True
-                matching_tag = tag
-        if will_include:
-            result.append(block.index_in_file)
-            print(
-                f"{block.index_in_file} [{matching_tag.kind} {matching_tag.name}] {block.text}"
-            )
-
-    print("******************")
-    return result
-
-
-def find_last_inventory_block(chat_history_file: File) -> Optional[int]:
-    result = None
-    for i, block in enumerate(chat_history_file.blocks):
-        for tag in block.tags:
-            if (
-                tag.kind == TagKindExtensions.CHARACTER
-                and tag.name == CharacterTag.INVENTORY
-            ):
-                result = i
     return result
 
 
