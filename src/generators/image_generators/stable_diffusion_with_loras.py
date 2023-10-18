@@ -1,6 +1,7 @@
 import json
-from typing import Final
+from typing import Dict, Final, Optional
 
+from pydantic.fields import PrivateAttr
 from steamship import Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
@@ -23,6 +24,18 @@ from utils.tags import (
 class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
     PLUGIN_HANDLE: Final[str] = "fal-sd-lora-image-generator-streaming"
+    DEFAULT_LORA: Final[str] = "https://civitai.com/api/download/models/123593"
+    KNOWN_LORAS_AND_TRIGGERS: Final[Dict[str, str]] = {
+        # Pixel Art XL (https://civitai.com/models/120096/pixel-art-xl) by https://civitai.com/user/NeriJS
+        "https://civitai.com/api/download/models/135931": "(pixel art)",
+        # Pixel Art SDXL RW (https://civitai.com/models/114334/pixel-art-sdxl-rw) by https://civitai.com/user/leonnn1
+        "https://civitai.com/api/download/models/123593": "((pixelart))",
+    }
+
+    _lora: str = PrivateAttr(default=DEFAULT_LORA)
+
+    def __init__(self, lora: Optional[str] = DEFAULT_LORA):
+        self._lora = lora
 
     def request_item_image_generation(self, item: Item, context: AgentContext) -> Task:
         # TODO(doug): cache plugin instance by client workspace
@@ -33,7 +46,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         game_state = get_game_state(context)
 
         item_prompt = (
-            f"(pixel art) 16-bit retro-game sprite for an item in a hero's inventory. "
+            f"{StableDiffusionWithLorasImageGenerator.KNOWN_LORAS_AND_TRIGGERS[self._lora]} "
+            "16-bit retro-game sprite for an item in a hero's inventory. "
             f"The items's name is: {item.name}. "
             f"The item's description is: {item.description}. "
         )
@@ -52,9 +66,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         options = {
             "seed": game_state.preferences.seed,
             "image_size": "square_hd",
-            "loras": json.dumps(
-                [{"path": "https://civitai.com/api/download/models/135931"}]
-            ),
+            "loras": json.dumps([{"path": self._lora}]),
         }
 
         num_existing_blocks = len(context.chat_history.file.blocks)
@@ -89,7 +101,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         background = game_state.player.background
 
         profile_prompt = (
-            f"(pixel art) 16-bit retro-game style profile picture of a hero on an adventure. "
+            f"{StableDiffusionWithLorasImageGenerator.KNOWN_LORAS_AND_TRIGGERS[self._lora]} "
+            "16-bit retro-game style profile picture of a hero on an adventure. "
             f"The hero's name is: {name}. "
             f"The hero has the following background: {background}. "
             f"The hero has a description of: {description}. "
@@ -109,9 +122,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         options = {
             "seed": game_state.preferences.seed,
             "image_size": "portrait_4_3",
-            "loras": json.dumps(
-                [{"path": "https://civitai.com/api/download/models/135931"}]
-            ),
+            "loras": json.dumps([{"path": self._lora}]),
         }
 
         num_existing_blocks = len(context.chat_history.file.blocks)
@@ -145,8 +156,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         game_state = get_game_state(context)
 
         scene_prompt = (
-            "(pixel art) background scene for a quest. \n"
-            "The scene being depicted is: \n"
+            f"{StableDiffusionWithLorasImageGenerator.KNOWN_LORAS_AND_TRIGGERS[self._lora]} "
+            "16-bit background scene for a quest. The scene being depicted is: \n"
             f"{description}"
         )
 
@@ -159,9 +170,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         options = {
             "seed": game_state.preferences.seed,
             "image_size": "landscape_16_9",
-            "loras": json.dumps(
-                [{"path": "https://civitai.com/api/download/models/135931"}]
-            ),
+            "loras": json.dumps([{"path": self._lora}]),
         }
 
         num_existing_blocks = len(context.chat_history.file.blocks)
@@ -191,7 +200,10 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         )
         game_state = get_game_state(context)
 
-        scene_prompt = f"(pixel art) {game_state.tone} {game_state.genre} camp."
+        scene_prompt = (
+            f"{StableDiffusionWithLorasImageGenerator.KNOWN_LORAS_AND_TRIGGERS[self._lora]} "
+            f"{game_state.tone} {game_state.genre} camp."
+        )
 
         tags = [
             Tag(kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.CAMP),
@@ -201,9 +213,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         options = {
             "seed": game_state.preferences.seed,
             "image_size": "landscape_16_9",
-            "loras": json.dumps(
-                [{"path": "https://civitai.com/api/download/models/135931"}]
-            ),
+            "loras": json.dumps([{"path": self._lora}]),
         }
 
         num_existing_blocks = len(context.chat_history.file.blocks)
