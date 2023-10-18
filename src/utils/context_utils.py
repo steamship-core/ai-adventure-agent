@@ -139,7 +139,10 @@ def get_audio_narration_generator(
             default=server_settings.default_narration_model,
             preferred=preferences.narration_model,
         )
-        generator = context.client.use_plugin(plugin_handle)
+        config = {}
+        if plugin_handle == "elevenlabs":
+            config["voice_id"] = "ThT5KcBeYPX3keUQqHPh"
+        generator = context.client.use_plugin(plugin_handle, config=config)
         context.metadata[_NARRATION_GENERATOR_KEY] = generator
 
     return generator
