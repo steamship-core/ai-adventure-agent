@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
-from steamship import SteamshipError
 
 from schema.objects import Item
 
@@ -41,7 +40,6 @@ class Character(BaseModel):
             self.inventory = other.inventory
         if other.motivation:
             self.motivation = other.motivation
-
 
     def inventory_description(self) -> str:
         result = f"{self.name} has the following items in their inventory:"
@@ -109,10 +107,12 @@ class HumanCharacter(Character):
         100,
         description="The energy the player has. Going on a quest requires and expends energy. This is the unit of monetization for the game.",
     )
+
     max_energy: Optional[int] = Field(
         100,
-        description="The maximum energy the player can ever have.",
+        description="DO NOT USE. DEPRECATED. The maximum energy the player can ever have.",
     )
+    """The `max_energy` field is still in the data model so Pydantic doesn't trip on its presence, but it is not used."""
 
     def update_from_web(self, other: "HumanCharacter"):
         """Performs a gentle update so that the website doesn't accidentally blast over this if it diverges in structure."""
@@ -124,8 +124,4 @@ class HumanCharacter(Character):
         if other.max_energy:
             self.max_energy = other.max_energy
         if other.energy:
-            if other.energy > self.max_energy:
-                raise SteamshipError(
-                    message=f"Unable to update. New energy level of {other.energy} exceeds the player's maximum energy of {self.max_energy}."
-                )
             self.energy = other.energy

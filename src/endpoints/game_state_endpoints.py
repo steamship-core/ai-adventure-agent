@@ -55,19 +55,6 @@ class GameStateMixin(PackageMixin):
                 message=f"Can only add a positive amount of energy. Got: {amount}"
             )
 
-        new_energy = gs.player.energy + amount
-
-        if new_energy > gs.player.max_energy:
-            if fail_if_exceed_max:
-                raise SteamshipError(
-                    message=f"Unable to update. New energy level of {new_energy} exceeds the player's maximum energy of {gs.player.max_energy}."
-                )
-            else:
-                logging.warning(
-                    f"Tried to set energy to {new_energy} but player has a max or {gs.player.max_energy}. Using max."
-                )
-                new_energy = gs.player.max_energy
-
-        gs.player.energy = new_energy
+        gs.player.energy = gs.player.energy + amount
         save_game_state(gs, context)
         return gs.dict()
