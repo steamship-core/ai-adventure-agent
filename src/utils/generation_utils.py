@@ -137,7 +137,7 @@ def generate_quest_item(
     quest_name: str, player: HumanCharacter, context: AgentContext
 ) -> (str, str):
     """Generates a found item from a quest, returning a tuple of its name and description"""
-    prompt = f"What object or item did {player.name} find during that story? It should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
+    prompt = f"What object or item did {player.name} find during that story? It should fit the setting of the story and help {player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
     block = do_generation(
         context,
         prompt,
