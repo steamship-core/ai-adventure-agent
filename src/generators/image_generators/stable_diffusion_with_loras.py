@@ -99,13 +99,11 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         game_state = get_game_state(context)
         name = game_state.player.name
         description = game_state.player.description
-        background = game_state.player.background
 
         profile_prompt = (
             f"{StableDiffusionWithLorasImageGenerator.KNOWN_LORAS_AND_TRIGGERS[self._lora]} "
             "16-bit retro-game style profile picture of a hero on an adventure. "
             f"The hero's name is: {name}. "
-            f"The hero has the following background: {background}. "
             f"The hero has a description of: {description}. "
         )
 
