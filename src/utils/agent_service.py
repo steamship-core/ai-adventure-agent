@@ -15,11 +15,11 @@ from steamship.data.tags.tag_constants import ChatTag
 from steamship.invocable import PackageService, post
 from steamship.invocable.invocable_response import StreamingResponse
 
-from schema.server_settings import ServerSettings
 from utils.context_utils import (
     RunNextAgentException,
     emit,
     get_game_state,
+    get_server_settings,
     with_game_state,
     with_server_settings,
 )
@@ -426,9 +426,13 @@ class AgentService(PackageService):
 
         # Get the game state and add to context
         game_state = get_game_state(context)
-        context = with_game_state(game_state, context)
-        server_settings = ServerSettings()
-        context = with_server_settings(server_settings, context)
+        context = with_game_state(
+            game_state, context
+        )  # TODO: This shouldn't be necessary since get_game_state caches it.
+        server_settings = get_server_settings(context)
+        context = with_server_settings(
+            server_settings, context
+        )  # TODO: This shouldn't bve necessary since get_server_settings caches it.
         # TODO(doug): figure out how to make this selectable.
 
         self._agent_context = context

@@ -146,9 +146,35 @@ def get_audio_narration_generator(
 
 
 def get_server_settings(
-    context: AgentContext, default: Optional["ServerSettings"] = None  # noqa: F821
+    context: AgentContext,
 ) -> Optional["ServerSettings"]:  # noqa: F821
-    return context.metadata.get(_SERVER_SETTINGS_KEY, default)
+    logging.debug(
+        f"Refreshing Server Settings from workspace {context.client.config.workspace_handle}.",
+        extra={
+            AgentLogging.IS_MESSAGE: True,
+            AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+            AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+        },
+    )
+
+    if _SERVER_SETTINGS_KEY in context.metadata:
+        return context.metadata.get(_SERVER_SETTINGS_KEY)
+
+    # Get it from the KV Store
+    kv = KeyValueStore(context.client, _SERVER_SETTINGS_KEY)
+    value = kv.get(_SERVER_SETTINGS_KEY)
+
+    if value:
+        print("Parsing Server Settings from stored value")
+        print(value)
+        server_settings = ServerSettings.parse_obj(value)
+        context.metadata[_SERVER_SETTINGS_KEY] = server_settings
+        return server_settings
+    else:
+        print("Creating new Server Settings -- one didn't exist!")
+        server_settings = ServerSettings()
+        context.metadata[_SERVER_SETTINGS_KEY] = server_settings
+        return server_settings
 
 
 def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F821
@@ -165,9 +191,8 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
         return context.metadata.get(_GAME_STATE_KEY)
 
     # Get it from the KV Store
-    key = "GameState"
-    kv = KeyValueStore(context.client, key)
-    value = kv.get(key)
+    kv = KeyValueStore(context.client, _GAME_STATE_KEY)
+    value = kv.get(_GAME_STATE_KEY)
 
     if value:
         print("Parsing game state from stored value")
@@ -193,6 +218,27 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
         return game_state
 
 
+def save_server_settings(server_settings, context: AgentContext):
+    """Save ServerSettings to the KeyValue store."""
+
+    logging.debug(
+        f"Saving Server Settings from workspace {context.client.config.workspace_handle}.",
+        extra={
+            AgentLogging.IS_MESSAGE: True,
+            AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+            AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+        },
+    )
+
+    # Save it to the KV Store
+    value = server_settings.dict()
+    kv = KeyValueStore(context.client, _SERVER_SETTINGS_KEY)
+    kv.set(_SERVER_SETTINGS_KEY, value)
+
+    # Also save it to the context
+    context.metadata[_SERVER_SETTINGS_KEY] = server_settings
+
+
 def save_game_state(game_state, context: AgentContext):
     """Save GameState to the KeyValue store."""
 
@@ -206,10 +252,9 @@ def save_game_state(game_state, context: AgentContext):
     )
 
     # Save it to the KV Store
-    key = "GameState"
     value = game_state.dict()
-    kv = KeyValueStore(context.client, key)
-    kv.set(key, value)
+    kv = KeyValueStore(context.client, _GAME_STATE_KEY)
+    kv.set(_GAME_STATE_KEY, value)
 
     # Also save it to the context
     context.metadata[_GAME_STATE_KEY] = game_state

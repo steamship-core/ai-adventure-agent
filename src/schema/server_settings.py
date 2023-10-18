@@ -45,3 +45,37 @@ class ServerSettings(BaseModel):
         raise SteamshipError(
             message=f"Invalid model selection (preferred={preferred}, default={default}). Only the following are allowed: {allowed}"
         )
+
+    def update_from_web(self, other: "ServerSettings"):
+        """Perform a gentle update so that the website doesn't accidentally blast over this if it diverges in
+        structure."""
+
+        if other.default_function_capable_llm_model:
+            self.default_function_capable_llm_model = (
+                other.default_function_capable_llm_model
+            )
+
+        if other.default_function_capable_llm_temperature:
+            self.default_function_capable_llm_temperature = (
+                other.default_function_capable_llm_temperature
+            )
+
+        if other.default_function_capable_llm_max_tokens:
+            self.default_function_capable_llm_max_tokens = (
+                other.default_function_capable_llm_max_tokens
+            )
+
+        if other.default_story_model:
+            self.default_story_model = other.default_story_model
+
+        if other.default_story_temperature:
+            self.default_story_temperature = other.default_story_temperature
+
+        if other.default_story_max_tokens:
+            self.default_story_max_tokens = other.default_story_max_tokens
+
+        if other.default_narration_model:
+            self.default_narration_model = other.default_narration_model
+
+        if other.quest_cost:
+            self.quest_cost = other.quest_cost
