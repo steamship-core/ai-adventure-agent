@@ -4,6 +4,10 @@ from pydantic import BaseModel, Field
 from steamship import SteamshipError
 
 
+def validate_prompt_args(prompt: str, valid_args: List[str]):
+    return True
+
+
 class ServerSettings(BaseModel):
     """Server Settings for the AI Adventure Game set by the Game Host.
 
@@ -32,6 +36,31 @@ class ServerSettings(BaseModel):
     # Energy Management
     quest_cost: int = Field(10, description="The cost of going on one quest")
 
+    # Prompts
+
+    camp_image_prompt: str = Field(
+        "(pixel art) {tone} {genre} camp.",
+        description="Prompt for generating camp images.",
+    )
+    item_image_prompt: str = Field(
+        "(pixel art) 16-bit retro-game sprite for an item in a hero's inventory. The items's name is: {name}. The item's description is: {description}.",
+        description="Prompt for generating item images.",
+    )
+    profile_image_prompt: str = Field(
+        "(pixel art) 16-bit retro-game style profile picture of a hero on an adventure. The hero's name is: {name}. The hero has the following background: {background}. The hero has a description of: {description}.",
+        description="Prompt for generating profile images.",
+    )
+
+    quest_background_image_prompt: str = Field(
+        "(pixel art) background scene for a quest. The scene being depicted is: {description}",
+        description="Prompt for generating quest background images.",
+    )
+
+    music_prompt: str = Field(
+        "16-bit game score for a quest game scene. {genre} genre. {tone}. Scene description: {description}",
+        description="Prompt for generating music.",
+    )
+
     def _select_model(
         self,
         allowed: List[str],
@@ -46,7 +75,7 @@ class ServerSettings(BaseModel):
             message=f"Invalid model selection (preferred={preferred}, default={default}). Only the following are allowed: {allowed}"
         )
 
-    def update_from_web(self, other: "ServerSettings"):
+    def update_from_web(self, other: "ServerSettings"):  # noqa: C901
         """Perform a gentle update so that the website doesn't accidentally blast over this if it diverges in
         structure."""
 
@@ -79,3 +108,28 @@ class ServerSettings(BaseModel):
 
         if other.quest_cost:
             self.quest_cost = other.quest_cost
+
+        # TODO: Validate that they don't have bad interpolated variables below.
+
+        if other.camp_image_prompt:
+            validate_prompt_args(other.camp_image_prompt, ["tone", "genre"])
+            self.camp_image_prompt = other.camp_image_prompt
+
+        if other.item_image_prompt:
+            validate_prompt_args(other.item_image_prompt, ["name", "description"])
+            self.item_image_prompt = other.item_image_prompt
+
+        if other.profile_image_prompt:
+            validate_prompt_args(
+                other.profile_image_prompt,
+                ["name", "background", "description", "tone", "genre"],
+            )
+            self.profile_image_prompt = other.profile_image_prompt
+
+        if other.quest_background_image_prompt:
+            validate_prompt_args(other.quest_background_image_prompt, ["description"])
+            self.quest_background_image_prompt = other.quest_background_image_prompt
+
+        if other.music_prompt:
+            validate_prompt_args(other.music_prompt, ["genre", "tone", "description"])
+            self.music_prompt = other.music_prompt

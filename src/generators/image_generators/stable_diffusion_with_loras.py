@@ -7,8 +7,9 @@ from steamship.data import TagValueKey
 
 from generators import utils
 from generators.image_generator import ImageGenerator
+from generators.utils import safe_format
 from schema.objects import Item
-from utils.context_utils import get_game_state
+from utils.context_utils import get_game_state, get_server_settings
 from utils.tags import (
     CampTag,
     CharacterTag,
@@ -31,11 +32,16 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         )
 
         game_state = get_game_state(context)
+        server_settings = get_server_settings(context)
 
-        item_prompt = (
-            f"(pixel art) 16-bit retro-game sprite for an item in a hero's inventory. "
-            f"The items's name is: {item.name}. "
-            f"The item's description is: {item.description}. "
+        item_prompt = safe_format(
+            server_settings.item_image_prompt,
+            {
+                "genre": game_state.genre or "Adventure",
+                "tone": game_state.tone or "Triumphant",
+                "name": item.name or "A random object",
+                "description": item.description or "Of usual character",
+            },
         )
 
         tags = [
@@ -84,15 +90,21 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         )
 
         game_state = get_game_state(context)
+        server_settings = get_server_settings(context)
+
         name = game_state.player.name
         description = game_state.player.description
         background = game_state.player.background
 
-        profile_prompt = (
-            f"(pixel art) 16-bit retro-game style profile picture of a hero on an adventure. "
-            f"The hero's name is: {name}. "
-            f"The hero has the following background: {background}. "
-            f"The hero has a description of: {description}. "
+        profile_prompt = safe_format(
+            server_settings.profile_image_prompt,
+            {
+                "genre": game_state.genre or "Adventure",
+                "tone": game_state.tone or "Triumphant",
+                "name": name or "Hero",
+                "description": description or "A superhero that will save the day.",
+                "background": background or "From humble beginnings.",
+            },
         )
 
         tags = [
@@ -143,11 +155,15 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             StableDiffusionWithLorasImageGenerator.PLUGIN_HANDLE
         )
         game_state = get_game_state(context)
+        server_settings = get_server_settings(context)
 
-        scene_prompt = (
-            "(pixel art) background scene for a quest. \n"
-            "The scene being depicted is: \n"
-            f"{description}"
+        scene_prompt = safe_format(
+            server_settings.quest_background_image_prompt,
+            {
+                "genre": game_state.genre or "Adventure",
+                "tone": game_state.tone or "Triumphant",
+                "description": description or "An interesting place far away.",
+            },
         )
 
         tags = [
@@ -190,8 +206,15 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             StableDiffusionWithLorasImageGenerator.PLUGIN_HANDLE
         )
         game_state = get_game_state(context)
+        server_settings = get_server_settings(context)
 
-        scene_prompt = f"(pixel art) {game_state.tone} {game_state.genre} camp."
+        scene_prompt = safe_format(
+            server_settings.camp_image_prompt,
+            {
+                "genre": game_state.genre or "Adventure",
+                "tone": game_state.tone or "Triumphant",
+            },
+        )
 
         tags = [
             Tag(kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.CAMP),

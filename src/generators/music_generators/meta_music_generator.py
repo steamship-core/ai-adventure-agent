@@ -5,7 +5,8 @@ from steamship.agents.schema import AgentContext
 
 from generators import utils
 from generators.music_generator import MusicGenerator
-from utils.context_utils import get_game_state
+from generators.utils import safe_format
+from utils.context_utils import get_game_state, get_server_settings
 from utils.tags import CampTag, QuestIdTag, SceneTag, StoryContextTag, TagKindExtensions
 
 
@@ -17,10 +18,16 @@ class MetaMusicGenerator(MusicGenerator):
     ) -> Task:
         music_gen = context.client.use_plugin(self.PLUGIN_HANDLE)
         game_state = get_game_state(context)
-        genre = game_state.genre or "Adventure"
-        tone = game_state.tone or "Triumphant"
+        server_settings = get_server_settings(context)
 
-        prompt = f"16-bit game score for a quest game scene. {genre} genre. {tone}. Scene description: {description}"
+        prompt = safe_format(
+            server_settings.music_prompt,
+            {
+                "genre": game_state.genre or "Adventure",
+                "tone": game_state.tone or "Triumphant",
+                "description": description,
+            },
+        )
 
         tags = [
             Tag(kind=TagKindExtensions.SCENE, name=SceneTag.AUDIO),
