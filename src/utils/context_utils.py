@@ -170,13 +170,12 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
     value = kv.get(key)
 
     if value:
-        print("Parsing game state from stored value")
-        print(value)
+        logging.debug(f"Parsing game state from stored value: \n{value}")
         game_state = GameState.parse_obj(value)
         context.metadata[_GAME_STATE_KEY] = game_state
         return game_state
     else:
-        print("Creating new game state -- one didn't exist!")
+        logging.debug("Creating new game state -- one didn't exist!")
         game_state = GameState()
         context.metadata[_GAME_STATE_KEY] = game_state
 
