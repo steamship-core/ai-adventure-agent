@@ -8,6 +8,8 @@ from generators.image_generators.stable_diffusion_with_loras import (
 )
 from generators.music_generator import MusicGenerator
 from generators.music_generators.meta_music_generator import MetaMusicGenerator
+from schema.server_settings import ServerSettings
+from utils.context_utils import get_game_state, get_server_settings
 
 _IMAGE_GENERATOR_KEY = "image-generator"
 _MUSIC_GENERATOR_KEY = "music-generator"
@@ -17,7 +19,17 @@ def get_image_generator(context: AgentContext) -> Optional[ImageGenerator]:
     generator = context.metadata.get(_IMAGE_GENERATOR_KEY)
     if not generator:
         # Lazily create
-        generator = StableDiffusionWithLorasImageGenerator()
+        server_settings: ServerSettings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        lora = server_settings._select_model(
+            StableDiffusionWithLorasImageGenerator.KNOWN_LORAS_AND_TRIGGERS.keys(),
+            default=server_settings.default_image_generation_lora,
+            preferred=preferences.image_generation_lora,
+        )
+
+        generator = StableDiffusionWithLorasImageGenerator(lora=lora)
         context.metadata[_IMAGE_GENERATOR_KEY] = generator
 
     return generator

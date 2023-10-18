@@ -56,6 +56,14 @@ class QuestAgent(InterruptiblePythonAgent):
         player = game_state.player
         quest = get_current_quest(context)
 
+        if not game_state.quest_arc:
+            game_state.quest_arc = generate_quest_arc(game_state.player, context)
+
+        if len(game_state.quest_arc) >= len(game_state.quests):
+            quest_description = game_state.quest_arc[len(game_state.quests) - 1]
+        else:
+            quest_description = None
+
         logging.debug(
             "Running Quest Agent",
             extra={
@@ -70,9 +78,6 @@ class QuestAgent(InterruptiblePythonAgent):
             quest.sent_intro = True
             save_game_state(game_state, context)
 
-            if not game_state.quest_arc:
-                game_state.quest_arc = generate_quest_arc(game_state.player, context)
-
             logging.debug(
                 "Sending Intro Part 2",
                 extra={
@@ -83,8 +88,7 @@ class QuestAgent(InterruptiblePythonAgent):
                 },
             )
 
-            if len(game_state.quest_arc) >= len(game_state.quests):
-                quest_description = game_state.quest_arc[len(game_state.quests)-1]
+            if quest_description is not None:
                 prompt = f"{game_state.player.name} is about to go on a mission to {quest_description.goal} at {quest_description.location}. Describe the first few things they do in a few sentences"
             else:
                 # here as a fallback
@@ -130,12 +134,17 @@ class QuestAgent(InterruptiblePythonAgent):
                     )
                 )
 
+
         if not quest.sent_outro:
             quest.sent_outro = True
             save_game_state(game_state, context)
 
+            if quest_description is not None:
+                prompt = f"How does this mission end? {player.name} should achieve their goal of {quest_description.goal}"
+            else:
+                prompt = f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}"
             story_end_block = send_story_generation(
-                f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}",
+                prompt,
                 quest_name=quest.name,
                 context=context,
             )
@@ -175,8 +184,9 @@ class QuestAgent(InterruptiblePythonAgent):
             text=f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}",
             tags=self.tags(QuestTag.USER_SOLUTION, quest),
         )
-        send_story_generation(
+        solution_block = send_story_generation(
             "What happens next? Does it work?",
             quest_name=quest.name,
             context=context,
         )
+        await_streamed_block(solution_block, context)

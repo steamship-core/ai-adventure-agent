@@ -1,7 +1,14 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 from steamship import SteamshipError
+
+NICE_LORAS_AND_TRIGGERS: Dict[str, str] = {
+    # Pixel Art XL (https://civitai.com/models/120096/pixel-art-xl) by https://civitai.com/user/NeriJS
+    "https://civitai.com/api/download/models/135931": "(pixel art)",
+    # Pixel Art SDXL RW (https://civitai.com/models/114334/pixel-art-sdxl-rw) by https://civitai.com/user/leonnn1
+    "https://civitai.com/api/download/models/123593": "((pixelart))",
+}
 
 
 def validate_prompt_args(prompt: str, valid_args: List[str]):
@@ -15,7 +22,10 @@ class ServerSettings(BaseModel):
     """
 
     # Image Generation Settings
-    # default_image_generator: str = Field("StableDiffusionWithLorasImageGenerator", description="")  # TODO(doug): fix
+    default_image_generation_lora: str = Field(
+        default="https://civitai.com/api/download/models/123593",
+        description="LoRA to use for image generation. This MUST be a known SDXL-based LoRA.",
+    )
 
     # Language Generation Settings - Function calling
     default_function_capable_llm_model: str = Field("gpt-3.5-turbo", description="")
@@ -23,9 +33,9 @@ class ServerSettings(BaseModel):
     default_function_capable_llm_max_tokens: int = Field(512, description="")
 
     # Language Generation Settings - Story telling
-    default_story_model: str = Field("gpt-4", description="")
+    default_story_model: str = Field("gpt-3.5-turbo", description="")
     default_story_temperature: float = Field(0.4, description="")
-    default_story_max_tokens: int = Field(256, description="")
+    default_story_max_tokens: int = Field(512, description="")
 
     # Narration Generation Settings
     default_narration_model: str = Field("elevenlabs", description="")
@@ -39,20 +49,22 @@ class ServerSettings(BaseModel):
     # Prompts
 
     camp_image_prompt: str = Field(
-        "(pixel art) {tone} {genre} camp.",
+        "{tone} {genre} camp.",
         description="Prompt for generating camp images.",
     )
+
     item_image_prompt: str = Field(
-        "(pixel art) 16-bit retro-game sprite for an item in a hero's inventory. The items's name is: {name}. The item's description is: {description}.",
+        "16-bit retro-game style item in a hero's inventory. The items's name is: {name}. The item's description is: {description}.",
         description="Prompt for generating item images.",
     )
+
     profile_image_prompt: str = Field(
-        "(pixel art) 16-bit retro-game style profile picture of a hero on an adventure. The hero's name is: {name}. The hero has the following background: {background}. The hero has a description of: {description}.",
+        "16-bit retro-game style profile picture of a hero on an adventure. The hero's name is: {name}. The hero has the following background: {background}. The hero has a description of: {description}.",
         description="Prompt for generating profile images.",
     )
 
     quest_background_image_prompt: str = Field(
-        "(pixel art) background scene for a quest. The scene being depicted is: {description}",
+        "16-bit background scene for a quest. The scene being depicted is: {description}",
         description="Prompt for generating quest background images.",
     )
 
@@ -63,24 +75,24 @@ class ServerSettings(BaseModel):
 
     # Loras
 
-    camp_image_loras: List[str] = Field(
-        ["https://civitai.com/api/download/models/135931"],
-        description="Loras for generating camp images.",
+    camp_image_loras: Dict[str, str] = Field(
+        {"https://civitai.com/api/download/models/135931": "(pixel art)"},
+        description="Lora and their triggers for generating camp images.",
     )
 
-    item_image_loras: List[str] = Field(
-        ["https://civitai.com/api/download/models/135931"],
-        description="Loras for generating item images.",
+    item_image_loras: Dict[str, str] = Field(
+        {"https://civitai.com/api/download/models/135931": "(pixel art)"},
+        description="Lora and their triggers for generating item images.",
     )
 
-    profile_image_loras: List[str] = Field(
-        ["https://civitai.com/api/download/models/135931"],
-        description="Lorase for generating profile images.",
+    profile_image_loras: Dict[str, str] = Field(
+        {"https://civitai.com/api/download/models/135931": "(pixel art)"},
+        description="Lora and their triggers for generating profile images.",
     )
 
-    quest_background_image_loras: List[str] = Field(
-        ["https://civitai.com/api/download/models/135931"],
-        description="Loras for generating quest background images.",
+    quest_background_image_loras: Dict[str, str] = Field(
+        {"https://civitai.com/api/download/models/135931": "(pixel art)"},
+        description="Lora and their triggers for generating quest background images.",
     )
 
     def _select_model(

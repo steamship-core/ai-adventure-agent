@@ -23,7 +23,7 @@ from utils.tags import (
 
 class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
-    PLUGIN_HANDLE: Final[str] = "fal-sd-lora-image-generator-streaming"
+    PLUGIN_HANDLE: Final[str] = "fal-sd-lora-image-generator"
 
     def request_item_image_generation(self, item: Item, context: AgentContext) -> Task:
         # TODO(doug): cache plugin instance by client workspace
@@ -42,6 +42,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
                 "name": item.name or "A random object",
                 "description": item.description or "Of usual character",
             },
+            server_settings.item_image_loras,
         )
 
         tags = [
@@ -105,6 +106,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
                 "description": description or "A superhero that will save the day.",
                 "background": background or "From humble beginnings.",
             },
+            server_settings.profile_image_loras,
         )
 
         tags = [
@@ -164,6 +166,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
                 "tone": game_state.tone or "Triumphant",
                 "description": description or "An interesting place far away.",
             },
+            server_settings.quest_background_image_loras,
         )
 
         tags = [
@@ -217,6 +220,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
                 "genre": game_state.genre or "Adventure",
                 "tone": game_state.tone or "Triumphant",
             },
+            server_settings.camp_image_loras,
         )
 
         tags = [

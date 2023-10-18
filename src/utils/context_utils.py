@@ -139,7 +139,10 @@ def get_audio_narration_generator(
             default=server_settings.default_narration_model,
             preferred=preferences.narration_model,
         )
-        generator = context.client.use_plugin(plugin_handle)
+        config = {}
+        if plugin_handle == "elevenlabs":
+            config["voice_id"] = "ThT5KcBeYPX3keUQqHPh"
+        generator = context.client.use_plugin(plugin_handle, config=config)
         context.metadata[_NARRATION_GENERATOR_KEY] = generator
 
     return generator
@@ -195,13 +198,12 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
     value = kv.get(_GAME_STATE_KEY)
 
     if value:
-        print("Parsing game state from stored value")
-        print(value)
+        logging.debug(f"Parsing game state from stored value: \n{value}")
         game_state = GameState.parse_obj(value)
         context.metadata[_GAME_STATE_KEY] = game_state
         return game_state
     else:
-        print("Creating new game state -- one didn't exist!")
+        logging.debug("Creating new game state -- one didn't exist!")
         game_state = GameState()
         context.metadata[_GAME_STATE_KEY] = game_state
 
