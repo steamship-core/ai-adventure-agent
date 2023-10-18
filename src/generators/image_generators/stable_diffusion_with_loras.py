@@ -59,7 +59,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             "seed": game_state.preferences.seed,
             "image_size": "square_hd",
             "loras": json.dumps(
-                [{"path": "https://civitai.com/api/download/models/135931"}]
+                map(lambda lora: {"path": lora}, server_settings.item_image_loras)
             ),
         }
 
@@ -122,7 +122,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             "seed": game_state.preferences.seed,
             "image_size": "portrait_4_3",
             "loras": json.dumps(
-                [{"path": "https://civitai.com/api/download/models/135931"}]
+                map(lambda lora: {"path": lora}, server_settings.profile_image_loras)
             ),
         }
 
@@ -176,7 +176,10 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             "seed": game_state.preferences.seed,
             "image_size": "landscape_16_9",
             "loras": json.dumps(
-                [{"path": "https://civitai.com/api/download/models/135931"}]
+                map(
+                    lambda lora: {"path": lora},
+                    server_settings.quest_background_image_loras,
+                )
             ),
         }
 
@@ -225,7 +228,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             "seed": game_state.preferences.seed,
             "image_size": "landscape_16_9",
             "loras": json.dumps(
-                [{"path": "https://civitai.com/api/download/models/135931"}]
+                map(lambda lora: {"path": lora}, server_settings.camp_image_loras)
             ),
         }
 

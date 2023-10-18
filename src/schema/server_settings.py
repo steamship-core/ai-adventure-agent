@@ -61,6 +61,28 @@ class ServerSettings(BaseModel):
         description="Prompt for generating music.",
     )
 
+    # Loras
+
+    camp_image_loras: List[str] = Field(
+        ["https://civitai.com/api/download/models/135931"],
+        description="Loras for generating camp images.",
+    )
+
+    item_image_loras: List[str] = Field(
+        ["https://civitai.com/api/download/models/135931"],
+        description="Loras for generating item images.",
+    )
+
+    profile_image_loras: List[str] = Field(
+        ["https://civitai.com/api/download/models/135931"],
+        description="Lorase for generating profile images.",
+    )
+
+    quest_background_image_loras: List[str] = Field(
+        ["https://civitai.com/api/download/models/135931"],
+        description="Loras for generating quest background images.",
+    )
+
     def _select_model(
         self,
         allowed: List[str],
@@ -114,10 +136,12 @@ class ServerSettings(BaseModel):
         if other.camp_image_prompt:
             validate_prompt_args(other.camp_image_prompt, ["tone", "genre"])
             self.camp_image_prompt = other.camp_image_prompt
+            self.camp_image_loras = other.camp_image_loras
 
         if other.item_image_prompt:
             validate_prompt_args(other.item_image_prompt, ["name", "description"])
             self.item_image_prompt = other.item_image_prompt
+            self.item_image_loras = other.item_image_loras
 
         if other.profile_image_prompt:
             validate_prompt_args(
@@ -125,10 +149,12 @@ class ServerSettings(BaseModel):
                 ["name", "background", "description", "tone", "genre"],
             )
             self.profile_image_prompt = other.profile_image_prompt
+            self.profile_image_loras = other.profile_image_loras
 
         if other.quest_background_image_prompt:
             validate_prompt_args(other.quest_background_image_prompt, ["description"])
             self.quest_background_image_prompt = other.quest_background_image_prompt
+            self.quest_background_image_loras = other.quest_background_image_loras
 
         if other.music_prompt:
             validate_prompt_args(other.music_prompt, ["genre", "tone", "description"])
