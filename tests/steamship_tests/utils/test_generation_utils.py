@@ -2,7 +2,10 @@ from steamship import File, Steamship
 from steamship.agents.schema import AgentContext
 
 from agents.onboarding_agent import OnboardingAgent
-from schema.characters import HumanCharacter
+from api import AdventureGameService
+from endpoints.npc_endpoints import NpcMixin
+from schema.camp import Camp
+from schema.characters import HumanCharacter, NpcCharacter
 from schema.game_state import GameState
 from schema.server_settings import ServerSettings
 from utils.context_utils import with_server_settings, _GAME_STATE_KEY, save_game_state, RunNextAgentException
@@ -57,6 +60,14 @@ def test_merchant_inventory():
             assert len(item[0]) < len(item[1])
 
 
+def test_merchant_inventory_endpoint():
+    with Steamship.temporary_workspace() as client:
+        context, game_state = prepare_state(client)
+        result = NpcMixin._refresh_inventory(context, game_state, "merchant")
+        print(result)
+
+
+
 def test_quest_arc():
     with Steamship.temporary_workspace() as client:
         context, game_state = prepare_state(client)
@@ -88,6 +99,8 @@ def create_test_game_state(context: AgentContext) -> GameState:
     game_state.player.background = "he's a guy"
     game_state.tone = "funny"
     game_state.genre = "adventure"
+    game_state.camp = Camp()
+    game_state.camp.npcs = [NpcCharacter(name="merchant")]
     save_game_state(game_state, context=context)
 
     return game_state

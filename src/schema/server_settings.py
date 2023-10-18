@@ -11,7 +11,10 @@ class ServerSettings(BaseModel):
     """
 
     # Image Generation Settings
-    # default_image_generator: str = Field("StableDiffusionWithLorasImageGenerator", description="")  # TODO(doug): fix
+    default_image_generation_lora: str = Field(
+        default="https://civitai.com/api/download/models/123593",
+        description="LoRA to use for image generation. This MUST be a known SDXL-based LoRA.",
+    )
 
     # Language Generation Settings - Function calling
     default_function_capable_llm_model: str = Field("gpt-3.5-turbo", description="")
@@ -19,9 +22,9 @@ class ServerSettings(BaseModel):
     default_function_capable_llm_max_tokens: int = Field(512, description="")
 
     # Language Generation Settings - Story telling
-    default_story_model: str = Field("gpt-4", description="")
+    default_story_model: str = Field("gpt-3.5-turbo", description="")
     default_story_temperature: float = Field(0.4, description="")
-    default_story_max_tokens: int = Field(256, description="")
+    default_story_max_tokens: int = Field(512, description="")
 
     # Narration Generation Settings
     default_narration_model: str = Field("elevenlabs", description="")

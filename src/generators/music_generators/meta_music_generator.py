@@ -10,7 +10,7 @@ from utils.tags import CampTag, QuestIdTag, SceneTag, StoryContextTag, TagKindEx
 
 
 class MetaMusicGenerator(MusicGenerator):
-    PLUGIN_HANDLE: Final[str] = "music-generator-streaming"
+    PLUGIN_HANDLE: Final[str] = "music-generator"
 
     def request_scene_music_generation(
         self, description: str, context: AgentContext
