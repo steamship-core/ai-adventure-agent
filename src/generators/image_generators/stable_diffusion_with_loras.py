@@ -23,7 +23,7 @@ from utils.tags import (
 
 class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
-    PLUGIN_HANDLE: Final[str] = "fal-sd-lora-image-generator-streaming"
+    PLUGIN_HANDLE: Final[str] = "fal-sd-lora-image-generator"
     DEFAULT_LORA: Final[str] = "https://civitai.com/api/download/models/123593"
     KNOWN_LORAS_AND_TRIGGERS: Final[Dict[str, str]] = {
         # Pixel Art XL (https://civitai.com/models/120096/pixel-art-xl) by https://civitai.com/user/NeriJS
@@ -35,6 +35,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
     _lora: str = PrivateAttr(default=DEFAULT_LORA)
 
     def __init__(self, lora: Optional[str] = DEFAULT_LORA):
+        super().__init__()
         self._lora = lora
 
     def request_item_image_generation(self, item: Item, context: AgentContext) -> Task:
@@ -47,7 +48,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
         item_prompt = (
             f"{StableDiffusionWithLorasImageGenerator.KNOWN_LORAS_AND_TRIGGERS[self._lora]} "
-            "16-bit retro-game sprite for an item in a hero's inventory. "
+            "16-bit retro-game style item in a hero's inventory. "
             f"The items's name is: {item.name}. "
             f"The item's description is: {item.description}. "
         )
