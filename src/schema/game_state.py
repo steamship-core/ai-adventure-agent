@@ -2,7 +2,6 @@ from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
-from steamship import Task, TaskState
 
 from schema.camp import Camp
 from schema.characters import HumanCharacter, NpcCharacter
@@ -56,8 +55,8 @@ class GameState(BaseModel):
     )
 
     quest_arc: Optional[List[QuestDescription]] = Field(
-        default= None,
-        description="The list of stages of quest that a player will go through"
+        default=None,
+        description="The list of stages of quest that a player will go through",
     )
 
     current_quest: Optional[str] = Field(
@@ -75,16 +74,8 @@ class GameState(BaseModel):
         description="The key of the last question asked to the user via context_utils.await_ask.",
     )
 
-    profile_image_task: Optional[
-        Task
-    ] = Field(  # TODO(doug): should this be a Task ID to reduce game state size, etc.?
-        default=None,
-        description="Task for the generation of an initial profile image for the primary character.",
-    )
-
     profile_image_url: Optional[str] = Field(
-        default=None,
-        description="The URL for the character image"
+        default=None, description="The URL for the character image"
     )
 
     chat_history_for_onboarding_complete: Optional[bool] = Field(
@@ -126,15 +117,7 @@ class GameState(BaseModel):
         )
 
     def image_generation_requested(self) -> bool:
-        if not self.profile_image_task:
-            return False
-        if task := self.profile_image_task:
-            # retry if failed.
-            return task.state in [
-                TaskState.succeeded,
-                TaskState.running,
-                TaskState.waiting,
-            ]
+        return True if self.profile_image_url else False
 
     def camp_image_requested(self) -> bool:
         return True if self.camp.image_block_url else False
