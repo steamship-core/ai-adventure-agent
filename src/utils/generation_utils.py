@@ -203,7 +203,7 @@ def generate_quest_arc(
         player: HumanCharacter,
         context: AgentContext
 ) -> List[QuestDescription]:
-    prompt = f"Please list 10 quests of increasing difficulty that {player.name} will go in to achieve their overall goal of {player.motivation}. They should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location>"
+    prompt = f"Please list 10 quests of increasing difficulty that {player.name} will go in to achieve their overall goal of {player.motivation}. They should fit the setting of the story. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location name>"
     block = do_generation(
         context,
         prompt,
