@@ -1,9 +1,11 @@
-from steamship import File, Steamship
+from steamship import File, Steamship, Block, Tag
 from steamship.agents.schema import AgentContext
+from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagKind, TagValueKey
 
 from agents.onboarding_agent import OnboardingAgent
 from api import AdventureGameService
 from endpoints.npc_endpoints import NpcMixin
+from endpoints.quest_endpoints import QuestMixin
 from schema.camp import Camp
 from schema.characters import HumanCharacter, NpcCharacter
 from schema.game_state import GameState
@@ -66,6 +68,16 @@ def test_merchant_inventory_endpoint():
         result = NpcMixin._refresh_inventory(context, game_state, "merchant")
         print(result)
 
+
+def test_audio_narration():
+    with Steamship.temporary_workspace() as client:
+        context, game_state = prepare_state(client)
+        file = File.create(client, blocks=[Block(text="Let's go on an adventure! "*20, tags=[Tag(kind=TagKind.CHAT, name=ChatTag.ROLE, value={TagValueKey.STRING_VALUE : RoleTag.ASSISTANT})])])
+        block = file.blocks[0]
+        narration_block = QuestMixin._narrate_block(block, context)
+        url = narration_block.raw_data_url
+        assert narration_block.raw_data_url is not None
+        print(narration_block.raw_data_url)
 
 
 def test_quest_arc():

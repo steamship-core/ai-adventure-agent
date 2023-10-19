@@ -44,22 +44,6 @@ from utils.tags import (
 )
 
 
-def send_audio_narration(block: Block, context: AgentContext) -> Optional[Block]:
-    """Generates and sends a background image to the player."""
-    generator = get_audio_narration_generator(context)
-    task = generator.generate(
-        text=block.text,
-        make_output_public=True,
-        # streaming=True,
-    )
-
-    # TODO: Figure out how to do this in a way that's treaming friendly AND sync friendly
-    task.wait()
-    block = task.output.blocks[0]
-    emit(output=block, context=context)
-    return block
-
-
 def send_agent_status_message(
     name: AgentStatusMessageTag, context: AgentContext, value: Optional[dict] = None
 ) -> Optional[Block]:
