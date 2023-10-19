@@ -1,11 +1,14 @@
 from typing import Callable, Optional
 
 import pytest
+from steamship import Steamship
 
 from api import AdventureGameService
 from schema.characters import Merchant
 from schema.game_state import GameState
 from schema.objects import Item, TradeResult
+from tests.steamship_tests.utils.test_generation_utils import prepare_state
+from tools.trade_tool import TradeTool
 
 
 def get_merchant(gs: GameState) -> Optional[Merchant]:
@@ -46,6 +49,28 @@ def test_trade_endpoint_buy(
     assert result.player_bought
     assert result.player_bought[0] == merchant.inventory[0]
 
+
+def test_trade_tool_buy():
+    with Steamship.temporary_workspace() as client:
+        context, game_state = prepare_state(client)
+        GOLD = 1000
+        game_state.player.gold = GOLD
+
+        merchant = get_merchant(game_state)
+        assert merchant
+        assert merchant.inventory
+
+        to_buy_item = merchant.inventory[0]
+        to_buy = [to_buy_item.name]
+
+        result = TradeTool(counter_party=merchant).attempt_trade(game_state, context, [], to_buy)
+
+        assert result.player_gold_delta == -1 * to_buy_item.price()
+        assert result.player_gold == GOLD - to_buy_item.price()
+        assert result.player_bought
+        assert result.player_bought[0] == to_buy_item
+
+        assert game_state.player.inventory[0] == to_buy_item
 
 @pytest.mark.parametrize("invocable_handler", [AdventureGameService], indirect=True)
 def test_trade_endpoint_sell(

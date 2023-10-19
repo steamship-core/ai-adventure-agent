@@ -9,6 +9,7 @@ from endpoints.quest_endpoints import QuestMixin
 from schema.camp import Camp
 from schema.characters import HumanCharacter, NpcCharacter
 from schema.game_state import GameState
+from schema.objects import Item
 from schema.server_settings import ServerSettings
 from utils.context_utils import with_server_settings, _GAME_STATE_KEY, save_game_state, RunNextAgentException
 from utils.generation_utils import send_story_generation, generate_merchant_inventory, generate_quest_arc
@@ -112,7 +113,7 @@ def create_test_game_state(context: AgentContext) -> GameState:
     game_state.tone = "funny"
     game_state.genre = "adventure"
     game_state.camp = Camp()
-    game_state.camp.npcs = [NpcCharacter(name="merchant")]
+    game_state.camp.npcs = [NpcCharacter(name="merchant", category="merchant", inventory=[Item(name="thingy",description="a thingy")])]
     save_game_state(game_state, context=context)
 
     return game_state
