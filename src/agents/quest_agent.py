@@ -6,6 +6,7 @@ from steamship import Tag
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
+from steamship.data.tags.tag_constants import RoleTag
 
 from generators.generator_context_utils import get_image_generator, get_music_generator
 from schema.game_state import GameState
@@ -17,7 +18,11 @@ from utils.context_utils import (
     get_game_state,
     save_game_state,
 )
-from utils.generation_utils import await_streamed_block, send_story_generation, generate_quest_arc
+from utils.generation_utils import (
+    await_streamed_block,
+    generate_quest_arc,
+    send_story_generation,
+)
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 from utils.tags import QuestIdTag, QuestTag, TagKindExtensions
 
@@ -45,10 +50,10 @@ class QuestAgent(InterruptiblePythonAgent):
     It can be slotted into as a state machine sub-agent by the overall agent.
     """
 
-    def run(self, context: AgentContext) -> Action:
+    def run(self, context: AgentContext) -> Action:  # noqa: C901
         """
-        It could go in a tool, but that doesn't feel necessary.. there are some other spots where tools feel very
-        well fit, but this might be better left open-ended so we can stop/start things as we like.
+        It could go in a tool, but that doesn't feel necessary... there are some other spots where tools feel very
+        well fit, but this might be better left open-ended, so we can stop/start things as we like.
         """
 
         # Load the main things we're working with. These can modified and the save_game_state called at any time
@@ -123,7 +128,50 @@ class QuestAgent(InterruptiblePythonAgent):
                 )
             )
             save_game_state(game_state, context)
-            self.generate_solution(game_state, context, quest)
+            try:
+                self.generate_solution(game_state, context, quest)
+            except Exception as e:
+                # TODO(doug): do we want to indicate the input was flagged if that is the issue?
+                if "flagged" in str(e):
+                    # flag messages as excluded
+                    if message := context.chat_history.last_user_message:
+                        message._one_time_set_tag(
+                            tag_kind="admin",
+                            tag_name="excluded",
+                            string_value="flagged",
+                        )
+
+                    # clear last sys message added by generate_solution ("what happens next?")
+                    if sys_message := context.chat_history.last_system_message:
+                        sys_message._one_time_set_tag(
+                            tag_kind="admin",
+                            tag_name="excluded",
+                            string_value="flagged",
+                        )
+
+                        # and clear other last sys message added by generate_solution ("user proposed: ... ")
+                        for block in context.chat_history.file.blocks[::-1]:
+                            if (
+                                block.chat_role == RoleTag.SYSTEM
+                                and block.id != sys_message.id
+                            ):
+                                block._one_time_set_tag(
+                                    tag_kind="admin",
+                                    tag_name="excluded",
+                                    string_value="flagged",
+                                )
+                                break
+
+                quest.user_problem_solutions.pop()
+                quest.user_problem_solutions.append(
+                    await_ask(
+                        f"What does {player.name} do next?",
+                        context=context,
+                        key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
+                        prompt_prologue="Apologies: Something went wrong when writing the next part of the story. Let's try again.",
+                    )
+                )
+
             if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
                 self.create_problem(game_state, context, quest)
                 quest.user_problem_solutions.append(
@@ -133,7 +181,6 @@ class QuestAgent(InterruptiblePythonAgent):
                         key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
                     )
                 )
-
 
         if not quest.sent_outro:
             quest.sent_outro = True
@@ -180,6 +227,7 @@ class QuestAgent(InterruptiblePythonAgent):
     def generate_solution(
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
+        # TODO(do we need both system messages)? can this be consolidated into a single prompt?
         context.chat_history.append_system_message(
             text=f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}",
             tags=self.tags(QuestTag.USER_SOLUTION, quest),

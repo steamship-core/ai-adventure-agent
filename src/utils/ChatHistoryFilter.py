@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 
 from steamship import Block, File
+from steamship.data.tags.tag_utils import get_tag
 
 from utils.tags import CharacterTag, QuestIdTag, TagKindExtensions
 
@@ -15,11 +16,21 @@ class ChatHistoryFilter(ABC):
         """Returns a list of included blocks, and optional explanations of why included for debugging"""
         pass
 
+    def _excluded(self, block: Block) -> bool:
+        return (
+            True if get_tag(tags=block.tags, kind="admin", name="excluded") else False
+        )
+
     def filter_chat_history(
         self, chat_history_file: File, filter_for: Optional[str] = None
     ) -> List[int]:
         filtered_blocks = self.filter_blocks(chat_history_file=chat_history_file)
         filtered_blocks.sort(key=lambda x: x[0].index_in_file)
+        filtered_blocks = [
+            block_tuple
+            for block_tuple in filtered_blocks
+            if (not self._excluded(block_tuple[0]) and block_tuple[0].text)
+        ]
 
         debug_messages = [f"{filter_for} input: "]
         for _, (block, inclusion_reason) in enumerate(filtered_blocks):
