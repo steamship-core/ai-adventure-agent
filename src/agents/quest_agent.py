@@ -6,7 +6,6 @@ from steamship import Tag
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
-from steamship.data.tags.tag_constants import RoleTag
 
 from generators.generator_context_utils import get_image_generator, get_music_generator
 from schema.game_state import GameState
@@ -24,6 +23,7 @@ from utils.generation_utils import (
     send_story_generation,
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent
+from utils.moderation_utils import mark_block_as_excluded
 from utils.tags import QuestIdTag, QuestTag, TagKindExtensions
 
 
@@ -129,46 +129,33 @@ class QuestAgent(InterruptiblePythonAgent):
             )
             save_game_state(game_state, context)
             try:
+                # TODO: tag last user message as solution
                 self.generate_solution(game_state, context, quest)
             except Exception as e:
+                prologue_msg = (
+                    "Our Apologies: Something went wrong with writing the next part of the story. "
+                    "Let's try again."
+                )
                 # TODO(doug): do we want to indicate the input was flagged if that is the issue?
                 if "flagged" in str(e):
-                    # flag messages as excluded
+                    prologue_msg = "That response triggered the game’s content moderation filter. Please try again."
+                    # flag original message as excluded (this will prevent "getting stuck")
                     if message := context.chat_history.last_user_message:
-                        message._one_time_set_tag(
-                            tag_kind="admin",
-                            tag_name="excluded",
-                            string_value="flagged",
-                        )
+                        mark_block_as_excluded(message)
 
-                    # clear last sys message added by generate_solution ("what happens next?")
+                    # clear last sys message added by generate_solution (that copies the user submitted solution)
                     if sys_message := context.chat_history.last_system_message:
-                        sys_message._one_time_set_tag(
-                            tag_kind="admin",
-                            tag_name="excluded",
-                            string_value="flagged",
-                        )
+                        mark_block_as_excluded(sys_message)
 
-                        # and clear other last sys message added by generate_solution ("user proposed: ... ")
-                        for block in context.chat_history.file.blocks[::-1]:
-                            if (
-                                block.chat_role == RoleTag.SYSTEM
-                                and block.id != sys_message.id
-                            ):
-                                block._one_time_set_tag(
-                                    tag_kind="admin",
-                                    tag_name="excluded",
-                                    string_value="flagged",
-                                )
-                                break
-
+                # undo the game solution state, and start over
+                # todo: should we consider using a Command design pattern-like approach here for undo?
                 quest.user_problem_solutions.pop()
                 quest.user_problem_solutions.append(
                     await_ask(
                         f"What does {player.name} do next?",
                         context=context,
                         key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
-                        prompt_prologue="Apologies: Something went wrong when writing the next part of the story. Let's try again.",
+                        prompt_prologue=prologue_msg,
                     )
                 )
 
@@ -227,13 +214,12 @@ class QuestAgent(InterruptiblePythonAgent):
     def generate_solution(
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
-        # TODO(do we need both system messages)? can this be consolidated into a single prompt?
-        context.chat_history.append_system_message(
-            text=f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}",
-            tags=self.tags(QuestTag.USER_SOLUTION, quest),
+        prompt = (
+            f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}.\n"
+            f"What happens next? Does it work?"
         )
         solution_block = send_story_generation(
-            "What happens next? Does it work?",
+            prompt=prompt,
             quest_name=quest.name,
             context=context,
         )
