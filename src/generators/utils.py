@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Optional
+from typing import Optional
 
 from steamship import Block, File, Task, TaskState
 
@@ -46,18 +46,10 @@ def find_new_block(
     return None
 
 
-def safe_format(
-    text: str, params: dict, loras_and_triggers: Optional[Dict[str, str]] = None
-) -> str:
+def safe_format(text: str, params: dict) -> str:
     """Safely formats a user-provided string by replacing {key} with `value` for all (key,value) pairs in `params`."""
     ret = text
     for (key, value) in params.items():
-        ret = ret.replace(f"{key}", value)
-
-    # If a Lora -> Trigger dict was provided, make sure to include all the triggers
-    if loras_and_triggers:
-        triggers = [trigger for (lora, trigger) in loras_and_triggers.items()]
-        trigger_list = ",".join(triggers)
-        ret = f"{trigger_list}, {ret}"
+        ret = ret.replace("{" + key + "}", value)
 
     return ret

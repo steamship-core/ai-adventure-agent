@@ -1,14 +1,9 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 from steamship import SteamshipError
 
-NICE_LORAS_AND_TRIGGERS: Dict[str, str] = {
-    # Pixel Art XL (https://civitai.com/models/120096/pixel-art-xl) by https://civitai.com/user/NeriJS
-    "https://civitai.com/api/download/models/135931": "(pixel art)",
-    # Pixel Art SDXL RW (https://civitai.com/models/114334/pixel-art-sdxl-rw) by https://civitai.com/user/leonnn1
-    "https://civitai.com/api/download/models/123593": "((pixelart))",
-}
+from schema.stable_diffusion_theme import StableDiffusionTheme
 
 
 def validate_prompt_args(prompt: str, valid_args: List[str]):
@@ -20,12 +15,6 @@ class ServerSettings(BaseModel):
 
     These are intended to be set by the game operator (not the user).
     """
-
-    # Image Generation Settings
-    default_image_generation_lora: str = Field(
-        default="https://civitai.com/api/download/models/123593",
-        description="LoRA to use for image generation. This MUST be a known SDXL-based LoRA.",
-    )
 
     # Language Generation Settings - Function calling
     default_function_capable_llm_model: str = Field("gpt-3.5-turbo", description="")
@@ -40,17 +29,17 @@ class ServerSettings(BaseModel):
     # Narration Generation Settings
     default_narration_model: str = Field("elevenlabs", description="")
 
-    # Narration Generation Settings
-    # default_background_music_model: str = Field("music-generator", description="")  # TODO(doug): fix
-
     # Energy Management
     quest_cost: int = Field(10, description="The cost of going on one quest")
-
-    # Prompts
 
     camp_image_prompt: str = Field(
         "{tone} {genre} camp.",
         description="Prompt for generating camp images.",
+    )
+
+    camp_image_negative_prompt: str = Field(
+        "",
+        description="Negative prompt for generating camp images.",
     )
 
     item_image_prompt: str = Field(
@@ -58,9 +47,19 @@ class ServerSettings(BaseModel):
         description="Prompt for generating item images.",
     )
 
+    item_image_negative_prompt: str = Field(
+        "",
+        description="Negative prompt for generating item images.",
+    )
+
     profile_image_prompt: str = Field(
         "16-bit retro-game style profile picture of a hero on an adventure. The hero's name is: {name}. The hero has the following background: {background}. The hero has a description of: {description}.",
         description="Prompt for generating profile images.",
+    )
+
+    profile_image_negative_prompt: str = Field(
+        "",
+        description="Negative prompt for generating profile images.",
     )
 
     quest_background_image_prompt: str = Field(
@@ -68,31 +67,38 @@ class ServerSettings(BaseModel):
         description="Prompt for generating quest background images.",
     )
 
+    quest_background_image_negative_prompt: str = Field(
+        "",
+        description="Negative prompt for generating quest background images.",
+    )
+
     music_prompt: str = Field(
         "16-bit game score for a quest game scene. {genre} genre. {tone}. Scene description: {description}",
         description="Prompt for generating music.",
     )
 
-    # Loras
-
-    camp_image_loras: Dict[str, str] = Field(
-        {"https://civitai.com/api/download/models/135931": "(pixel art)"},
-        description="Lora and their triggers for generating camp images.",
+    image_themes: List[StableDiffusionTheme] = Field(
+        [], description="A list of stable diffusion themes to make available."
     )
 
-    item_image_loras: Dict[str, str] = Field(
-        {"https://civitai.com/api/download/models/135931": "(pixel art)"},
-        description="Lora and their triggers for generating item images.",
+    camp_image_theme: str = Field(
+        "pixel_art_2",
+        description="The Stable Diffusion theme for generating camp images.",
     )
 
-    profile_image_loras: Dict[str, str] = Field(
-        {"https://civitai.com/api/download/models/135931": "(pixel art)"},
-        description="Lora and their triggers for generating profile images.",
+    item_image_theme: str = Field(
+        "pixel_art_2",
+        description="The Stable Diffusion theme for generating item images.",
     )
 
-    quest_background_image_loras: Dict[str, str] = Field(
-        {"https://civitai.com/api/download/models/135931": "(pixel art)"},
-        description="Lora and their triggers for generating quest background images.",
+    profile_image_theme: str = Field(
+        "pixel_art_2",
+        description="The Stable Diffusion theme for generating profile images.",
+    )
+
+    quest_background_theme: str = Field(
+        "pixel_art_2",
+        description="The Stable Diffusion theme for generating quest images.",
     )
 
     def _select_model(
@@ -148,25 +154,47 @@ class ServerSettings(BaseModel):
         if other.camp_image_prompt:
             validate_prompt_args(other.camp_image_prompt, ["tone", "genre"])
             self.camp_image_prompt = other.camp_image_prompt
-            self.camp_image_loras = other.camp_image_loras
+
+        if other.camp_image_theme:
+            self.camp_image_theme = other.camp_image_theme
+
+        if other.camp_image_negative_prompt is not None:
+            self.camp_image_negative_prompt = other.camp_image_negative_prompt
 
         if other.item_image_prompt:
             validate_prompt_args(other.item_image_prompt, ["name", "description"])
             self.item_image_prompt = other.item_image_prompt
-            self.item_image_loras = other.item_image_loras
+
+        if other.item_image_theme:
+            self.item_image_theme = other.item_image_theme
+
+        if other.item_image_negative_prompt is not None:
+            self.camp_image_negative_prompt = other.camp_image_negative_prompt
 
         if other.profile_image_prompt:
             validate_prompt_args(
                 other.profile_image_prompt,
-                ["name", "background", "description", "tone", "genre"],
+                ["name", "description"],
             )
             self.profile_image_prompt = other.profile_image_prompt
-            self.profile_image_loras = other.profile_image_loras
+
+        if other.profile_image_negative_prompt is not None:
+            self.profile_image_negative_prompt = other.profile_image_negative_prompt
+
+        if other.profile_image_theme:
+            self.profile_image_theme = other.profile_image_theme
 
         if other.quest_background_image_prompt:
             validate_prompt_args(other.quest_background_image_prompt, ["description"])
             self.quest_background_image_prompt = other.quest_background_image_prompt
-            self.quest_background_image_loras = other.quest_background_image_loras
+
+        if other.quest_background_image_negative_prompt is not None:
+            self.quest_background_image_negative_prompt = (
+                other.quest_background_image_negative_prompt
+            )
+
+        if other.quest_background_theme:
+            self.quest_background_theme = other.quest_background_theme
 
         if other.music_prompt:
             validate_prompt_args(other.music_prompt, ["genre", "tone", "description"])
