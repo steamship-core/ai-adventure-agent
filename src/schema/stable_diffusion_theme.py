@@ -113,6 +113,7 @@ PIXEL_ART_THEME_2 = StableDiffusionTheme(
 )
 
 # https://civitai.com/models/120853/crayon-style-sdxl-and-sd15
+# Note: This isn't included in the list below because we haven't gotten it to work well yet.
 CRAYON = StableDiffusionTheme(
     name="crayon",
     guidance_scale=10,
@@ -123,6 +124,7 @@ CRAYON = StableDiffusionTheme(
 )
 
 # LZ-comics (https://civitai.com/models/164614/lz-comics) by https://civitai.com/user/Lunzi
+# Note: This isn't included in the list below because we haven't gotten it to work well yet.
 BW_COMIC_1 = StableDiffusionTheme(
     name="bw_comic_1",
     model="runwayml/stable-diffusion-v1-5",
@@ -135,6 +137,7 @@ BW_COMIC_1 = StableDiffusionTheme(
 
 # One Piece (Wano Saga) Style LoRA
 # (https://civitai.com/models/4219/one-piece-wano-saga-style-lora) by https://civitai.com/user/Lykon
+# Note: This isn't included in the list below because we haven't gotten it to work well yet.
 ONE_PIECE = StableDiffusionTheme(
     name="one-piece",
     model="runwayml/stable-diffusion-v1-5",
@@ -146,6 +149,6 @@ ONE_PIECE = StableDiffusionTheme(
 )
 
 # Premade themes that we know work well
-PREMADE_THEMES = [PIXEL_ART_THEME_1, PIXEL_ART_THEME_2, ONE_PIECE, CRAYON]
+PREMADE_THEMES = [PIXEL_ART_THEME_1, PIXEL_ART_THEME_2]
 
 DEFAULT_THEME = PIXEL_ART_THEME_2
