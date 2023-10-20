@@ -10,7 +10,8 @@ from agents.onboarding_agent import OnboardingAgent
 from schema.game_state import ActiveMode, GameState
 
 # An instnace is a game instance.
-from utils.context_utils import RunNextAgentException
+from utils.context_utils import RunNextAgentException, get_game_state
+from utils.generation_utils import generate_story_intro
 
 
 class OnboardingMixin(PackageMixin):
@@ -48,3 +49,10 @@ class OnboardingMixin(PackageMixin):
         except BaseException as e:
             logging.exception(e)
             raise e
+
+    @post("/generate_story_intro")
+    def generate_story_intro(self) -> str:
+        context = self.agent_service.build_default_context()
+        game_state = get_game_state(context)
+        story_intro = generate_story_intro(player=game_state.player, context=context)
+        return story_intro

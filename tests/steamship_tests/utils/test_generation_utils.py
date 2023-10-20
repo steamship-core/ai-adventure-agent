@@ -12,7 +12,8 @@ from schema.game_state import GameState
 from schema.objects import Item
 from schema.server_settings import ServerSettings
 from utils.context_utils import with_server_settings, _GAME_STATE_KEY, save_game_state, RunNextAgentException
-from utils.generation_utils import send_story_generation, generate_merchant_inventory, generate_quest_arc
+from utils.generation_utils import send_story_generation, generate_merchant_inventory, generate_quest_arc, \
+    generate_story_intro
 
 
 # @pytest.mark.usefixtures("client")
@@ -90,6 +91,16 @@ def test_quest_arc():
         for quest_description in quest_arc:
             assert quest_description.goal is not None
             assert quest_description.location is not None
+
+
+def test_story_intro():
+    with Steamship.temporary_workspace() as client:
+        context, game_state = prepare_state(client)
+        story_intro = generate_story_intro(player=game_state.player, context=context)
+
+        assert len(story_intro) > 8
+        print(story_intro)
+
 
 def prepare_state(client: Steamship) -> (AgentContext, GameState):
     ctx_keys = {"id": "testing-foo"}

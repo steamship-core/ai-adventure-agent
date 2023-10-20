@@ -235,6 +235,31 @@ def generate_quest_arc(
                 result.append(QuestDescription(goal=goal, location = location))
     return result
 
+def generate_story_intro(
+        player: HumanCharacter,
+        context: AgentContext
+) -> str:
+    prompt = f"Please write a few sentences of introduction to the character {player.name} as they embark on their journey to {player.motivation}."
+    block = do_generation(
+        context,
+        prompt,
+        prompt_tags=[Tag(
+            kind=TagKindExtensions.CHARACTER,
+            name=CharacterTag.INTRODUCTION_PROMPT,
+        )],
+        output_tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INTRODUCTION)],
+        filter= TagFilter([
+                (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                (TagKindExtensions.CHARACTER, CharacterTag.INTRODUCTION_PROMPT)
+            ]),
+        generation_for="Character Introduction"
+    )
+    return block.text
+
 def do_generation(
     context: AgentContext,
     prompt: str,
