@@ -57,6 +57,7 @@ class OnboardingAgent(InterruptiblePythonAgent):
                     new_block_tag_kind=TagKindExtensions.CHARACTER,
                     new_block_tag_name=CharacterTag.IMAGE,
                 )
+                game_state.player.profile_image_url = character_image_block.raw_data_url
                 game_state.profile_image_url = character_image_block.raw_data_url
                 save_game_state(game_state, context)
 
