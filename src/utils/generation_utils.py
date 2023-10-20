@@ -44,22 +44,6 @@ from utils.tags import (
 )
 
 
-def send_audio_narration(block: Block, context: AgentContext) -> Optional[Block]:
-    """Generates and sends a background image to the player."""
-    generator = get_audio_narration_generator(context)
-    task = generator.generate(
-        text=block.text,
-        make_output_public=True,
-        # streaming=True,
-    )
-
-    # TODO: Figure out how to do this in a way that's treaming friendly AND sync friendly
-    task.wait()
-    block = task.output.blocks[0]
-    emit(output=block, context=context)
-    return block
-
-
 def send_agent_status_message(
     name: AgentStatusMessageTag, context: AgentContext, value: Optional[dict] = None
 ) -> Optional[Block]:
@@ -219,7 +203,7 @@ def generate_quest_arc(
         player: HumanCharacter,
         context: AgentContext
 ) -> List[QuestDescription]:
-    prompt = f"Please list 10 quests of increasing difficulty that {player.name} will go in to achieve their overall goal of {player.motivation}. They should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location>"
+    prompt = f"Please list 10 quests of increasing difficulty that {player.name} will go in to achieve their overall goal of {player.motivation}. They should fit the setting of the story. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location name>"
     block = do_generation(
         context,
         prompt,
@@ -250,6 +234,31 @@ def generate_quest_arc(
                     location = location[:location.index("\n")]
                 result.append(QuestDescription(goal=goal, location = location))
     return result
+
+def generate_story_intro(
+        player: HumanCharacter,
+        context: AgentContext
+) -> str:
+    prompt = f"Please write a few sentences of introduction to the character {player.name} as they embark on their journey to {player.motivation}."
+    block = do_generation(
+        context,
+        prompt,
+        prompt_tags=[Tag(
+            kind=TagKindExtensions.CHARACTER,
+            name=CharacterTag.INTRODUCTION_PROMPT,
+        )],
+        output_tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INTRODUCTION)],
+        filter= TagFilter([
+                (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                (TagKindExtensions.CHARACTER, CharacterTag.INTRODUCTION_PROMPT)
+            ]),
+        generation_for="Character Introduction"
+    )
+    return block.text
 
 def do_generation(
     context: AgentContext,

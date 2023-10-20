@@ -63,12 +63,12 @@ class TradeTool(Tool):
             item
             for item in player.inventory or []
             if item not in player_seeks_to_sell_items
-        ]
+        ] + player_seeks_to_buy_items
         self.counter_party.inventory = [
             item
             for item in self.counter_party.inventory or []
             if item not in player_seeks_to_buy_items
-        ]
+        ] + player_seeks_to_sell_items
         player.gold = player.gold + gold_delta
 
         # Save the game state. The above modifications were all linked by-reference

@@ -49,9 +49,7 @@ class OnboardingAgent(InterruptiblePythonAgent):
         if not game_state.image_generation_requested():
             if image_gen := get_image_generator(context):
                 num_known_blocks = len(context.chat_history.file.blocks)
-                game_state.profile_image_task = (
-                    image_gen.request_profile_image_generation(context=context)
-                )
+                image_gen.request_profile_image_generation(context=context)
                 context.chat_history.file.refresh()
                 character_image_block = find_new_block(
                     file=context.chat_history.file,

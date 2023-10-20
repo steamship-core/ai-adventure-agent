@@ -77,10 +77,10 @@ class NpcCharacter(Character):
 class Merchant(NpcCharacter):
     """Intent:
     - The Merchant appears in your camp after your second quest.
-    - The Merchant updates items after each quest, the cost of the items scale with the player RANK. Higher rank is
-      more expensive items.
+    - The Merchant updates items after each quest, the cost of the items scale with the player RANK. Higher rank is more expensive items.
     - If you buy, disposition goes up.
     - If you only sell, dispotition goes down. Or something?
+
     """
 
     pass
@@ -107,7 +107,6 @@ class HumanCharacter(Character):
         100,
         description="The energy the player has. Going on a quest requires and expends energy. This is the unit of monetization for the game.",
     )
-
     max_energy: Optional[int] = Field(
         100,
         description="DO NOT USE. DEPRECATED. The maximum energy the player can ever have.",

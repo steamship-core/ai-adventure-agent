@@ -1,15 +1,19 @@
-from steamship import File, Steamship
+from steamship import File, Steamship, Block, Tag
 from steamship.agents.schema import AgentContext
+from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagKind, TagValueKey
 
 from agents.onboarding_agent import OnboardingAgent
 from api import AdventureGameService
 from endpoints.npc_endpoints import NpcMixin
+from endpoints.quest_endpoints import QuestMixin
 from schema.camp import Camp
 from schema.characters import HumanCharacter, NpcCharacter
 from schema.game_state import GameState
+from schema.objects import Item
 from schema.server_settings import ServerSettings
 from utils.context_utils import with_server_settings, _GAME_STATE_KEY, save_game_state, RunNextAgentException
-from utils.generation_utils import send_story_generation, generate_merchant_inventory, generate_quest_arc
+from utils.generation_utils import send_story_generation, generate_merchant_inventory, generate_quest_arc, \
+    generate_story_intro
 
 
 # @pytest.mark.usefixtures("client")
@@ -67,6 +71,16 @@ def test_merchant_inventory_endpoint():
         print(result)
 
 
+def test_audio_narration():
+    with Steamship.temporary_workspace() as client:
+        context, game_state = prepare_state(client)
+        file = File.create(client, blocks=[Block(text="Let's go on an adventure! "*20, tags=[Tag(kind=TagKind.CHAT, name=ChatTag.ROLE, value={TagValueKey.STRING_VALUE : RoleTag.ASSISTANT})])])
+        block = file.blocks[0]
+        narration_block = QuestMixin._narrate_block(block, context)
+        url = narration_block.raw_data_url
+        assert narration_block.raw_data_url is not None
+        print(narration_block.raw_data_url)
+
 
 def test_quest_arc():
     with Steamship.temporary_workspace() as client:
@@ -77,6 +91,16 @@ def test_quest_arc():
         for quest_description in quest_arc:
             assert quest_description.goal is not None
             assert quest_description.location is not None
+
+
+def test_story_intro():
+    with Steamship.temporary_workspace() as client:
+        context, game_state = prepare_state(client)
+        story_intro = generate_story_intro(player=game_state.player, context=context)
+
+        assert len(story_intro) > 8
+        print(story_intro)
+
 
 def prepare_state(client: Steamship) -> (AgentContext, GameState):
     ctx_keys = {"id": "testing-foo"}
@@ -100,7 +124,7 @@ def create_test_game_state(context: AgentContext) -> GameState:
     game_state.tone = "funny"
     game_state.genre = "adventure"
     game_state.camp = Camp()
-    game_state.camp.npcs = [NpcCharacter(name="merchant")]
+    game_state.camp.npcs = [NpcCharacter(name="merchant", category="merchant", inventory=[Item(name="thingy",description="a thingy")])]
     save_game_state(game_state, context=context)
 
     return game_state

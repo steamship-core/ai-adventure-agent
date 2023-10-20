@@ -1,3 +1,4 @@
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import List
@@ -92,6 +93,7 @@ class NpcMixin(PackageMixin):
 
     @staticmethod
     def _refresh_inventory(context: AgentContext, game_state: GameState, npc_name: str) -> List[Item]:
+        start = time.perf_counter()
         generated_items = generate_merchant_inventory(game_state.player, context=context)
         # refresh game state directly before altering
         game_state = get_game_state(context)
@@ -105,16 +107,14 @@ class NpcMixin(PackageMixin):
                 id=str(uuid.uuid4())
             )
             npc.inventory.append(new_item)
+        num_known_blocks = len(context.chat_history.file.blocks)
         if image_gen := get_image_generator(context):
             tasks = []
             for item in npc.inventory:
                 tasks.append(image_gen.request_item_image_generation(item=item, context=context))
-            for i, task in enumerate(tasks):
-                output = task.wait()
-                npc.inventory[i].picture_url = output.blocks[0].raw_data_url
+                block = find_new_block(context.chat_history.file, num_known_blocks, new_block_tag_kind=TagKindExtensions.ITEM, new_block_tag_name=ItemTag.IMAGE)
+                item.picture_url = block.raw_data_url
         save_game_state(game_state=game_state, context=context)
-
-        save_game_state(game_state, context)
         return npc.inventory
 
 
