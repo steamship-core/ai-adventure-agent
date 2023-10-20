@@ -10,15 +10,17 @@ While at the same time not committing to any huge abstraction overhead: this is 
 functions whose mechanics can change under the hood as we discover better ways to do things, and the game developer
 doesn't need to know.
 """
+import re
 import time
 from typing import List, Optional, Tuple
 
-from steamship import Block, Tag
+from steamship import Block, SteamshipError, Tag
 from steamship.agents.schema import AgentContext
 from steamship.data import TagKind
 from steamship.data.block import StreamState
 from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagValueKey
 
+from generators.utils import safe_format
 from schema.characters import HumanCharacter
 from schema.quest import QuestDescription
 from utils.ChatHistoryFilter import (
@@ -28,19 +30,16 @@ from utils.ChatHistoryFilter import (
     TagFilter,
     UnionFilter,
 )
-from utils.context_utils import (
-    emit,
-    get_audio_narration_generator,
-    get_story_text_generator,
-)
+from utils.context_utils import emit, get_server_settings, get_story_text_generator
 from utils.tags import (
     AgentStatusMessageTag,
     CharacterTag,
     MerchantTag,
+    QuestArcTag,
     QuestIdTag,
     QuestTag,
     StoryContextTag,
-    TagKindExtensions, QuestArcTag,
+    TagKindExtensions,
 )
 
 
@@ -121,7 +120,14 @@ def generate_quest_item(
     quest_name: str, player: HumanCharacter, context: AgentContext
 ) -> (str, str):
     """Generates a found item from a quest, returning a tuple of its name and description"""
-    prompt = f"What object or item did {player.name} find during that story? It should fit the setting of the story and help {player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
+    server_settings = get_server_settings(context)
+    prompt = safe_format(
+        server_settings.quest_item_find_prompt,
+        {
+            "name": player.name,
+        },
+    )
+
     block = do_generation(
         context,
         prompt,
@@ -152,7 +158,13 @@ def generate_merchant_inventory(
     player: HumanCharacter, context: AgentContext
 ) -> List[Tuple[str, str]]:
     """Generates the inventory for a merchant"""
-    prompt = f"Please list 5 objects that a merchant might sell {player.name} in a shop. They should fit the setting of the story and help {player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
+
+    server_settings = get_server_settings(context)
+    prompt = safe_format(
+        server_settings.merchant_inventory_prompt,
+        {"name": player.name, "motivation": player.motivation},
+    )
+
     block = do_generation(
         context,
         prompt,
@@ -199,28 +211,37 @@ def generate_merchant_inventory(
             result.append((name, description))
     return result
 
+
 def generate_quest_arc(
-        player: HumanCharacter,
-        context: AgentContext
+    player: HumanCharacter, context: AgentContext
 ) -> List[QuestDescription]:
-    prompt = f"Please list 10 quests of increasing difficulty that {player.name} will go in to achieve their overall goal of {player.motivation}. They should fit the setting of the story. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location name>"
+    server_settings = get_server_settings(context)
+    prompt = safe_format(
+        server_settings.quest_list_prompt,
+        {"name": player.name, "motivation": player.motivation},
+    )
+
     block = do_generation(
         context,
         prompt,
-        prompt_tags=[Tag(
-            kind=TagKindExtensions.QUEST_ARC,
-            name=QuestArcTag.PROMPT,
-        )],
+        prompt_tags=[
+            Tag(
+                kind=TagKindExtensions.QUEST_ARC,
+                name=QuestArcTag.PROMPT,
+            )
+        ],
         output_tags=[Tag(kind=TagKindExtensions.QUEST_ARC, name=QuestArcTag.RESULT)],
-        filter= TagFilter([
+        filter=TagFilter(
+            [
                 (TagKindExtensions.CHARACTER, CharacterTag.NAME),
                 (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                 (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-                (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT)
-            ]),
-        generation_for="Quest Arc"
+                (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT),
+            ]
+        ),
+        generation_for="Quest Arc",
     )
     result: List[QuestDescription] = []
     items = block.text.split("QUEST GOAL:")
@@ -231,34 +252,43 @@ def generate_quest_arc(
                 goal = parts[0].strip()
                 location = parts[1].strip()
                 if "\n" in location:
-                    location = location[:location.index("\n")]
-                result.append(QuestDescription(goal=goal, location = location))
+                    location = location[: location.index("\n")]
+                result.append(QuestDescription(goal=goal, location=location))
     return result
 
-def generate_story_intro(
-        player: HumanCharacter,
-        context: AgentContext
-) -> str:
-    prompt = f"Please write a few sentences of introduction to the character {player.name} as they embark on their journey to {player.motivation}."
+
+def generate_story_intro(player: HumanCharacter, context: AgentContext) -> str:
+    server_settings = get_server_settings(context)
+    prompt = safe_format(
+        server_settings.story_intro_prompt,
+        {"name": player.name, "motivation": player.motivation},
+    )
     block = do_generation(
         context,
         prompt,
-        prompt_tags=[Tag(
-            kind=TagKindExtensions.CHARACTER,
-            name=CharacterTag.INTRODUCTION_PROMPT,
-        )],
-        output_tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INTRODUCTION)],
-        filter= TagFilter([
+        prompt_tags=[
+            Tag(
+                kind=TagKindExtensions.CHARACTER,
+                name=CharacterTag.INTRODUCTION_PROMPT,
+            )
+        ],
+        output_tags=[
+            Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INTRODUCTION)
+        ],
+        filter=TagFilter(
+            [
                 (TagKindExtensions.CHARACTER, CharacterTag.NAME),
                 (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                 (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-                (TagKindExtensions.CHARACTER, CharacterTag.INTRODUCTION_PROMPT)
-            ]),
-        generation_for="Character Introduction"
+                (TagKindExtensions.CHARACTER, CharacterTag.INTRODUCTION_PROMPT),
+            ]
+        ),
+        generation_for="Character Introduction",
     )
     return block.text
+
 
 def do_generation(
     context: AgentContext,
@@ -322,3 +352,18 @@ def await_streamed_block(block: Block, context: AgentContext) -> Block:
         block = Block.get(block.client, _id=block.id)
     context.chat_history.file.refresh()
     return block
+
+
+def get_prompt_vars(prompt: str) -> List[str]:
+    """Fetches the list of {words} inside curly braces."""
+    return re.findall("{([^}]+)", prompt)
+
+
+def validate_prompt_args(prompt: str, valid_args: List[str]):
+    """Validates that the prompt doesn't contain an argumnt that isn't in the list."""
+    prompt_vars = get_prompt_vars(prompt)
+    for var_name in prompt_vars:
+        if var_name not in valid_args:
+            raise SteamshipError(
+                message=f"This prompt uses a variable ({var_name}) that is not in the list of valid variables ({valid_args}). The full prompt was [{prompt}]. Please remove this variable and try again."
+            )

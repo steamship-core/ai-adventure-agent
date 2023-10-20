@@ -4,10 +4,7 @@ from pydantic import BaseModel, Field
 from steamship import SteamshipError
 
 from schema.stable_diffusion_theme import StableDiffusionTheme
-
-
-def validate_prompt_args(prompt: str, valid_args: List[str]):
-    return True
+from utils.generation_utils import validate_prompt_args
 
 
 class ServerSettings(BaseModel):
@@ -99,6 +96,37 @@ class ServerSettings(BaseModel):
     quest_background_theme: str = Field(
         "pixel_art_2",
         description="The Stable Diffusion theme for generating quest images.",
+    )
+
+    # Quest Related Prompts
+
+    # Uses: 'name', 'motivation'
+    story_intro_prompt: str = Field(
+        "Please write a few sentences of introduction to the character {name} as they embark on their journey to {motivation}.",
+        description="Generates the instructions to the player as they embark on their quest.",
+    )
+
+    # Uses: 'name', 'motivation'
+    quest_list_prompt: str = Field(
+        "Please list 10 quests of increasing difficulty that {name} will go in to achieve their overall goal of {motivation}. They should fit the setting of the story. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location name>",
+        description="Generates the list of quests that the player is to go on.",
+    )
+
+    # Uses: 'name'
+    merchant_inventory_prompt: str = Field(
+        "Please list 5 objects that a merchant might sell {name} in a shop. They should fit the setting of the story and help {name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>",
+        description="Generates the list of quests that the player is to go on.",
+    )
+
+    # Uses: 'name'
+    quest_item_find_prompt: str = Field(
+        "What object or item did {name} find during that story? It should fit the setting of the story and help {name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>",
+        description="Generates the list of quests that the player is to go on.",
+    )
+
+    summarize_quest_prompt: str = Field(
+        "Please summarize the above quest in one to two sentences.",
+        description="Generates the list of quests that the player is to go on.",
     )
 
     def _select_model(

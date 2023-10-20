@@ -1,9 +1,9 @@
-from steamship import File, Steamship, Block, Tag
+import pytest
+from steamship import Block, File, Steamship, SteamshipError, Tag
 from steamship.agents.schema import AgentContext
 from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagKind, TagValueKey
 
 from agents.onboarding_agent import OnboardingAgent
-from api import AdventureGameService
 from endpoints.npc_endpoints import NpcMixin
 from endpoints.quest_endpoints import QuestMixin
 from schema.camp import Camp
@@ -11,9 +11,20 @@ from schema.characters import HumanCharacter, NpcCharacter
 from schema.game_state import GameState
 from schema.objects import Item
 from schema.server_settings import ServerSettings
-from utils.context_utils import with_server_settings, _GAME_STATE_KEY, save_game_state, RunNextAgentException
-from utils.generation_utils import send_story_generation, generate_merchant_inventory, generate_quest_arc, \
-    generate_story_intro
+from utils.context_utils import (
+    _GAME_STATE_KEY,
+    RunNextAgentException,
+    save_game_state,
+    with_server_settings,
+)
+from utils.generation_utils import (
+    generate_merchant_inventory,
+    generate_quest_arc,
+    generate_story_intro,
+    get_prompt_vars,
+    send_story_generation,
+    validate_prompt_args,
+)
 
 
 # @pytest.mark.usefixtures("client")
@@ -45,7 +56,7 @@ def test_send_story_generation(
 
         assert sorted_tags[4].kind == "quest"
         assert sorted_tags[4].name == "quest_id"
-        assert sorted_tags[4].value == {"id":"test-quest"}
+        assert sorted_tags[4].value == {"id": "test-quest"}
 
         assert sorted_tags[5].kind == "role"
         assert sorted_tags[5].name == "assistant"
@@ -56,7 +67,9 @@ def test_send_story_generation(
 def test_merchant_inventory():
     with Steamship.temporary_workspace() as client:
         context, game_state = prepare_state(client)
-        inventory = generate_merchant_inventory(player=game_state.player, context=context)
+        inventory = generate_merchant_inventory(
+            player=game_state.player, context=context
+        )
 
         assert len(inventory) == 5
         for item in inventory:
@@ -74,10 +87,23 @@ def test_merchant_inventory_endpoint():
 def test_audio_narration():
     with Steamship.temporary_workspace() as client:
         context, game_state = prepare_state(client)
-        file = File.create(client, blocks=[Block(text="Let's go on an adventure! "*20, tags=[Tag(kind=TagKind.CHAT, name=ChatTag.ROLE, value={TagValueKey.STRING_VALUE : RoleTag.ASSISTANT})])])
+        file = File.create(
+            client,
+            blocks=[
+                Block(
+                    text="Let's go on an adventure! " * 20,
+                    tags=[
+                        Tag(
+                            kind=TagKind.CHAT,
+                            name=ChatTag.ROLE,
+                            value={TagValueKey.STRING_VALUE: RoleTag.ASSISTANT},
+                        )
+                    ],
+                )
+            ],
+        )
         block = file.blocks[0]
         narration_block = QuestMixin._narrate_block(block, context)
-        url = narration_block.raw_data_url
         assert narration_block.raw_data_url is not None
         print(narration_block.raw_data_url)
 
@@ -97,9 +123,21 @@ def test_story_intro():
     with Steamship.temporary_workspace() as client:
         context, game_state = prepare_state(client)
         story_intro = generate_story_intro(player=game_state.player, context=context)
-
         assert len(story_intro) > 8
         print(story_intro)
+
+
+def test_get_prompt_vars():
+    assert get_prompt_vars("Hi Ted") == []
+    assert get_prompt_vars("Hi {Ted}") == ["Ted"]
+    assert get_prompt_vars("{Hi} {Ted}") == ["Hi", "Ted"]
+    assert get_prompt_vars("Hi {Hi}{Hi} {Ted}") == ["Hi", "Hi", "Ted"]
+
+
+def test_validate_prompt_args():
+    validate_prompt_args("Hi {name}", ["name"])
+    with pytest.raises(SteamshipError):
+        validate_prompt_args("Hi {name}", [])
 
 
 def prepare_state(client: Steamship) -> (AgentContext, GameState):
@@ -111,6 +149,7 @@ def prepare_state(client: Steamship) -> (AgentContext, GameState):
     game_state = create_test_game_state(ctx)
     run_onboarding(ctx)
     return ctx, game_state
+
 
 def create_test_game_state(context: AgentContext) -> GameState:
     game_state = GameState()
@@ -124,10 +163,17 @@ def create_test_game_state(context: AgentContext) -> GameState:
     game_state.tone = "funny"
     game_state.genre = "adventure"
     game_state.camp = Camp()
-    game_state.camp.npcs = [NpcCharacter(name="merchant", category="merchant", inventory=[Item(name="thingy",description="a thingy")])]
+    game_state.camp.npcs = [
+        NpcCharacter(
+            name="merchant",
+            category="merchant",
+            inventory=[Item(name="thingy", description="a thingy")],
+        )
+    ]
     save_game_state(game_state, context=context)
 
     return game_state
+
 
 def run_onboarding(context: AgentContext):
     agent = OnboardingAgent(tools=[])
@@ -135,4 +181,3 @@ def run_onboarding(context: AgentContext):
         agent.run(context)
     except RunNextAgentException:
         pass
-
