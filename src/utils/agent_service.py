@@ -385,11 +385,11 @@ class AgentService(PackageService):
 
         # AgentContexts serve to allow the AgentService to run agents
         # with appropriate information about the desired tasking.
-        if context_id is not None:
-            logging.warning(
-                "This agent ALWAYS uses the context id `default` since it is a game occuping an entire workspace, not confined to a single chat history. "
-                f"The provided context_id of {context_id} will be ignored. This is to prevent surprising state errors."
-            )
+        # if context_id is not None:
+        #     logging.warning(
+        #         "This agent ALWAYS uses the context id `default` since it is a game occuping an entire workspace, not confined to a single chat history. "
+        #         f"The provided context_id of {context_id} will be ignored. This is to prevent surprising state errors."
+        #     )
 
         # NOTA BENE!
         context_id = "default"
