@@ -35,7 +35,7 @@ class StableDiffusionTheme(BaseModel):
         description="Any extra words, including trigger words for LoRAs in this theme. Include a command and spacing if you require it."
     )
 
-    model: str = Field(
+    model_name: str = Field(
         "stabilityai/stable-diffusion-xl-base-1.0",
         description='URL or HuggingFace ID of the base model to generate the image. Examples: "stabilityai/stable-diffusion-xl-base-1.0", "runwayml/stable-diffusion-v1-5", "SG161222/Realistic_Vision_V2.0". ',
     )
@@ -127,7 +127,7 @@ CRAYON = StableDiffusionTheme(
 # Note: This isn't included in the list below because we haven't gotten it to work well yet.
 BW_COMIC_1 = StableDiffusionTheme(
     name="bw_comic_1",
-    model="runwayml/stable-diffusion-v1-5",
+    model_name="runwayml/stable-diffusion-v1-5",
     prompt_prefix="line art, comic, comic, koma, text bubble, monochrome, ",
     negative_prompt_prefix="(deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation. tattoo, watermark, ",
     model_architecture="sd",
@@ -140,7 +140,7 @@ BW_COMIC_1 = StableDiffusionTheme(
 # Note: This isn't included in the list below because we haven't gotten it to work well yet.
 ONE_PIECE = StableDiffusionTheme(
     name="one-piece",
-    model="runwayml/stable-diffusion-v1-5",
+    model_name="runwayml/stable-diffusion-v1-5",
     prompt_prefix="((wanostyle)) ",
     negative_prompt_prefix="(deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation. tattoo, watermark, ",
     model_architecture="sd",

@@ -48,7 +48,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
         options = {
             "seed": theme.seed,
-            "model_name": theme.model,
+            "model_name": theme.model_name,
             "loras": lora_json_str,
             "image_size": image_size,
             "num_inference_steps": theme.num_inference_steps,
