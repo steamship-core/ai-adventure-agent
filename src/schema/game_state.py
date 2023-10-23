@@ -15,7 +15,7 @@ class ActiveMode(str, Enum):
     QUEST = "quest"
     NPC_CONVERSATION = "npc-conversation"
     DIAGNOSTIC = "diagnostic"
-
+    GENDOWN_QUEST = "gendown"
 
 class GameState(BaseModel):
     """Settings for a user of the game.
@@ -140,7 +140,10 @@ class GameState(BaseModel):
         if self.in_conversation_with:
             return ActiveMode.NPC_CONVERSATION
         if self.current_quest:
-            return ActiveMode.QUEST
+            if self.tone == "gendown": # Hack
+                return ActiveMode.GENDOWN_QUEST
+            else:
+                return ActiveMode.QUEST
         return ActiveMode.CAMP
 
     def find_npc(self, npc_name: str) -> Optional[NpcCharacter]:

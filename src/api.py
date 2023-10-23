@@ -16,7 +16,8 @@ from steamship.agents.mixins.transports.telegram import (
     TelegramTransportConfig,
 )
 from steamship.agents.schema import Agent, AgentContext, Tool
-from steamship.invocable import Config
+from steamship.invocable import Config, post, longstr
+from steamship.utils.kv_store import KeyValueStore
 from steamship.utils.repl import AgentREPL
 
 from agents.camp_agent import CampAgent
@@ -29,6 +30,7 @@ from endpoints.npc_endpoints import NpcMixin
 from endpoints.onboarding_endpoints import OnboardingMixin
 from endpoints.quest_endpoints import QuestMixin
 from endpoints.server_endpoints import ServerSettingsMixin
+from gendown.agent import GendownAgent
 from schema.game_state import ActiveMode
 from utils.agent_service import AgentService
 from utils.context_utils import get_game_state
@@ -118,6 +120,8 @@ class AdventureGameService(AgentService):
     tools: List[Tool]
     """The list of Tools that this agent is capable of using."""
 
+    kv: Optional[KeyValueStore]
+
     @classmethod
     def config_cls(cls) -> Type[Config]:
         """Return the Configuration class so that Steamship can auto-generate a web UI upon agent creation time."""
@@ -125,6 +129,8 @@ class AdventureGameService(AgentService):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        self.kv = KeyValueStore(self.client, store_identifier="gendown")
 
         # Communication Transport Setup
         # -----------------------------
@@ -227,6 +233,12 @@ class AdventureGameService(AgentService):
             sub_agent = self.quest_agent
         elif active_mode == ActiveMode.CAMP:
             sub_agent = self.camp_agent
+        elif active_mode == ActiveMode.GENDOWN_QUEST:
+            markdown = (self.kv.get("_root_md_file") or {}).get("value")
+            if not markdown:
+                markdown = "Hi there! Use the set_gendown endpoint to set a Gendown script."
+            sub_agent = GendownAgent(markdown, self.kv)
+
         else:
             raise SteamshipError(message=f"Unknown mode: {active_mode}")
 
@@ -240,6 +252,12 @@ class AdventureGameService(AgentService):
         )
 
         return sub_agent
+
+    @post("set_gendown")
+    def set_gendown(self, gendown: longstr):
+        # Totally clear the kv store; hack to prevent demo from caching
+        self.kv.reset()
+        self.kv.set("_root_md_file", {"value": gendown})
 
 
 if __name__ == "__main__":

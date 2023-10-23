@@ -30,6 +30,14 @@ class OnboardingAgent(InterruptiblePythonAgent):
         game_state: GameState = get_game_state(context)
         player: HumanCharacter = game_state.player
 
+        player.name = "gendown"
+        player.background = "gendown"
+        player.description = "gendown"
+        player.motivation = "gendown"
+        game_state.tone = "gendown"
+        game_state.genre = "gendown"
+        save_game_state(game_state, context)
+
         if not player.name:
             player.name = await_ask("What is your character's name?", context)
             save_game_state(game_state, context)

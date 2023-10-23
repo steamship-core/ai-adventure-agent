@@ -6,34 +6,11 @@ from marko.element import Element
 from marko.md_renderer import MarkdownRenderer
 import re
 from pydantic import BaseModel, Field
+from steamship import SteamshipError
 from steamship.agents.schema import AgentContext
 
+from gendown.node import Kind, Node
 
-def safe_format(text: str, params: dict) -> str:
-    """Safely formats a user-provided string by replacing {key} with `value` for all (key,value) pairs in `params`."""
-    ret = text
-    for (key, value) in params.items():
-        ret = ret.replace("{" + key + "}", value)
-
-    return ret
-
-
-class NodeKind(str, Enum):
-    scope = "scope"
-    output = "output"
-    command = "command"
-
-class AstNode(BaseModel):
-    id: Optional[str] = Field("", description="Id. Used for resume!")
-    text: Optional[str] = Field("", description="The content")
-    kind: Optional[str] = Field("", description="")
-    command: Optional[str] = Field("", description="The comamnd, if kind is command")
-    inline_command_arg: Optional[str] = Field("")
-    children: Optional[List["AstNode"]]
-
-    def visit(self, context: AgentContext):
-        if self.kind == NodeKind.output:
-            asdf
 
 def is_output(node: Element):
     """By default, every markdown element is assumed output."""
@@ -62,8 +39,8 @@ def is_command(node: Element):
                         renderer.__enter__()
                         default_argument += renderer.render(child)
 
-                return AstNode(
-                    kind=NodeKind.command,
+                return Node(
+                    kind=Kind.command,
                     command=command_parts[0].strip(),
                     inline_command_arg=" ".join(command_parts[1:]).strip(),
                     text=default_argument.strip()
@@ -71,21 +48,22 @@ def is_command(node: Element):
     return None
 
 
-def parse_gendown(text: str) -> List[AstNode]:
+def parse_gendown(text: str) -> Node:
     markdown = Markdown(extensions=[])
 
     md = markdown.parse(text)
-    ret = []
 
-    cursor = AstNode(kind=NodeKind.output)
+    root = Node(id="0", kind=Kind.scope, children=[])
+
+    cursor = Node(kind=Kind.output)
 
     def reduce():
-        nonlocal ret
+        nonlocal root
         nonlocal cursor
         if cursor.text:
             cursor.text = cursor.text.strip()
-            ret.append(cursor)
-        cursor = AstNode(kind=NodeKind.output)
+            root.append_child(cursor)
+        cursor = Node(kind=Kind.output)
 
     renderer = MarkdownRenderer()
     renderer.__enter__()
@@ -93,13 +71,12 @@ def parse_gendown(text: str) -> List[AstNode]:
     for child in md.children:
         if cmd := is_command(child):
             reduce()
-            ret.append(cmd)
+            root.append_child(cmd)
         elif is_output(child):
             cursor.text += renderer.render(child)
     reduce()
 
-
-    return ret
+    return root
 
 
 
