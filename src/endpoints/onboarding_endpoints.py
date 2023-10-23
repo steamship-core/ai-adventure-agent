@@ -45,7 +45,7 @@ class OnboardingMixin(PackageMixin):
             self.onboarding_agent.run(context)
             return True
         except RunNextAgentException:
-            return True
+            return game_state.chat_history_for_onboarding_complete
         except BaseException as e:
             logging.exception(e)
             raise e

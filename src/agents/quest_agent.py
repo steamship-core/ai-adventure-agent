@@ -17,8 +17,13 @@ from utils.context_utils import (
     get_game_state,
     save_game_state,
 )
-from utils.generation_utils import await_streamed_block, send_story_generation, generate_quest_arc
+from utils.generation_utils import (
+    await_streamed_block,
+    generate_quest_arc,
+    send_story_generation,
+)
 from utils.interruptible_python_agent import InterruptiblePythonAgent
+from utils.moderation_utils import mark_block_as_excluded
 from utils.tags import QuestIdTag, QuestTag, TagKindExtensions
 
 
@@ -45,10 +50,10 @@ class QuestAgent(InterruptiblePythonAgent):
     It can be slotted into as a state machine sub-agent by the overall agent.
     """
 
-    def run(self, context: AgentContext) -> Action:
+    def run(self, context: AgentContext) -> Action:  # noqa: C901
         """
-        It could go in a tool, but that doesn't feel necessary.. there are some other spots where tools feel very
-        well fit, but this might be better left open-ended so we can stop/start things as we like.
+        It could go in a tool, but that doesn't feel necessary... there are some other spots where tools feel very
+        well fit, but this might be better left open-ended, so we can stop/start things as we like.
         """
 
         # Load the main things we're working with. These can modified and the save_game_state called at any time
@@ -123,7 +128,37 @@ class QuestAgent(InterruptiblePythonAgent):
                 )
             )
             save_game_state(game_state, context)
-            self.generate_solution(game_state, context, quest)
+            try:
+                # TODO: tag last user message as solution
+                self.generate_solution(game_state, context, quest)
+            except Exception as e:
+                prologue_msg = (
+                    "Our Apologies: Something went wrong with writing the next part of the story. "
+                    "Let's try again."
+                )
+                # TODO(doug): do we want to indicate the input was flagged if that is the issue?
+                if "flagged" in str(e):
+                    prologue_msg = "That response triggered the game’s content moderation filter. Please try again."
+                    # flag original message as excluded (this will prevent "getting stuck")
+                    if message := context.chat_history.last_user_message:
+                        mark_block_as_excluded(message)
+
+                    # clear last sys message added by generate_solution (that copies the user submitted solution)
+                    if sys_message := context.chat_history.last_system_message:
+                        mark_block_as_excluded(sys_message)
+
+                # undo the game solution state, and start over
+                # todo: should we consider using a Command design pattern-like approach here for undo?
+                quest.user_problem_solutions.pop()
+                quest.user_problem_solutions.append(
+                    await_ask(
+                        f"What does {player.name} do next?",
+                        context=context,
+                        key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
+                        prompt_prologue=prologue_msg,
+                    )
+                )
+
             if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
                 self.create_problem(game_state, context, quest)
                 quest.user_problem_solutions.append(
@@ -133,7 +168,6 @@ class QuestAgent(InterruptiblePythonAgent):
                         key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
                     )
                 )
-
 
         if not quest.sent_outro:
             quest.sent_outro = True
@@ -180,12 +214,12 @@ class QuestAgent(InterruptiblePythonAgent):
     def generate_solution(
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
-        context.chat_history.append_system_message(
-            text=f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}",
-            tags=self.tags(QuestTag.USER_SOLUTION, quest),
+        prompt = (
+            f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}.\n"
+            f"What happens next? Does it work?"
         )
         solution_block = send_story_generation(
-            "What happens next? Does it work?",
+            prompt=prompt,
             quest_name=quest.name,
             context=context,
         )

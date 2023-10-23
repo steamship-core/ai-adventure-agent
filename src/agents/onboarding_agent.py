@@ -10,10 +10,24 @@ from utils.context_utils import (
     RunNextAgentException,
     await_ask,
     get_game_state,
+    get_story_text_generator,
     save_game_state,
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent
+from utils.moderation_utils import mark_block_as_excluded
 from utils.tags import CampTag, CharacterTag, StoryContextTag, TagKindExtensions
+
+
+def _is_allowed_by_moderation(user_input: str, context: AgentContext) -> bool:
+    generator = get_story_text_generator(context)
+    try:
+        task = generator.generate(text=user_input)
+        task.wait()
+        return True
+    except Exception as e:
+        if "flagged" in str(e):
+            return False
+        return True
 
 
 class OnboardingAgent(InterruptiblePythonAgent):
@@ -32,18 +46,67 @@ class OnboardingAgent(InterruptiblePythonAgent):
 
         if not player.name:
             player.name = await_ask("What is your character's name?", context)
+            if not _is_allowed_by_moderation(player.name, context):
+                msgs = context.chat_history.messages
+                for m in msgs:
+                    if m.text == player.name:
+                        mark_block_as_excluded(m)
+                player.name = None
+                save_game_state(game_state, context)
+                raise RunNextAgentException(
+                    FinishAction(
+                        output=[
+                            Block(
+                                text="Your player name was flagged by the game's moderation engine. "
+                                "Please select another name."
+                            )
+                        ]
+                    )
+                )
             save_game_state(game_state, context)
 
         if not player.background:
             player.background = await_ask(
                 f"What is {player.name}'s backstory?", context
             )
+            if not _is_allowed_by_moderation(player.background, context):
+                msgs = context.chat_history.messages
+                for m in msgs:
+                    if m.text == player.background:
+                        mark_block_as_excluded(m)
+                player.background = None
+                save_game_state(game_state, context)
+                RunNextAgentException(
+                    FinishAction(
+                        output=[
+                            Block(
+                                text="Your player's background was flagged by the game's moderation engine. Please provide another."
+                            )
+                        ]
+                    )
+                )
             save_game_state(game_state, context)
 
         if not player.description:
             player.description = await_ask(
                 f"What is {player.name}'s physical description?", context
             )
+            if not _is_allowed_by_moderation(player.description, context):
+                msgs = context.chat_history.messages
+                for m in msgs:
+                    if m.text == player.description:
+                        mark_block_as_excluded(m)
+                player.description = None
+                save_game_state(game_state, context)
+                raise RunNextAgentException(
+                    FinishAction(
+                        output=[
+                            Block(
+                                text="Your player's description was flagged by the game's moderation engine. Please provide another."
+                            )
+                        ]
+                    )
+                )
             save_game_state(game_state, context)
 
         if not game_state.image_generation_requested():
@@ -72,6 +135,22 @@ class OnboardingAgent(InterruptiblePythonAgent):
             player.motivation = await_ask(
                 f"What is {player.name} motivated to achieve?", context
             )
+            if not _is_allowed_by_moderation(player.motivation, context):
+                msgs = context.chat_history.messages
+                for m in msgs:
+                    if m.text == player.motivation:
+                        mark_block_as_excluded(m)
+                player.motivation = None
+                save_game_state(game_state, context)
+                raise RunNextAgentException(
+                    FinishAction(
+                        output=[
+                            Block(
+                                text="Your player's motivation was flagged by the game's moderation engine. Please provide another."
+                            )
+                        ]
+                    )
+                )
             save_game_state(game_state, context)
 
         if not game_state.genre:
@@ -79,6 +158,22 @@ class OnboardingAgent(InterruptiblePythonAgent):
                 "What is the genre of the story (Adventure, Fantasy, Thriller, Sci-Fi)?",
                 context,
             )
+            if not _is_allowed_by_moderation(game_state.genre, context):
+                msgs = context.chat_history.messages
+                for m in msgs:
+                    if m.text == game_state.genre:
+                        mark_block_as_excluded(m)
+                game_state.genre = None
+                save_game_state(game_state, context)
+                raise RunNextAgentException(
+                    FinishAction(
+                        output=[
+                            Block(
+                                text="Your genre was flagged by the game's moderation engine. Please provide another genre."
+                            )
+                        ]
+                    )
+                )
             save_game_state(game_state, context)
 
         if not game_state.tone:
@@ -86,6 +181,22 @@ class OnboardingAgent(InterruptiblePythonAgent):
                 "What is the tone of the story (Hollywood style, Dark, Funny, Romantic)?",
                 context,
             )
+            if not _is_allowed_by_moderation(game_state.tone, context):
+                msgs = context.chat_history.messages
+                for m in msgs:
+                    if m.text == game_state.genre:
+                        mark_block_as_excluded(m)
+                game_state.tone = None
+                save_game_state(game_state, context)
+                raise RunNextAgentException(
+                    FinishAction(
+                        output=[
+                            Block(
+                                text="Your tone was flagged by the game's moderation engine. Please provide another tone."
+                            )
+                        ]
+                    )
+                )
             save_game_state(game_state, context)
 
         if not game_state.camp_image_requested() and (
