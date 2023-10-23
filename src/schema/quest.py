@@ -8,13 +8,10 @@ from schema.characters import Item
 class QuestDescription(BaseModel):
     """The sketch of a quest the user will go on"""
 
-    goal: str = Field(
-        description="The goal of the quest"
-    )
+    goal: str = Field(description="The goal of the quest")
 
-    location: str = Field(
-        description="The location of the quest"
-    )
+    location: str = Field(description="The location of the quest")
+
 
 class Quest(BaseModel):
     """Information about a quest."""
@@ -45,7 +42,8 @@ class Quest(BaseModel):
     )
 
     num_problems_to_encounter: int = Field(
-        default=3, description="How many problems will the user encounter during the quest?"
+        default=3,
+        description="How many problems will the user encounter during the quest?",
     )
 
     user_problem_solutions: Optional[List[str]] = Field(
@@ -74,7 +72,11 @@ class Quest(BaseModel):
     energy_delta: Optional[int] = Field(
         -10, description="The change in energy that resulted from this quest."
     )
-
     completed_timestamp: Optional[str] = Field(
         None, description="The timestamp at which the quest was completed"
+    )
+
+    # TODO(dougreid): cleanup
+    social_media_summary: Optional[str] = Field(
+        None, description="A social-media friendly summary"
     )

@@ -5,7 +5,10 @@ from steamship import Block, Tag, Task
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, Tool
 
-from generators.generator_context_utils import get_image_generator
+from generators.generator_context_utils import (
+    get_image_generator,
+    get_social_media_generator,
+)
 from generators.utils import find_new_block
 from schema.game_state import GameState
 from schema.objects import Item
@@ -120,6 +123,12 @@ class EndQuestTool(Tool):
         summary_block = generate_quest_summary(quest.name, context)
         summary = summary_block.text
         quest.text_summary = summary
+
+        if social_gen := get_social_media_generator(context=context):
+            social_summary = social_gen.generate_shareable_quest_snippet(
+                quest=quest, context=context
+            )
+            quest.social_media_summary = social_summary
 
         # Finally.. close the quest.
         game_state.current_quest = None

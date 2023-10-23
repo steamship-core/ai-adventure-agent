@@ -37,10 +37,11 @@ from utils.tags import (
     AgentStatusMessageTag,
     CharacterTag,
     MerchantTag,
+    QuestArcTag,
     QuestIdTag,
     QuestTag,
     StoryContextTag,
-    TagKindExtensions, QuestArcTag,
+    TagKindExtensions,
 )
 
 
@@ -97,7 +98,7 @@ def send_story_generation(
 
 
 def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[Block]:
-    """Generates and sends a background image to the player."""
+    """Generates and sends a quest summary to the player."""
     prompt = "Please summarize the above quest in one to two sentences."
     block = do_generation(
         context,
@@ -199,28 +200,32 @@ def generate_merchant_inventory(
             result.append((name, description))
     return result
 
+
 def generate_quest_arc(
-        player: HumanCharacter,
-        context: AgentContext
+    player: HumanCharacter, context: AgentContext
 ) -> List[QuestDescription]:
     prompt = f"Please list 10 quests of increasing difficulty that {player.name} will go in to achieve their overall goal of {player.motivation}. They should fit the setting of the story. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location name>"
     block = do_generation(
         context,
         prompt,
-        prompt_tags=[Tag(
-            kind=TagKindExtensions.QUEST_ARC,
-            name=QuestArcTag.PROMPT,
-        )],
+        prompt_tags=[
+            Tag(
+                kind=TagKindExtensions.QUEST_ARC,
+                name=QuestArcTag.PROMPT,
+            )
+        ],
         output_tags=[Tag(kind=TagKindExtensions.QUEST_ARC, name=QuestArcTag.RESULT)],
-        filter= TagFilter([
+        filter=TagFilter(
+            [
                 (TagKindExtensions.CHARACTER, CharacterTag.NAME),
                 (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                 (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-                (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT)
-            ]),
-        generation_for="Quest Arc"
+                (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT),
+            ]
+        ),
+        generation_for="Quest Arc",
     )
     result: List[QuestDescription] = []
     items = block.text.split("QUEST GOAL:")
@@ -231,9 +236,10 @@ def generate_quest_arc(
                 goal = parts[0].strip()
                 location = parts[1].strip()
                 if "\n" in location:
-                    location = location[:location.index("\n")]
-                result.append(QuestDescription(goal=goal, location = location))
+                    location = location[: location.index("\n")]
+                result.append(QuestDescription(goal=goal, location=location))
     return result
+
 
 def generate_story_intro(
         player: HumanCharacter,
@@ -259,6 +265,7 @@ def generate_story_intro(
         generation_for="Character Introduction"
     )
     return block.text
+
 
 def do_generation(
     context: AgentContext,
