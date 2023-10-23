@@ -1,5 +1,3 @@
-import urllib
-
 from steamship.agents.schema import AgentContext
 
 from generators.social_media_generator import SocialMediaGenerator
@@ -37,8 +35,8 @@ class HaikuTweetGenerator(SocialMediaGenerator):
 
         if len(quest.new_items) > 0:
             item = quest.new_items[0]
-            title = urllib.parse.quote(item.name, safe="")
-            description = urllib.parse.quote(item.description, safe="")
+            # title = urllib.parse.quote(item.name, safe="")
+            # description = urllib.parse.quote(item.description, safe="")
 
             # TODO: validate picture url format and indices
             print(f"---- {item.picture_url} ----")
@@ -46,7 +44,8 @@ class HaikuTweetGenerator(SocialMediaGenerator):
             raw_less = picture_url.rstrip("/raw")
             slash_index = raw_less.rfind("/") + 1
             block_id = raw_less[slash_index:]
-            url = f"https://ai-adventure.steamship.com/social/items/share?title={title}&description={description}&block_id={block_id}"
+            url = f"https://ai-adventure.steamship.com/og?blockId={block_id}"
+            # url = f"https://ai-adventure.steamship.com/social/items/share?title={title}&description={description}&block_id={block_id}"
             tweet_body = f"{tweet_body}\n\n{url}"
 
         return tweet_body
