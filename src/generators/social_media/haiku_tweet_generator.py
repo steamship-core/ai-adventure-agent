@@ -39,7 +39,6 @@ class HaikuTweetGenerator(SocialMediaGenerator):
             # description = urllib.parse.quote(item.description, safe="")
 
             # TODO: validate picture url format and indices
-            print(f"---- {item.picture_url} ----")
             picture_url = item.picture_url
             raw_less = picture_url.rstrip("/raw")
             slash_index = raw_less.rfind("/") + 1
