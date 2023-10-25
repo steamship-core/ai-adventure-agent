@@ -1,10 +1,15 @@
 import logging
 from typing import Any, List, Union
 
-from steamship import Block, Task
+from steamship import Block, Tag, Task
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, Tool
 
+from generators.generator_context_utils import (
+    get_image_generator,
+    get_social_media_generator,
+)
+from generators.utils import find_new_block
 from schema.game_state import GameState
 from schema.objects import Item
 from utils.context_utils import (
@@ -13,6 +18,12 @@ from utils.context_utils import (
     get_story_text_generator,
     save_game_state,
 )
+from utils.generation_utils import (
+    generate_quest_item,
+    generate_quest_summary,
+    send_agent_status_message,
+)
+from utils.tags import AgentStatusMessageTag, CharacterTag, ItemTag, TagKindExtensions
 
 
 class EndQuestTool(Tool):
@@ -62,24 +73,16 @@ class EndQuestTool(Tool):
                 "You weren't currently in a quest.",
             )
 
-        generator = get_story_text_generator(context)
+        get_story_text_generator(context)
 
         player = game_state.player
 
         # Let's do some things to tidy up.
-        task = generator.generate(
-            text=f"What object or item did {player.name} find during that story? It should fit the setting of the story and help {player.motivation} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
-        )
-        task.wait()
-        response = task.output.blocks[0].text
+        item_name, item_description = generate_quest_item(quest.name, player, context)
 
         item = Item()
-        parts = response.split("ITEM DESCRIPTION:")
-        if len(parts) == 2:
-            item.name = parts[0].replace("ITEM NAME:", "").strip()
-            item.description = parts[1].strip()
-        else:
-            item.name = response.strip()
+        item.name = item_name
+        item.description = item_description
 
         if item.name:
             quest.new_items = [item]
@@ -87,21 +90,45 @@ class EndQuestTool(Tool):
         if not player.inventory:
             player.inventory = []
         player.inventory.append(item)
+        context.chat_history.append_system_message(
+            text=player.inventory_description(),
+            tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INVENTORY)],
+        )
+        save_game_state(game_state, context)
 
-        # Increase the player's rank
+        if image_gen := get_image_generator(context):
+            num_known_blocks = len(context.chat_history.file.blocks)
+            image_gen.request_item_image_generation(item=item, context=context)
+            context.chat_history.file.refresh()
+            item_image_block = find_new_block(
+                file=context.chat_history.file,
+                num_known_blocks=num_known_blocks,
+                new_block_tag_kind=TagKindExtensions.ITEM,
+                new_block_tag_name=ItemTag.IMAGE,
+            )
+            item.picture_url = item_image_block.raw_data_url
+            save_game_state(game_state=game_state, context=context)
+
+        # Going on a quest increases the player's rank
         player.rank += quest.rank_delta
 
-        # Summarize the quest
-        quest.chat_history.append_system_message(
-            "Summarize this quest in three sentences."
-        )
-        summary = (
-            generator.generate(quest.chat_history.file.id, options={"max_tokens": 200})
-            .wait()
-            .blocks[0]
-            .text
-        )
+        # Going on a quest results in gold
+        player.gold += quest.gold_delta
+
+        # Going on a quest expends energy
+        player.energy -= quest.energy_delta
+        if player.energy < 0:
+            player.energy = 0
+
+        summary_block = generate_quest_summary(quest.name, context)
+        summary = summary_block.text
         quest.text_summary = summary
+
+        if social_gen := get_social_media_generator(context=context):
+            social_summary = social_gen.generate_shareable_quest_snippet(
+                quest=quest, context=context
+            )
+            quest.social_media_summary = social_summary
 
         # Finally.. close the quest.
         game_state.current_quest = None
@@ -110,11 +137,13 @@ class EndQuestTool(Tool):
         # included in this.
         save_game_state(game_state, context)
 
-        return "You've finished the quest! TODO: Stream celebration."
+        send_agent_status_message(AgentStatusMessageTag.QUEST_COMPLETE, context=context)
+
+        return ""
 
     def run(
         self, tool_input: List[Block], context: AgentContext
     ) -> Union[List[Block], Task[Any]]:
         game_state = get_game_state(context)
-        msg = self.end_quest(game_state, context)
-        return [Block(text=msg)]
+        self.end_quest(game_state, context)
+        return []

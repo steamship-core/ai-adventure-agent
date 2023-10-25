@@ -1,18 +1,7 @@
-from pydantic import BaseModel, Field
-from steamship import PluginInstance, Steamship, SteamshipError
-from steamship.agents.llms.openai import ChatOpenAI
-from steamship.agents.schema import ChatLLM
-from steamship.agents.schema.agent import AgentContext
+from typing import List, Optional
 
-from utils.context_utils import (
-    with_background_image_generator,
-    with_background_music_generator,
-    with_function_capable_llm,
-    with_narration_generator,
-    with_profile_image_generator,
-    with_server_settings,
-    with_story_generator,
-)
+from pydantic import BaseModel, Field
+from steamship import SteamshipError
 
 
 class ServerSettings(BaseModel):
@@ -22,134 +11,40 @@ class ServerSettings(BaseModel):
     """
 
     # Image Generation Settings
-    default_profile_image_model: str = Field("dall-e", description="")
-    default_background_image_model: str = Field("dall-e", description="")
+    default_image_generation_lora: str = Field(
+        default="https://civitai.com/api/download/models/123593",
+        description="LoRA to use for image generation. This MUST be a known SDXL-based LoRA.",
+    )
 
     # Language Generation Settings - Function calling
-    default_function_capable_llm_model: str = Field("gpt-4", description="")
+    default_function_capable_llm_model: str = Field("gpt-3.5-turbo", description="")
     default_function_capable_llm_temperature: float = Field(0.4, description="")
-    default_function_capable_llm_max_tokens: int = Field(256, description="")
+    default_function_capable_llm_max_tokens: int = Field(512, description="")
 
     # Language Generation Settings - Story telling
-    default_llm_model: str = Field("gpt-4", description="")
-    default_llm_temperature: float = Field(0.4, description="")
-    default_llm_max_tokens: int = Field(256, description="")
+    default_story_model: str = Field("gpt-3.5-turbo", description="")
+    default_story_temperature: float = Field(0.4, description="")
+    default_story_max_tokens: int = Field(512, description="")
 
     # Narration Generation Settings
     default_narration_model: str = Field("elevenlabs", description="")
 
     # Narration Generation Settings
-    default_background_music_model: str = Field("music-generator", description="")
+    # default_background_music_model: str = Field("music-generator", description="")  # TODO(doug): fix
 
-    def get_story_generator(self, client: Steamship) -> PluginInstance:
-        """Return a plugin instance for the story generator."""
-        plugin_handle = None
+    # Energy Management
+    quest_cost: int = Field(10, description="The cost of going on one quest")
 
-        if self.default_llm_model in ["gpt-3.5-turbo", "gpt-4"]:
-            plugin_handle = (
-                "gpt-4"  # This is the Steamship plugin, not the actual model.
-            )
-
-        if plugin_handle is None:
-            raise SteamshipError(message=f"Invalid LLM model: {self.default_llm_model}")
-
-        return client.use_plugin(
-            plugin_handle,
-            config={
-                "model": self.default_llm_model,
-                "max_tokens": self.default_llm_max_tokens,
-                "temperature": self.default_llm_temperature,
-            },
+    def _select_model(
+        self,
+        allowed: List[str],
+        default: Optional[str] = None,
+        preferred: Optional[str] = None,
+    ) -> str:
+        if preferred and preferred in allowed:
+            return preferred
+        if default in allowed:
+            return default
+        raise SteamshipError(
+            message=f"Invalid model selection (preferred={preferred}, default={default}). Only the following are allowed: {allowed}"
         )
-
-    def get_function_capable_llm(self, client: Steamship) -> ChatLLM:
-        """Return a plugin instance for the story generator."""
-        return ChatOpenAI(client)
-
-    def get_profile_image_generator(self, client: Steamship) -> PluginInstance:
-        """Return a plugin instance for the profile image generator."""
-        plugin_handle = None
-
-        if self.default_profile_image_model in ["dall-e"]:
-            plugin_handle = "dall-e"
-
-        if plugin_handle is None:
-            raise SteamshipError(
-                message=f"Invalid Image model: {self.default_profile_image_model}"
-            )
-
-        return client.use_plugin(plugin_handle)
-
-    def get_background_image_generator(self, client: Steamship) -> PluginInstance:
-        """Return a plugin instance for the background image generator."""
-        plugin_handle = None
-
-        if self.default_background_image_model in ["dall-e"]:
-            plugin_handle = "dall-e"
-
-        if plugin_handle is None:
-            raise SteamshipError(
-                message=f"Invalid Image model: {self.default_background_image_model}"
-            )
-
-        return client.use_plugin(plugin_handle)
-
-    def get_narration_generator(self, client: Steamship) -> PluginInstance:
-        """Return a plugin instance for the narration."""
-        plugin_handle = None
-
-        if self.default_narration_model in ["elevenlabs", "elevenlabs-test"]:
-            plugin_handle = self.default_narration_model
-
-        if plugin_handle is None:
-            raise SteamshipError(
-                message=f"Invalid Narration model: {self.default_narration_model}"
-            )
-
-        return client.use_plugin(plugin_handle)
-
-    def get_background_music_generator(self, client: Steamship) -> PluginInstance:
-        """Return a plugin instance for the background music."""
-        plugin_handle = None
-
-        if self.default_background_music_model in ["music-generator"]:
-            plugin_handle = self.default_narration_model
-
-        if plugin_handle is None:
-            raise SteamshipError(
-                message=f"Invalid Background Music model: {self.default_background_music_model}"
-            )
-
-        return client.use_plugin(plugin_handle)
-
-    def add_to_agent_context(self, context: AgentContext) -> AgentContext:
-        # TODO: This feels like a great way to interact with AgentContext, but this is a LOT of loading that has to
-        # happen on EVERY call. Perhaps we move this to happen on-demand to speed things up if latency is bad.
-
-        context = with_story_generator(
-            self.get_story_generator(context.client), context
-        )
-
-        context = with_narration_generator(
-            self.get_narration_generator(context.client), context
-        )
-
-        context = with_background_music_generator(
-            self.get_background_music_generator(context.client), context
-        )
-
-        context = with_profile_image_generator(
-            self.get_profile_image_generator(context.client), context
-        )
-
-        context = with_background_image_generator(
-            self.get_background_image_generator(context.client), context
-        )
-
-        context = with_function_capable_llm(
-            self.get_function_capable_llm(context.client), context
-        )
-
-        context = with_server_settings(self, context)
-
-        return context

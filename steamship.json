@@ -1,11 +1,11 @@
 {
 	"type": "package",
-	"handle": "ai-adventure-game-beta",
-	"version": "1.0.3-rc.13",
+	"handle": "ai-adventure-game",
+	"version": "1.0.4-rc.8",
 	"description": "",
 	"author": "",
 	"entrypoint": "Unused",
-	"public": true,
+	"public": false,
 	"plugin": null,
 	"build_config": {
 		"ignore": [

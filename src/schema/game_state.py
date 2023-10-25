@@ -1,16 +1,20 @@
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
-from steamship import Steamship
-from steamship.agents.schema import AgentContext
-from steamship.utils.kv_store import KeyValueStore
 
 from schema.camp import Camp
-from schema.characters import HumanCharacter
-from schema.quest import Quest
+from schema.characters import HumanCharacter, NpcCharacter
+from schema.preferences import Preferences
+from schema.quest import Quest, QuestDescription
 
-# An instnace is a game instance.
-from utils.context_utils import with_game_state
+
+class ActiveMode(str, Enum):
+    ONBOARDING = "onboarding"
+    CAMP = "camp"
+    QUEST = "quest"
+    NPC_CONVERSATION = "npc-conversation"
+    DIAGNOSTIC = "diagnostic"
 
 
 class GameState(BaseModel):
@@ -32,12 +36,12 @@ class GameState(BaseModel):
         HumanCharacter(), description="The player of the game."
     )
 
-    tone: Optional[str] = Field(
-        "Silly", description="The tone of the story being told."
+    preferences: Preferences = Field(
+        Preferences(), description="Player's game preferences"
     )
-    genre: Optional[str] = Field(
-        "Thriller", description="The genre of the story being told."
-    )
+
+    tone: Optional[str] = Field(None, description="The tone of the story being told.")
+    genre: Optional[str] = Field(None, description="The genre of the story being told.")
     # END ONBOARDING FIELDS
 
     # NOTE: The fields below are not intended to be settable BY the user themselves.
@@ -48,6 +52,11 @@ class GameState(BaseModel):
     camp: Optional[Camp] = Field(
         Camp(),
         description="The player's camp. This is where they are then not on a quest.",
+    )
+
+    quest_arc: Optional[List[QuestDescription]] = Field(
+        default=None,
+        description="The list of stages of quest that a player will go through",
     )
 
     current_quest: Optional[str] = Field(
@@ -65,6 +74,35 @@ class GameState(BaseModel):
         description="The key of the last question asked to the user via context_utils.await_ask.",
     )
 
+    profile_image_url: Optional[str] = Field(
+        default=None, description="The URL for the character image"
+    )
+
+    chat_history_for_onboarding_complete: Optional[bool] = Field(
+        default=None,
+        description="Whether the onboarding profile has been written to the chat history",
+    )
+
+    diagnostic_mode: Optional[str] = Field(
+        default=None, description="The name of the remote diagnostic test to run"
+    )
+
+    def update_from_web(self, other: "GameState"):
+        """Perform a gentle update so that the website doesn't accidentally blast over this if it diverges in
+        structure."""
+
+        # Allow zeroing out even if it's None
+        self.diagnostic_mode = other.diagnostic_mode
+
+        if other.genre:
+            self.genre = other.genre
+        if other.tone:
+            self.tone = other.tone
+        if other.player:
+            self.player.update_from_web(other.player)
+        if other.preferences:
+            self.preferences.update_from_web(other.preferences)
+
     def is_onboarding_complete(self) -> bool:
         """Return True if the player onboarding has been completed.
 
@@ -72,27 +110,47 @@ class GameState(BaseModel):
         """
         return (
             self.player is not None
-            and self.player.name is not None
-            and self.player.description is not None
-            and self.player.background is not None
-            and self.player.motivation is not None
-            and self.player.inventory is not None
-            and len(self.player.inventory) > 0
+            and self.player.is_onboarding_complete()
             and self.genre is not None
             and self.tone is not None
+            and self.chat_history_for_onboarding_complete
         )
 
-    @staticmethod
-    def load(client: Steamship) -> "GameState":
-        """Save GameState to the KeyValue store."""
-        key = "GameState"
-        kv = KeyValueStore(client, key)
-        try:
-            value = kv.get(key)
-            return GameState.parse_obj(value)
-        except BaseException:
-            return GameState()
+    def image_generation_requested(self) -> bool:
+        if self.player.profile_image_url:
+            return True
+        elif self.profile_image_url:
+            return True
+        else:
+            return False
 
-    def add_to_agent_context(self, context: AgentContext) -> AgentContext:
-        context = with_game_state(self, context)
-        return context
+    def camp_image_requested(self) -> bool:
+        return True if self.camp.image_block_url else False
+
+    def camp_audio_requested(self) -> bool:
+        return True if self.camp.audio_block_url else False
+
+    def dict(self, **kwargs) -> dict:
+        """Return the dict representation, making sure the computed properties are there."""
+        ret = super().dict(**kwargs)
+        ret["active_mode"] = self.active_mode.value
+        return ret
+
+    @property
+    def active_mode(self) -> ActiveMode:
+        if self.diagnostic_mode is not None:
+            return ActiveMode.DIAGNOSTIC  # Diagnostic mode takes precedence
+        if not self.is_onboarding_complete():
+            return ActiveMode.ONBOARDING
+        if self.in_conversation_with:
+            return ActiveMode.NPC_CONVERSATION
+        if self.current_quest:
+            return ActiveMode.QUEST
+        return ActiveMode.CAMP
+
+    def find_npc(self, npc_name: str) -> Optional[NpcCharacter]:
+        if self.camp and self.camp.npcs:
+            for npc in self.camp.npcs:
+                if npc.name == npc_name:
+                    return npc
+        return None

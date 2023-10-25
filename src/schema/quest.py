@@ -5,6 +5,14 @@ from pydantic import BaseModel, Field
 from schema.characters import Item
 
 
+class QuestDescription(BaseModel):
+    """The sketch of a quest the user will go on"""
+
+    goal: str = Field(description="The goal of the quest")
+
+    location: str = Field(description="The location of the quest")
+
+
 class Quest(BaseModel):
     """Information about a quest."""
 
@@ -28,6 +36,23 @@ class Quest(BaseModel):
         None, description="The ChatFile ID of the quest."
     )
 
+    # For managing the back-and-forth
+    sent_intro: Optional[bool] = Field(
+        False, description="Whether the intro of the quest was sent to the user."
+    )
+
+    num_problems_to_encounter: int = Field(
+        default=3,
+        description="How many problems will the user encounter during the quest?",
+    )
+
+    user_problem_solutions: Optional[List[str]] = Field(
+        default_factory=list, description="The user's solutions to the problems."
+    )
+    sent_outro: Optional[bool] = Field(
+        False, description="Whether the outro of the quest was sent to the user."
+    )
+
     # Output Fields
     image_url: Optional[str] = Field(
         None, description="An image of this quest generated afterwards by AI."
@@ -40,4 +65,18 @@ class Quest(BaseModel):
     )
     rank_delta: Optional[int] = Field(
         1, description="The change in rank that resulted from this quest."
+    )
+    gold_delta: Optional[int] = Field(
+        25, description="The change in gold that resulted from this quest."
+    )
+    energy_delta: Optional[int] = Field(
+        -10, description="The change in energy that resulted from this quest."
+    )
+    completed_timestamp: Optional[str] = Field(
+        None, description="The timestamp at which the quest was completed"
+    )
+
+    # TODO(dougreid): cleanup
+    social_media_summary: Optional[str] = Field(
+        None, description="A social-media friendly summary"
     )

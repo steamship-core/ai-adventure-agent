@@ -20,62 +20,30 @@ That reduces the need of the game code to perform verbose plumbing operations.
 import logging
 from typing import List, Optional, Union
 
-from steamship import Block, MimeTypes, PluginInstance, Tag
+from steamship import Block, PluginInstance
+from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
-from steamship.data import TagValueKey
 from steamship.utils.kv_store import KeyValueStore
+
+# from schema.characters import HumanCharacter
+from schema.game_state import GameState
+from schema.server_settings import ServerSettings
+from utils.tags import QuestIdTag
 
 _STORY_GENERATOR_KEY = "story-generator"
 _FUNCTION_CAPABLE_LLM = (
     "function-capable-llm"  # This could be distinct from the one generating the story.
 )
 _BACKGROUND_MUSIC_GENERATOR_KEY = "background-music-generator"
-_BACKGROUND_IMAGE_GENERATOR_KEY = "background-image-generator"
-_PROFILE_IMAGE_GENERATOR_KEY = "profile-image-generator"
 _NARRATION_GENERATOR_KEY = "narration-generator"
 _SERVER_SETTINGS_KEY = "server-settings"
-_game_state_KEY = "user-settings"
-
-
-def with_story_generator(
-    instance: PluginInstance, context: AgentContext
-) -> AgentContext:
-    context.metadata[_STORY_GENERATOR_KEY] = instance
-    return context
+_GAME_STATE_KEY = "user-settings"
 
 
 def with_function_capable_llm(instance: ChatLLM, context: AgentContext) -> AgentContext:
     context.metadata[_FUNCTION_CAPABLE_LLM] = instance
-    return context
-
-
-def with_background_music_generator(
-    instance: PluginInstance, context: AgentContext
-) -> AgentContext:
-    context.metadata[_BACKGROUND_MUSIC_GENERATOR_KEY] = instance
-    return context
-
-
-def with_background_image_generator(
-    instance: PluginInstance, context: AgentContext
-) -> AgentContext:
-    context.metadata[_BACKGROUND_IMAGE_GENERATOR_KEY] = instance
-    return context
-
-
-def with_profile_image_generator(
-    instance: PluginInstance, context: AgentContext
-) -> AgentContext:
-    context.metadata[_PROFILE_IMAGE_GENERATOR_KEY] = instance
-    return context
-
-
-def with_narration_generator(
-    instance: PluginInstance, context: AgentContext
-) -> AgentContext:
-    context.metadata[_NARRATION_GENERATOR_KEY] = instance
     return context
 
 
@@ -87,40 +55,97 @@ def with_server_settings(
 
 
 def with_game_state(
-    server_settings: "GameState", context: AgentContext  # noqa: F821
-) -> "GameState":  # noqa: F821
-    context.metadata[_game_state_KEY] = server_settings
+    game_state: "GameState", context: AgentContext  # noqa: F821
+) -> "AgentContext":  # noqa: F821
+    context.metadata[_GAME_STATE_KEY] = game_state
     return context
 
 
 def get_story_text_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_STORY_GENERATOR_KEY, default)
+    generator = context.metadata.get(_STORY_GENERATOR_KEY, default)
+
+    if not generator:
+        # Lazily create
+        server_settings: ServerSettings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        open_ai_models = ["gpt-3.5-turbo", "gpt-4"]
+        replicate_models = ["dolly_v2", "llama_v2"]
+
+        model_name = server_settings._select_model(
+            open_ai_models + replicate_models,
+            default=server_settings.default_story_model,
+            preferred=preferences.narration_model,
+        )
+
+        plugin_handle = None
+        if model_name in open_ai_models:
+            plugin_handle = "gpt-4"
+        elif model_name in replicate_models:
+            plugin_handle = "replicate-llm"
+
+        generator = context.client.use_plugin(
+            plugin_handle,
+            config={
+                "model": model_name,
+                "max_tokens": server_settings.default_story_max_tokens,
+                "temperature": server_settings.default_story_temperature,
+            },
+        )
+
+        context.metadata[_STORY_GENERATOR_KEY] = generator
+
+    return generator
 
 
 def get_background_music_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_BACKGROUND_MUSIC_GENERATOR_KEY, default)
+    generator = context.metadata.get(_BACKGROUND_MUSIC_GENERATOR_KEY, default)
 
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
 
-def get_background_image_generator(
-    context: AgentContext, default: Optional[PluginInstance] = None
-) -> Optional[PluginInstance]:
-    return context.metadata.get(_BACKGROUND_IMAGE_GENERATOR_KEY, default)
+        plugin_handle = server_settings._select_model(
+            ["music-generator"],  # Valid models
+            default=server_settings.default_narration_model,
+            preferred=preferences.background_music_model,
+        )
+        generator = context.client.use_plugin(plugin_handle)
+        context.metadata[_BACKGROUND_MUSIC_GENERATOR_KEY] = generator
 
-
-def get_profile_image_generator(
-    context: AgentContext, default: Optional[PluginInstance] = None
-) -> Optional[PluginInstance]:
-    return context.metadata.get(_PROFILE_IMAGE_GENERATOR_KEY, default)
+    return generator
 
 
 def get_audio_narration_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
-    return context.metadata.get(_NARRATION_GENERATOR_KEY, default)
+    generator = context.metadata.get(_NARRATION_GENERATOR_KEY, default)
+
+    if not generator:
+        # Lazily create
+        server_settings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        plugin_handle = server_settings._select_model(
+            ["elevenlabs"],
+            default=server_settings.default_narration_model,
+            preferred=preferences.narration_model,
+        )
+        config = {}
+        if plugin_handle == "elevenlabs":
+            config["voice_id"] = "ThT5KcBeYPX3keUQqHPh"
+        generator = context.client.use_plugin(plugin_handle, config=config)
+        context.metadata[_NARRATION_GENERATOR_KEY] = generator
+
+    return generator
 
 
 def get_server_settings(
@@ -129,10 +154,8 @@ def get_server_settings(
     return context.metadata.get(_SERVER_SETTINGS_KEY, default)
 
 
-def get_game_state(
-    context: AgentContext, default: Optional["GameState"] = None  # noqa: F821
-) -> Optional["GameState"]:  # noqa: F821
-    logging.info(
+def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F821
+    logging.debug(
         f"Refreshing Game State from workspace {context.client.config.workspace_handle}.",
         extra={
             AgentLogging.IS_MESSAGE: True,
@@ -141,11 +164,48 @@ def get_game_state(
         },
     )
 
-    return context.metadata.get(_game_state_KEY, default)
+    if _GAME_STATE_KEY in context.metadata:
+        return context.metadata.get(_GAME_STATE_KEY)
+
+    # Get it from the KV Store
+    key = "GameState"
+    kv = KeyValueStore(context.client, key)
+    value = kv.get(key)
+
+    if value:
+        logging.debug(f"Parsing game state from stored value: \n{value}")
+        game_state = GameState.parse_obj(value)
+        context.metadata[_GAME_STATE_KEY] = game_state
+        return game_state
+    else:
+        logging.debug("Creating new game state -- one didn't exist!")
+        game_state = GameState()
+        context.metadata[_GAME_STATE_KEY] = game_state
+
+        # FOR QUICK DEBUGGING
+        # game_state.player = HumanCharacter()
+        # game_state.player.name = "Dave"
+        # game_state.player.motivation = "Doing cool things"
+        # game_state.player.description = "he is tall"
+        # game_state.player.background = "he's a guy"
+        # game_state.tone = "funny"
+        # game_state.genre = "adventure"
+        ####
+
+        return game_state
 
 
 def save_game_state(game_state, context: AgentContext):
     """Save GameState to the KeyValue store."""
+
+    logging.debug(
+        f"Saving Game State from workspace {context.client.config.workspace_handle}.",
+        extra={
+            AgentLogging.IS_MESSAGE: True,
+            AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+            AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+        },
+    )
 
     # Save it to the KV Store
     key = "GameState"
@@ -154,7 +214,7 @@ def save_game_state(game_state, context: AgentContext):
     kv.set(key, value)
 
     # Also save it to the context
-    context.metadata[_game_state_KEY] = game_state
+    context.metadata[_GAME_STATE_KEY] = game_state
 
 
 def get_current_quest(context: AgentContext) -> Optional["Quest"]:  # noqa: F821
@@ -247,7 +307,12 @@ def switch_history_to_current_quest(
 def get_function_capable_llm(
     context: AgentContext, default: Optional[ChatLLM] = None  # noqa: F821
 ) -> Optional[ChatLLM]:  # noqa: F821
-    return context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
+    llm = context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
+    if not llm:
+        # Lazy create
+        llm = ChatOpenAI(context.client)
+        context.metadata[_FUNCTION_CAPABLE_LLM] = llm
+    return llm
 
 
 def _key_for_question(blocks: List[Block], key: Optional[str] = None) -> str:
@@ -267,7 +332,7 @@ def _key_for_question(blocks: List[Block], key: Optional[str] = None) -> str:
     return ret
 
 
-class FinishActionException(Exception):
+class FinishActionException(Exception):  # noqa: N818
     """Thrown when a piece of code wishes to pop the stack all the way up to the enclosing Agent or AgentService.
 
     The intended result is that the agent treat teh Exception as a FinishAction, emitting the response.
@@ -283,7 +348,10 @@ class FinishActionException(Exception):
 
 
 def await_ask(
-    question: Union[str, List[Block]], context: AgentContext, key: Optional[str] = None
+    question: Union[str, List[Block]],
+    context: AgentContext,
+    key_suffix: str = "",
+    prompt_prologue: Optional[str] = "",
 ):
     """Asks the user a question. Can be used like `input` in Python.
 
@@ -301,24 +369,26 @@ def await_ask(
 
         The FinishActionException is handled by the enclosing Agent.
     """
-    BASE_TAGS = [
-        Tag(
-            kind="request-id",
-            name=context.request_id,
-            value={TagValueKey.STRING_VALUE.value: context.request_id},
-        )
-    ]
+    # Check if we have ALREADY asked about this key!
+    game_state = get_game_state(context)
+
+    base_tags = []
+
+    if game_state.current_quest:
+        # Make sure we're tagging this for request rehydration
+        base_tags.append(QuestIdTag(game_state.current_quest))
 
     # Make sure question is List[Block]
     if isinstance(question, str):
-        output = [Block(text=question, tags=BASE_TAGS)]
+        output = [Block(text=question, tags=base_tags)]
     else:
+        for block in question:
+            if not block.tags:
+                block.tags = []
+            block.tags.extend(base_tags)
         output = question
 
-    key = _key_for_question(output)
-
-    # Check if we have ALREADY asked about this key!
-    game_state = get_game_state(context)
+    key = _key_for_question(output) + key_suffix
 
     logging.info(
         f"Seeking input with await_ask key: {key}.",
@@ -368,6 +438,10 @@ def await_ask(
     )
 
     save_game_state(game_state, context)
+
+    if prompt_prologue:
+        output.insert(0, Block(text=prompt_prologue))
+
     raise FinishActionException(action=FinishAction(output=output))
 
 
@@ -385,60 +459,7 @@ def emit(output: Union[str, Block, List[Block]], context: AgentContext):
         func(output, context.metadata)
 
 
-def append_to_chat_history_and_emit(
-    context: AgentContext,
-    text: str = None,
-    tags: List[Tag] = None,
-    content: Union[str, bytes] = None,
-    url: Optional[str] = None,
-    mime_type: Optional[MimeTypes] = None,
-    block: Optional[Block] = None,
-) -> Block:
-    """Append a new block and then trigger an emit() for sync clients.
-
-    Adds a new `blocks` option for in-process generation output.
-
-    TODO / NOTA BENE:
-      While we could just generate directly into the ChatHistory, this currently (1) doesn't enable
-      us to ensure those generated blocks have the correct chat-related tags, and (2) doesn't give us a way to
-      notify non-streaming clients of these new blocks.
-
-    This is the preferred way to send an assistant message to the user if:
-
-    - One is streaming messages amidst operation (e.g. streaming back several messages)
-    - One wishes to still support non-streaming clients, including the development CLI
-
-    The streaming client will see the message because of the chat history append operation.
-    The non-streaming client will see the message because of the emit() operation.
-    """
-
-    if block is None:
-        block = context.chat_history.append_assistant_message(
-            text=text, tags=tags, content=content, url=url, mime_type=mime_type
-        )
-        emit(block, context)
-        return block
-    else:
-        if block.is_video() or block.is_audio() or block.is_image():
-            # TODO: This is super inefficient.
-            _block = context.chat_history.append_assistant_message(
-                url=block.to_public_url(), tags=block.tags, mime_type=block.mime_type
-            )
-        else:
-            _block = context.chat_history.append_assistant_message(
-                text=block.text, tags=block.tags, mime_type=block.mime_type
-            )
-        try:
-            emit(_block, context)
-        except BaseException as e:
-            logging.error(e)
-            logging.error(
-                "Ted note: I'm not going to fix right now but I think the engine is having trouble returning /raw for a text block."
-            )
-        return block
-
-
-class RunNextAgentException(Exception):
+class RunNextAgentException(Exception):  # noqa: N818
     """Thrown when a piece of code, anywhere, wishes to pop the stack all the way up to the AgentService and
     activate the next agent.
 

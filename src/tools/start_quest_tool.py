@@ -1,12 +1,18 @@
 import uuid
 from typing import Any, List, Optional, Union
 
-from steamship import Block, MimeTypes, Task
-from steamship.agents.schema import AgentContext, ChatHistory, FinishAction, Tool
+from steamship import Block, MimeTypes, SteamshipError, Task
+from steamship.agents.schema import AgentContext, FinishAction, Tool
 
 from schema.game_state import GameState
 from schema.quest import Quest
-from utils.context_utils import RunNextAgentException, get_game_state, save_game_state
+from schema.server_settings import ServerSettings
+from utils.context_utils import (
+    RunNextAgentException,
+    get_game_state,
+    get_server_settings,
+    save_game_state,
+)
 
 
 class StartQuestTool(Tool):
@@ -42,50 +48,28 @@ class StartQuestTool(Tool):
         kwargs["is_final"] = True
         super().__init__(**kwargs)
 
-    def start_quest(
+    def start_quest(  # noqa: C901
         self,
         game_state: GameState,
         context: AgentContext,
         purpose: Optional[str] = None,
     ) -> Quest:
-        quest = Quest(chat_file_id=f"quest-{uuid.uuid4()}")
+        server_settings: ServerSettings = get_server_settings(context)
         player = game_state.player
 
-        chat_history = ChatHistory.get_or_create(
-            context.client, {"id": quest.chat_file_id}
-        )
-        chat_history.append_system_message(
-            f"We are writing a story about the adventure of a character named {player.name}."
-        )
-        chat_history.append_system_message(
-            f"{player.name} has the following background: {player.background}"
-        )
-
-        # Add in information about pinventory
-        items = []
-        for item in player.inventory:
-            items.append(item.name)
-        if len(items) > 0:
-            item_list = ",".join(items)
-            chat_history.append_system_message(
-                f"{player.name} has the following things in their inventory: {item_list}"
+        if player.energy < server_settings.quest_cost:
+            raise SteamshipError(
+                message=f"Going on a quest costs {server_settings.quest_cost} energy, but you only have {player.energy}."
             )
 
-        chat_history.append_system_message(
-            f"{player.name}'s motivation is to {player.motivation}"
-        )
-        chat_history.append_system_message(
-            f"The tone of this story is {game_state.tone}"
-        )
+        # quest = Quest(chat_file_id=f"quest-{uuid.uuid4()}")
+        chat_history = context.chat_history
 
-        # Add in information about prior quests
-        prepared_mission_summaries = []
-        for prior_quest in game_state.quests:
-            prepared_mission_summaries.append(prior_quest.text_summary)
-        if len(prepared_mission_summaries) > 0:
-            chat_history.append_system_message(
-                f"{player.name} has already been on previous missions: \n {prepared_mission_summaries}"
-            )
+        quest = Quest(
+            chat_file_id=chat_history.file.id,
+            # For now a quest is a fixed cost, controlled by the server settings.
+            energy_delta=server_settings.quest_cost,
+        )
 
         # Now save the chat history file
         quest.chat_file_id = chat_history.file.id
@@ -94,6 +78,9 @@ class StartQuestTool(Tool):
             game_state.quests = []
         game_state.quests.append(quest)
 
+        quest.name = f"{uuid.uuid4()}"
+
+        print(f"Current quest name is: {quest.name}")
         game_state.current_quest = quest.name
 
         # This saves it in a way that is both persistent (KV Store) and updates the context
@@ -118,13 +105,13 @@ class StartQuestTool(Tool):
             action=FinishAction(
                 input=[
                     Block(
-                        text=f"{player.name} gathers his items and prepares to embark on a quest..",
+                        text=f"", # Empty string here to not interfere with prompts in quest_agent
                         mime_type=MimeTypes.MKD,
                     )
                 ],
                 output=[
                     Block(
-                        text="{player.name} stands up.",
+                        text=f"{player.name} stands up.",
                         mime_type=MimeTypes.MKD,
                     )
                 ],

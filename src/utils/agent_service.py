@@ -1,5 +1,4 @@
 import logging
-import uuid
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
@@ -9,14 +8,24 @@ from steamship.agents.logging import AgentLogging, StreamingOpts
 from steamship.agents.schema import Action, Agent, FinishAction
 from steamship.agents.schema.context import AgentContext, EmitFunc, Metadata
 from steamship.agents.utils import with_llm
+
+# from steamship.base.client import API_TIMINGS
 from steamship.data import TagKind
 from steamship.data.tags.tag_constants import ChatTag
 from steamship.invocable import PackageService, post
 from steamship.invocable.invocable_response import StreamingResponse
 
-from schema.game_state import GameState
 from schema.server_settings import ServerSettings
-from utils.context_utils import RunNextAgentException, append_to_chat_history_and_emit
+from utils.context_utils import (
+    RunNextAgentException,
+    emit,
+    get_game_state,
+    with_game_state,
+    with_server_settings,
+)
+
+# from utils.timing_utils import pretty_print_timings
+from utils.tags import QuestIdTag
 
 
 def build_context_appending_emit_func(
@@ -26,17 +35,47 @@ def build_context_appending_emit_func(
 
     NOTE: Messages will be tagged as ASSISTANT messages, as this assumes that agent output should be considered
     an assistant response to a USER.
+
+    EXTENSION NOTE:
+    - Some blocks are generated and then emitted when Generation is complete.
+    - Some blocks are streamed directly into the ChatHistory (for the web user) but we still want to emit them for users
+    of non-streaming clients: ship run local, AgentREPL, Telegram, etc.
+
+    As a hack, this project adopts the following convention:
+
+    - If a Block has the tag `kind=chat, name=streamed-to-chat-history` then it doesn't call emit here, since that
+      would be redundant.
     """
 
     def chat_history_append_func(blocks: List[Block], metadata: Metadata):
         for block in blocks:
+            # Check if this block was already streamed to ChatHistory
+            already_streamed_to_chat_history = False
+            for tag in block.tags or []:
+                if (
+                    tag.kind == TagKind.CHAT.value
+                    and tag.name == "streamed-to-chat-history"
+                ):
+                    already_streamed_to_chat_history = True
+                    break
+
+            # If this block was already streamed, skip emitting it here.
+            if already_streamed_to_chat_history:
+                continue
+
             block.set_public_data(make_blocks_public)
-            context.chat_history.append_assistant_message(
-                text=block.text,
-                tags=block.tags,
-                url=block.raw_data_url or block.url or block.content_url or None,
-                mime_type=block.mime_type,
-            )
+            if block.text:
+                context.chat_history.append_assistant_message(
+                    text=block.text,
+                    tags=block.tags,
+                    mime_type=block.mime_type,
+                )
+            else:
+                context.chat_history.append_assistant_message(
+                    tags=block.tags,
+                    url=block.raw_data_url or block.url or block.content_url or None,
+                    mime_type=block.mime_type,
+                )
 
     return chat_history_append_func
 
@@ -369,7 +408,6 @@ class AgentService(PackageService):
 
         context = AgentContext.get_or_create(
             client=self.client,
-            request_id=self.client.config.request_id,
             context_keys={"id": f"{context_id}"},
             use_llm_cache=use_llm_cache,
             use_action_cache=use_action_cache,
@@ -379,19 +417,19 @@ class AgentService(PackageService):
                 include_tool_messages=include_tool_messages,
             ),
             initial_system_message="",  # None necessary
+            searchable=False,
         )
 
         # Add a default LLM to the context, using the Agent's if it exists.
         llm = ChatOpenAI(client=self.client)
         context = with_llm(context=context, llm=llm)
 
-        # Now add in the Server Settings
+        # Get the game state and add to context
+        game_state = get_game_state(context)
+        context = with_game_state(game_state, context)
         server_settings = ServerSettings()
-        context = server_settings.add_to_agent_context(context)
-
-        # Now add in the Game State
-        game_state = GameState.load(self.client)
-        context = game_state.add_to_agent_context(context)
+        context = with_server_settings(server_settings, context)
+        # TODO(doug): figure out how to make this selectable.
 
         self._agent_context = context
         return context
@@ -399,15 +437,21 @@ class AgentService(PackageService):
     def _history_file_for_context(
         self, context_id: Optional[str] = None, **kwargs
     ) -> File:
-        # AgentContexts serve to allow the AgentService to run agents
-        # with appropriate information about the desired tasking.
-        if context_id is None:
-            context_id = uuid.uuid4()
+
+        # NOTA BENE!
+        context_id = "default"
+
+        #
+        # # AgentContexts serve to allow the AgentService to run agents
+        # # with appropriate information about the desired tasking.
+        # if context_id is None:
+        #     context_id = uuid.uuid4()
 
         ctx = AgentContext.get_or_create(
             self.client,
             context_keys={"id": f"{context_id}"},
             initial_system_message=self.get_default_agent().default_system_message(),
+            searchable=False,
         )
         return ctx.chat_history.file
 
@@ -442,7 +486,13 @@ class AgentService(PackageService):
         return StreamingResponse(task=task, file=history_file)
 
     def _prompt(self, prompt: str, context: AgentContext) -> List[Block]:
-        context.chat_history.append_user_message(prompt)
+        game_state = get_game_state(context)
+
+        base_tags = []
+        if game_state.current_quest:
+            base_tags.append(QuestIdTag(game_state.current_quest))
+
+        context.chat_history.append_user_message(prompt, tags=base_tags)
         agent: Optional[Agent] = self.get_default_agent()
         self.run_agent(agent, context)
 
@@ -451,7 +501,6 @@ class AgentService(PackageService):
         self, prompt: Optional[str] = None, context_id: Optional[str] = None, **kwargs
     ) -> List[Block]:
         """Run an agent with the provided text as the input."""
-        print("HI")
         with self.build_default_context(context_id, **kwargs) as context:
             prompt = prompt or kwargs.get("question") or "Hi."
             logging.info(f"/prompt called with message {prompt}")
@@ -481,18 +530,37 @@ class AgentService(PackageService):
             had_exception = (
                 True  # Not true, but it causes the loop to execute at least once.
             )
+            max_exceptions_allowed = 4
+            exception_count = 0
             while had_exception:
                 try:
                     self._prompt(prompt, context)
                     had_exception = False
                 except RunNextAgentException as e:
+                    exception_count += 1
+                    if exception_count > max_exceptions_allowed:
+                        raise SteamshipError(message="Maximum agent switches exceeded")
+
+                    logging.info(
+                        "Got RunNextAgentException. Loading next agent.",
+                        extra={
+                            AgentLogging.IS_MESSAGE: True,
+                            AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
+                            AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
+                        },
+                    )
+                    self.agent = None
+
                     had_exception = True
                     for block in e.action.output or []:
-                        append_to_chat_history_and_emit(context, block=block)
+                        emit(output=block, context=context)
 
                     prompt = "Hi."
                     if e.action.input:
                         prompt = e.action.input[0].text
+
+            # timings = API_TIMINGS
+            # pretty_print_timings(timings)
 
             # Return the response as a set of multi-modal blocks.
             return output_blocks

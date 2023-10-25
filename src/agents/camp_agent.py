@@ -1,3 +1,6 @@
+from typing import List
+
+from steamship import Block
 from steamship.agents.functional import FunctionsBasedAgent
 from steamship.agents.schema import AgentContext
 from steamship.agents.schema.message_selectors import MessageWindowMessageSelector
@@ -6,6 +9,17 @@ from schema.game_state import GameState
 from tools.start_conversation_tool import StartConversationTool
 from tools.start_quest_tool import StartQuestTool
 from utils.context_utils import get_game_state
+from utils.moderation_utils import is_block_excluded
+
+
+class NonExcludedMessageWindowSelector(MessageWindowMessageSelector):
+    def get_messages(self, messages: List[Block]) -> List[Block]:
+        # choice here: if the user has been submitting a bunch of problematic conversation
+        #              then we are ok "forgetting" the distant context. so, we can trim from
+        #              the discovered window, rather than first filtering and then selecting
+        #              via the window.
+        context_messages = super().get_messages(messages)
+        return [msg for msg in context_messages if not is_block_excluded(msg)]
 
 
 class CampAgent(FunctionsBasedAgent):
@@ -21,7 +35,7 @@ class CampAgent(FunctionsBasedAgent):
     def __init__(self, **kwargs):
         super().__init__(
             tools=[StartQuestTool(), StartConversationTool()],
-            message_selector=MessageWindowMessageSelector(k=10),
+            message_selector=NonExcludedMessageWindowSelector(k=10),
             **kwargs,
         )
 
@@ -45,7 +59,7 @@ class CampAgent(FunctionsBasedAgent):
         else:
             camp_crew = "Nobody is currently with you at camp."
 
-        self.PROMPT = f"""You a game engine which helps users make a choice of option.
+        self.PROMPT = f"""You are a game engine which helps users make a choice of option.
 
 They only have two options to choose between:
 
