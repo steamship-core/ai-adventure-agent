@@ -5,6 +5,17 @@ from pydantic import BaseModel, Field
 from schema.characters import Item
 
 
+class QuestLocation(BaseModel):
+    name: str = Field(description="Name of the quest location")
+    description: str = Field(description="Description of the location")
+
+
+class QuestObstacle(BaseModel):
+    obstacle_type: str = Field(description="summary of obstacle type")
+    obstacle_description: str = Field(description="full text description of the obstacle")
+    block_indices: Optional[List[int]] = Field(default=[])
+
+
 class QuestDescription(BaseModel):
     """The sketch of a quest the user will go on"""
 
@@ -52,6 +63,13 @@ class Quest(BaseModel):
     sent_outro: Optional[bool] = Field(
         False, description="Whether the outro of the quest was sent to the user."
     )
+
+    goal: str = Field(description="point of quest")
+    location: QuestLocation = Field(description="Location of the quest")
+    obstacles: List[QuestObstacle] = Field(default=[], description="obstacles encountered in this quest")
+    current_text_summary: Optional[str] = Field(default=None, description="used to store information on current state in case the need arises to compress history")
+    difficulty: Optional[int] = Field(default=1, lt=10, ge=0)
+    intro_block_index_in_file: Optional[int] = Field(description="...")
 
     # Output Fields
     image_url: Optional[str] = Field(

@@ -87,6 +87,11 @@ class GameState(BaseModel):
         default=None, description="The name of the remote diagnostic test to run"
     )
 
+    # TODO: this is a totally leaky abstraction. We should clean this up.
+    system_prompt_index_in_file: Optional[int] = Field(
+        default=0, description="Index of the current overall system prompt for game."
+    )
+
     def update_from_web(self, other: "GameState"):
         """Perform a gentle update so that the website doesn't accidentally blast over this if it diverges in
         structure."""
