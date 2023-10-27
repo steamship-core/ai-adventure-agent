@@ -1,4 +1,5 @@
 import uuid
+from random import randrange, randint
 from typing import Any, List, Optional, Union
 
 from steamship import Block, MimeTypes, SteamshipError, Task
@@ -78,6 +79,11 @@ class StartQuestTool(Tool):
             game_state.quests = []
         game_state.quests.append(quest)
 
+        quest_difficulty_base = 1
+        if game_state.quest_arc is not None and len(game_state.quest_arc) >= len(game_state.quests):
+            quest_difficulty_base = len(game_state.quests)
+        quest.num_problems_to_encounter =self.num_problems_to_encounter(quest_difficulty_base)
+
         quest.name = f"{uuid.uuid4()}"
 
         print(f"Current quest name is: {quest.name}")
@@ -87,6 +93,11 @@ class StartQuestTool(Tool):
         save_game_state(game_state, context)
 
         return quest
+
+    def num_problems_to_encounter(self, difficulty_base: int) -> int:
+        return (difficulty_base // 4) + 2 + randint(0, 2)
+
+
 
     def run(
         self, tool_input: List[Block], context: AgentContext
