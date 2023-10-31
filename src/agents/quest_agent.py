@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime, timezone
 from random import random
@@ -21,7 +22,7 @@ from utils.context_utils import (
 from utils.generation_utils import (
     await_streamed_block,
     generate_quest_arc,
-    send_story_generation,
+    send_story_generation, generate_likelihood_estimation,
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 from utils.moderation_utils import mark_block_as_excluded
@@ -237,7 +238,7 @@ class QuestAgent(InterruptiblePythonAgent):
             f"Please consider their abilities and whether any referenced objects are nearby or in their inventory. "
             f"ONLY RESPOND WITH ONE OF [VERY UNLIKELY, UNLIKELY, LIKELY, VERY LIKELY]"
         )
-        likelihood_block = send_story_generation(
+        likelihood_block = generate_likelihood_estimation(
             prompt=prompt,
             quest_name=quest.name,
             context=context,
@@ -256,8 +257,13 @@ class QuestAgent(InterruptiblePythonAgent):
             required_roll = 0.5
         roll = random()
         succeeded = roll > required_roll
+        dice_roll_message = json.dumps ({
+            "required" : required_roll,
+            "rolled" : roll,
+            "success" : succeeded
+        })
         context.chat_history.append_system_message(
-            f"{game_state.player.name} needed to roll a {required_roll}, and rolled {roll}. Success: {succeeded}",
+            dice_roll_message,
             tags=self.tags(QuestTag.DICE_ROLL, quest)
         )
         return succeeded

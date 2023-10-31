@@ -96,6 +96,40 @@ def send_story_generation(
     )
     return block
 
+def generate_likelihood_estimation(
+    prompt: str, quest_name: str, context: AgentContext
+) -> Optional[Block]:
+    """Generates and sends a background image to the player."""
+    block = do_generation(
+        context,
+        prompt,
+        prompt_tags=[
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT),
+            QuestIdTag(quest_name),
+        ],
+        output_tags=[],
+        filter=UnionFilter(
+            [
+                TagFilter(
+                    tag_types=[
+                        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
+                    ]
+                ),
+                QuestNameFilter(quest_name=quest_name),
+                LastInventoryFilter(),
+            ]
+        ),
+        generation_for="Dice Roll",
+        stop_tokens=["\n"],
+        new_file=True
+    )
+    return block
 
 def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[Block]:
     """Generates and sends a quest summary to the player."""
@@ -275,6 +309,7 @@ def do_generation(
     filter: ChatHistoryFilter,
     generation_for: str,  # For debugging output
     stop_tokens: Optional[List[str]] = None,
+    new_file: bool = False,
 ) -> Block:
     """Generates the inventory for a merchant"""
 
@@ -306,11 +341,13 @@ def do_generation(
     if stop_tokens:
         options["stop"] = stop_tokens
 
+    output_file_id = None if new_file else context.chat_history.file.id
+
     task = generator.generate(
         tags=output_tags,
         append_output_to_file=True,
         input_file_id=context.chat_history.file.id,
-        output_file_id=context.chat_history.file.id,
+        output_file_id=output_file_id,
         streaming=True,
         input_file_block_index_list=block_indices,
         options=options,
