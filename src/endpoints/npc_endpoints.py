@@ -10,13 +10,12 @@ from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
 
 from generators.generator_context_utils import get_image_generator
-from generators.utils import find_new_block, await_blocks_created_and_task_started
 from schema.game_state import GameState
 from schema.objects import TradeResult, Item
 from tools.end_conversation_tool import EndConversationTool
 from tools.start_conversation_tool import StartConversationTool
 
-# An instnace is a game instance.
+# An instance is a game instance.
 from tools.trade_tool import TradeTool
 from utils.context_utils import get_game_state, save_game_state
 from utils.generation_utils import generate_merchant_inventory
@@ -107,16 +106,13 @@ class NpcMixin(PackageMixin):
                 id=str(uuid.uuid4())
             )
             npc.inventory.append(new_item)
-        num_known_blocks = len(context.chat_history.file.blocks)
         if image_gen := get_image_generator(context):
             tasks = []
             for item in npc.inventory:
                 task = image_gen.request_item_image_generation(item=item, context=context)
                 tasks.append(task)
-                await_blocks_created_and_task_started(num_known_blocks, context.chat_history.file, task, new_block_tag_kind=TagKindExtensions.ITEM, new_block_tag_name=ItemTag.IMAGE)
-                block = find_new_block(context.chat_history.file, num_known_blocks, new_block_tag_kind=TagKindExtensions.ITEM, new_block_tag_name=ItemTag.IMAGE)
+                block = task.wait().blocks[0]
                 item.picture_url = block.raw_data_url
-                num_known_blocks = len(context.chat_history.file.blocks)
         save_game_state(game_state=game_state, context=context)
         return npc.inventory
 

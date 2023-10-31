@@ -127,7 +127,8 @@ def generate_likelihood_estimation(
         ),
         generation_for="Dice Roll",
         stop_tokens=["\n"],
-        new_file=True
+        new_file=True,
+        streaming=False,
     )
     return block
 
@@ -172,6 +173,7 @@ def generate_quest_item(
             [QuestNameFilter(quest_name=quest_name), LastInventoryFilter()]
         ),
         generation_for="Quest Item",
+        streaming=False,
     )
     parts = block.text.split("ITEM DESCRIPTION:")
     if len(parts) == 2:
@@ -219,6 +221,7 @@ def generate_merchant_inventory(
             ]
         ),
         generation_for="Merchant Inventory",
+        streaming=False,
     )
     result = []
     items = block.text.split("ITEM NAME:")
@@ -260,6 +263,7 @@ def generate_quest_arc(
             ]
         ),
         generation_for="Quest Arc",
+        streaming=False,
     )
     result: List[QuestDescription] = []
     items = block.text.split("QUEST GOAL:")
@@ -288,7 +292,7 @@ def generate_story_intro(
             name=CharacterTag.INTRODUCTION_PROMPT,
         )],
         output_tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INTRODUCTION)],
-        filter= TagFilter([
+        filter = TagFilter([
                 (TagKindExtensions.CHARACTER, CharacterTag.NAME),
                 (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                 (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
@@ -296,7 +300,8 @@ def generate_story_intro(
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
                 (TagKindExtensions.CHARACTER, CharacterTag.INTRODUCTION_PROMPT)
             ]),
-        generation_for="Character Introduction"
+        generation_for="Character Introduction",
+        streaming=False,
     )
     return block.text
 
@@ -310,6 +315,7 @@ def do_generation(
     generation_for: str,  # For debugging output
     stop_tokens: Optional[List[str]] = None,
     new_file: bool = False,
+    streaming: bool = True,
 ) -> Block:
     """Generates the inventory for a merchant"""
 
@@ -348,7 +354,7 @@ def do_generation(
         append_output_to_file=True,
         input_file_id=context.chat_history.file.id,
         output_file_id=output_file_id,
-        streaming=True,
+        streaming=streaming,
         input_file_block_index_list=block_indices,
         options=options,
     )
