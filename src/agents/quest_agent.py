@@ -243,7 +243,6 @@ class QuestAgent(InterruptiblePythonAgent):
             quest_name=quest.name,
             context=context,
         )
-        await_streamed_block(likelihood_block, context)
         likelihood_text = likelihood_block.text.upper()
         if likelihood_text.startswith("VERY UNLIKELY"):
             required_roll = 0.9

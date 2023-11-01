@@ -6,7 +6,6 @@ from steamship import Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
 
-from generators import utils
 from generators.image_generator import ImageGenerator
 from schema.objects import Item
 from utils.context_utils import get_game_state
@@ -70,7 +69,6 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             "loras": json.dumps([{"path": self._lora}]),
         }
 
-        num_existing_blocks = len(context.chat_history.file.blocks)
         task = sd.generate(
             text=item_prompt,
             tags=tags,
@@ -81,14 +79,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             options=options,
         )
 
-        # this has obvious flaw but hopefully that corner case is small enough
-        return utils.await_blocks_created_and_task_started(
-            num_existing_blocks,
-            context.chat_history.file,
-            task,
-            new_block_tag_kind=TagKindExtensions.ITEM,
-            new_block_tag_name=ItemTag.IMAGE,
-        )
+        task.wait()
+        return task
 
     def request_profile_image_generation(self, context: AgentContext) -> Task:
         # TODO(doug): cache plugin instance by client workspace
@@ -124,7 +116,6 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             "loras": json.dumps([{"path": self._lora}]),
         }
 
-        num_existing_blocks = len(context.chat_history.file.blocks)
         task = sd.generate(
             text=profile_prompt,
             tags=tags,
@@ -135,15 +126,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             options=options,
         )
 
-        # this has obvious flaw but hopefully that corner case is small enough
-        updated_task = utils.await_blocks_created_and_task_started(
-            num_existing_blocks,
-            context.chat_history.file,
-            task,
-            new_block_tag_kind=TagKindExtensions.CHARACTER,
-            new_block_tag_name=CharacterTag.IMAGE,
-        )
-        return updated_task
+        task.wait()
+        return task
 
     def request_scene_image_generation(
         self, description: str, context: AgentContext
@@ -172,7 +156,6 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             "loras": json.dumps([{"path": self._lora}]),
         }
 
-        num_existing_blocks = len(context.chat_history.file.blocks)
         task = sd.generate(
             text=scene_prompt,
             tags=tags,
@@ -183,14 +166,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             options=options,
         )
 
-        # this has obvious flaw but hopefully that corner case is small enough
-        return utils.await_blocks_created_and_task_started(
-            num_existing_blocks,
-            context.chat_history.file,
-            task,
-            new_block_tag_kind=TagKindExtensions.SCENE,
-            new_block_tag_name=SceneTag.BACKGROUND,
-        )
+        task.wait()
+        return task
 
     def request_camp_image_generation(self, context: AgentContext) -> Task:
         # TODO(doug): cache plugin instance by client workspace
@@ -215,7 +192,6 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             "loras": json.dumps([{"path": self._lora}]),
         }
 
-        num_existing_blocks = len(context.chat_history.file.blocks)
         task = sd.generate(
             text=scene_prompt,
             tags=tags,
@@ -226,11 +202,5 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             options=options,
         )
 
-        # this has obvious flaw but hopefully that corner case is small enough
-        return utils.await_blocks_created_and_task_started(
-            num_known_blocks=num_existing_blocks,
-            file=context.chat_history.file,
-            task=task,
-            new_block_tag_kind=TagKindExtensions.CAMP,
-            new_block_tag_name=CampTag.IMAGE,
-        )
+        task.wait()
+        return task
