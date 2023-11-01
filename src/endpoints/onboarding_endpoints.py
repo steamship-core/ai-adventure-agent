@@ -7,7 +7,7 @@ from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
 
 from agents.onboarding_agent import OnboardingAgent
-from schema.game_state import ActiveMode, GameState
+from schema.game_state import ActiveMode
 
 # An instnace is a game instance.
 from utils.context_utils import RunNextAgentException, get_game_state
@@ -28,8 +28,8 @@ class OnboardingMixin(PackageMixin):
     def complete_onboarding(self, **kwargs) -> bool:
         """Attempts to complete onboarding."""
         try:
-            game_state = GameState.parse_obj(kwargs)
             context = self.agent_service.build_default_context()
+            game_state = get_game_state(context)
 
             if game_state.active_mode != ActiveMode.ONBOARDING:
                 raise SteamshipError(
