@@ -161,7 +161,11 @@ class AdventureGameService(AgentService):
         # -----------------------------
 
         # API for getting and setting server settings
-        self.add_mixin(ServerSettingsMixin(client=self.client))
+        self.add_mixin(
+            ServerSettingsMixin(
+                client=self.client, agent_service=cast(AgentService, self)
+            )
+        )
 
         # API for getting and setting game state
         self.add_mixin(
