@@ -1,24 +1,40 @@
+import logging
+
 from steamship import Steamship
 from steamship.invocable import get, post
 from steamship.invocable.package_mixin import PackageMixin
+
+from schema.server_settings import ServerSettings
+from utils.agent_service import AgentService
+from utils.context_utils import get_server_settings, save_server_settings
 
 
 class ServerSettingsMixin(PackageMixin):
     """Provides endpoints for Game State."""
 
+    agent_service: AgentService
     client: Steamship
 
-    def __init__(self, client: Steamship):
+    def __init__(self, client: Steamship, agent_service: AgentService):
         self.client = client
+        self.agent_service = agent_service
 
     @post("/server_settings")
-    def post_game_state(self, **kwargs) -> dict:
-        """Set the game state."""
-        # TODO: Save the game state
-        return {}
+    def post_server_settings(self, **kwargs) -> dict:
+        """Set the server settings."""
+        try:
+            server_settings = ServerSettings.parse_obj(kwargs)
+            context = self.agent_service.build_default_context()
+            existing_state = get_server_settings(context)
+            existing_state.update_from_web(server_settings)
+            save_server_settings(existing_state, context)
+            return server_settings.dict()
+        except BaseException as e:
+            logging.exception(e)
+            raise e
 
     @get("/server_settings")
-    def get_game_state(self, **kwargs) -> dict:
-        """Get the game state."""
-        # TODO: Load the game state
-        return {}
+    def get_server_settings(self) -> dict:
+        """Get the server settings."""
+        context = self.agent_service.build_default_context()
+        return get_server_settings(context).dict()
