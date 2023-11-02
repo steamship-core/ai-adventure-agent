@@ -1,5 +1,7 @@
+import json
 import logging
 from datetime import datetime, timezone
+from random import random
 from typing import List
 
 from steamship import Tag
@@ -9,16 +11,22 @@ from steamship.agents.schema.action import FinishAction
 
 from generators.generator_context_utils import get_image_generator, get_music_generator
 from schema.game_state import GameState
-from schema.quest import Quest
+from schema.quest import Quest, QuestDescription
 from tools.end_quest_tool import EndQuestTool
 from utils.context_utils import (
     await_ask,
     get_current_quest,
     get_game_state,
-    save_game_state,
+    save_game_state, FinishActionException,
+)
+from utils.generation_utils import (
+    await_streamed_block,
+    generate_quest_arc,
+    send_story_generation, generate_likelihood_estimation,
 )
 from utils.generation_utils import await_streamed_block, send_story_generation, generate_quest_arc
 from utils.interruptible_python_agent import InterruptiblePythonAgent
+from utils.moderation_utils import mark_block_as_excluded
 from utils.tags import QuestIdTag, QuestTag, TagKindExtensions
 
 
@@ -45,10 +53,10 @@ class QuestAgent(InterruptiblePythonAgent):
     It can be slotted into as a state machine sub-agent by the overall agent.
     """
 
-    def run(self, context: AgentContext) -> Action:
+    def run(self, context: AgentContext) -> Action:  # noqa: C901
         """
-        It could go in a tool, but that doesn't feel necessary.. there are some other spots where tools feel very
-        well fit, but this might be better left open-ended so we can stop/start things as we like.
+        It could go in a tool, but that doesn't feel necessary... there are some other spots where tools feel very
+        well fit, but this might be better left open-ended, so we can stop/start things as we like.
         """
 
         # Load the main things we're working with. These can modified and the save_game_state called at any time
@@ -100,7 +108,7 @@ class QuestAgent(InterruptiblePythonAgent):
             )
             await_streamed_block(block, context)
 
-            self.create_problem(game_state, context, quest)
+            self.create_problem(game_state, context, quest, quest_description=quest_description)
 
             save_game_state(game_state, context)
         else:
@@ -123,9 +131,53 @@ class QuestAgent(InterruptiblePythonAgent):
                 )
             )
             save_game_state(game_state, context)
-            self.generate_solution(game_state, context, quest)
+            try:
+                if self.evaluate_solution(game_state, context, quest):
+                    # TODO: tag last user message as solution
+                    self.generate_solution(game_state, context, quest)
+                else:
+                    self.describe_failure(game_state, context, quest)
+                    quest.user_problem_solutions.pop()
+                    quest.user_problem_solutions.append(
+                        await_ask(
+                            f"What does {player.name} do next?",
+                            context=context,
+                            key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
+                        )
+                    )
+            except Exception as e:
+                if isinstance(e, FinishActionException):
+                    raise e
+                else:
+                    prologue_msg = (
+                        "Our Apologies: Something went wrong with writing the next part of the story. "
+                        "Let's try again."
+                    )
+                    # TODO(doug): do we want to indicate the input was flagged if that is the issue?
+                    if "flagged" in str(e):
+                        prologue_msg = "That response triggered the game’s content moderation filter. Please try again."
+                        # flag original message as excluded (this will prevent "getting stuck")
+                        if message := context.chat_history.last_user_message:
+                            mark_block_as_excluded(message)
+
+                        # clear last sys message added by generate_solution (that copies the user submitted solution)
+                        if sys_message := context.chat_history.last_system_message:
+                            mark_block_as_excluded(sys_message)
+
+                    # undo the game solution state, and start over
+                    # todo: should we consider using a Command design pattern-like approach here for undo?
+                    quest.user_problem_solutions.pop()
+                    quest.user_problem_solutions.append(
+                        await_ask(
+                            f"What does {player.name} do next?",
+                            context=context,
+                            key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
+                            prompt_prologue=prologue_msg,
+                        )
+                    )
+
             if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
-                self.create_problem(game_state, context, quest)
+                self.create_problem(game_state, context, quest, quest_description=quest_description)
                 quest.user_problem_solutions.append(
                     await_ask(
                         f"What does {player.name} do next?",
@@ -133,7 +185,6 @@ class QuestAgent(InterruptiblePythonAgent):
                         key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
                     )
                 )
-
 
         if not quest.sent_outro:
             quest.sent_outro = True
@@ -159,10 +210,15 @@ class QuestAgent(InterruptiblePythonAgent):
         return [Tag(kind=TagKindExtensions.QUEST, name=part), QuestIdTag(quest.name)]
 
     def create_problem(
-        self, game_state: GameState, context: AgentContext, quest: Quest
+        self, game_state: GameState, context: AgentContext, quest: Quest, quest_description: QuestDescription
     ):
+        if len(quest.user_problem_solutions) == quest.num_problems_to_encounter -1:
+            # if last problem, try to make it make sense for wrapping things up
+            prompt = f"Describe the last problem {game_state.player.name} needs to overcome in order to finish the quest: {quest_description.goal}."
+        else:
+            prompt = f"Oh no! {game_state.player.name} encounters a new problem. Describe the problem."
         problem_block = send_story_generation(
-            f"Oh no! {game_state.player.name} encounters a new problem. Describe the problem.",
+            prompt=prompt,
             quest_name=quest.name,
             context=context,
         )
@@ -177,15 +233,66 @@ class QuestAgent(InterruptiblePythonAgent):
                 description=updated_problem_block.text, context=context
             )
 
+    def evaluate_solution(self, game_state: GameState, context: AgentContext, quest: Quest):
+        prompt = (
+            f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}. How likely is this to succeed? "
+            f"Please consider their abilities and whether any referenced objects are nearby or in their inventory. "
+            f"ONLY RESPOND WITH ONE OF [VERY UNLIKELY, UNLIKELY, LIKELY, VERY LIKELY]"
+        )
+        likelihood_block = generate_likelihood_estimation(
+            prompt=prompt,
+            quest_name=quest.name,
+            context=context,
+        )
+        likelihood_text = likelihood_block.text.upper()
+        if likelihood_text.startswith("VERY UNLIKELY"):
+            required_roll = 0.9
+        elif likelihood_text.startswith("UNLIKELY"):
+            required_roll = 0.7
+        elif likelihood_text.startswith("LIKELY"):
+            required_roll = 0.3
+        elif likelihood_text.startswith("VERY LIKELY"):
+            required_roll = 0.1
+        else:
+            required_roll = 0.5
+        roll = random()
+        succeeded = roll > required_roll
+        dice_roll_message = json.dumps ({
+            "required" : required_roll,
+            "rolled" : roll,
+            "success" : succeeded
+        })
+        context.chat_history.append_system_message(
+            dice_roll_message,
+            tags=self.tags(QuestTag.DICE_ROLL, quest)
+        )
+        return succeeded
+
+
+
     def generate_solution(
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
-        context.chat_history.append_system_message(
-            text=f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}",
-            tags=self.tags(QuestTag.USER_SOLUTION, quest),
+        prompt = (
+            f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it totally works.\n"
+            f"Describe what happens."
         )
         solution_block = send_story_generation(
-            "What happens next? Does it work?",
+            prompt=prompt,
+            quest_name=quest.name,
+            context=context,
+        )
+        await_streamed_block(solution_block, context)
+
+    def describe_failure(
+        self, game_state: GameState, context: AgentContext, quest: Quest
+    ):
+        prompt = (
+            f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it fails.\n"
+            f"Describe what happens."
+        )
+        solution_block = send_story_generation(
+            prompt=prompt,
             quest_name=quest.name,
             context=context,
         )

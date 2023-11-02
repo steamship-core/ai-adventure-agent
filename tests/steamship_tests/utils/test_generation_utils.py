@@ -68,7 +68,10 @@ def test_merchant_inventory_endpoint():
     with Steamship.temporary_workspace() as client:
         context, game_state = prepare_state(client)
         result = NpcMixin._refresh_inventory(context, game_state, "merchant")
-        print(result)
+        assert len(result) == 5
+
+        # assert that all images are unique
+        assert len(set([item.picture_url for item in result])) == 5
 
 
 def test_audio_narration():

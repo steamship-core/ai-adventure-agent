@@ -393,7 +393,10 @@ class FinishActionException(Exception):  # noqa: N818
 
 
 def await_ask(
-    question: Union[str, List[Block]], context: AgentContext, key_suffix: str = ""
+    question: Union[str, List[Block]],
+    context: AgentContext,
+    key_suffix: str = "",
+    prompt_prologue: Optional[str] = "",
 ):
     """Asks the user a question. Can be used like `input` in Python.
 
@@ -480,6 +483,10 @@ def await_ask(
     )
 
     save_game_state(game_state, context)
+
+    if prompt_prologue:
+        output.insert(0, Block(text=prompt_prologue))
+
     raise FinishActionException(action=FinishAction(output=output))
 
 

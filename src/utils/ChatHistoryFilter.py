@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 
 from steamship import Block, File
 
+from utils.moderation_utils import is_block_excluded
 from utils.tags import CharacterTag, QuestIdTag, TagKindExtensions
 
 
@@ -20,6 +21,11 @@ class ChatHistoryFilter(ABC):
     ) -> List[int]:
         filtered_blocks = self.filter_blocks(chat_history_file=chat_history_file)
         filtered_blocks.sort(key=lambda x: x[0].index_in_file)
+        filtered_blocks = [
+            block_tuple
+            for block_tuple in filtered_blocks
+            if (not is_block_excluded(block_tuple[0]) and block_tuple[0].text)
+        ]
 
         debug_messages = [f"{filter_for} input: "]
         for _, (block, inclusion_reason) in enumerate(filtered_blocks):

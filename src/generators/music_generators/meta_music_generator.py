@@ -35,7 +35,6 @@ class MetaMusicGenerator(MusicGenerator):
         if quest_id := game_state.current_quest:
             tags.append(QuestIdTag(quest_id))
 
-        num_existing_blocks = len(context.chat_history.file.blocks)
         task = music_gen.generate(
             text=prompt,
             append_output_to_file=True,
@@ -44,14 +43,8 @@ class MetaMusicGenerator(MusicGenerator):
             make_output_public=True,
             tags=tags,
         )
-        # this has obvious flaw but hopefully that corner case is small enough
-        return utils.await_blocks_created_and_task_started(
-            num_existing_blocks,
-            context.chat_history.file,
-            task,
-            new_block_tag_kind=TagKindExtensions.SCENE,
-            new_block_tag_name=SceneTag.AUDIO,
-        )
+        task.wait()
+        return task
 
     def request_camp_music_generation(self, context: AgentContext) -> Task:
         music_gen = context.client.use_plugin(self.PLUGIN_HANDLE)
@@ -68,7 +61,6 @@ class MetaMusicGenerator(MusicGenerator):
         if quest_id := game_state.current_quest:
             tags.append(QuestIdTag(quest_id))
 
-        num_existing_blocks = len(context.chat_history.file.blocks)
         task = music_gen.generate(
             text=prompt,
             append_output_to_file=True,
@@ -77,11 +69,5 @@ class MetaMusicGenerator(MusicGenerator):
             make_output_public=True,
             tags=tags,
         )
-        # this has obvious flaw but hopefully that corner case is small enough
-        return utils.await_blocks_created_and_task_started(
-            num_known_blocks=num_existing_blocks,
-            file=context.chat_history.file,
-            task=task,
-            new_block_tag_kind=TagKindExtensions.CAMP,
-            new_block_tag_name=SceneTag.AUDIO,
-        )
+        task.wait()
+        return task

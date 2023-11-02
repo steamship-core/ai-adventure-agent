@@ -28,8 +28,8 @@ class OnboardingMixin(PackageMixin):
     def complete_onboarding(self, **kwargs) -> bool:
         """Attempts to complete onboarding."""
         try:
-            game_state = GameState.parse_obj(kwargs)
             context = self.agent_service.build_default_context()
+            game_state = get_game_state(context)
 
             if game_state.active_mode != ActiveMode.ONBOARDING:
                 raise SteamshipError(
@@ -45,7 +45,7 @@ class OnboardingMixin(PackageMixin):
             self.onboarding_agent.run(context)
             return True
         except RunNextAgentException:
-            return True
+            return game_state.chat_history_for_onboarding_complete
         except BaseException as e:
             logging.exception(e)
             raise e

@@ -23,6 +23,9 @@ class Character(BaseModel):
     motivation: Optional[str] = Field(
         None, description="The motivation of the character."
     )
+    profile_image_url: Optional[str] = Field(
+        default=None, description="The URL for the character image"
+    )
 
     def fetch_inventory(self, references: List[str]) -> List[Item]:
         """Fetches inventory that matches the provided names."""

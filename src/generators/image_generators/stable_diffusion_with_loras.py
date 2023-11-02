@@ -1,11 +1,11 @@
 import json
-from typing import Final, List
+from typing import Dict, Final, Optional, List
 
+from pydantic.fields import PrivateAttr
 from steamship import Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
 
-from generators import utils
 from generators.image_generator import ImageGenerator
 from schema.objects import Item
 from utils.context_utils import get_game_state, get_server_settings
@@ -69,6 +69,22 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             options=options,
         )
 
+    DEFAULT_LORA: Final[str] = "https://civitai.com/api/download/models/123593"
+    KNOWN_LORAS_AND_TRIGGERS: Final[Dict[str, str]] = {
+        # Pixel Art XL (https://civitai.com/models/120096/pixel-art-xl) by https://civitai.com/user/NeriJS
+        "https://civitai.com/api/download/models/135931": "(pixel art)",
+        # Pixel Art SDXL RW (https://civitai.com/models/114334/pixel-art-sdxl-rw) by https://civitai.com/user/leonnn1
+        "https://civitai.com/api/download/models/123593": "((pixelart))",
+    }
+
+    _lora: str = PrivateAttr(default=DEFAULT_LORA)
+
+    def __init__(self, lora: Optional[str] = DEFAULT_LORA):
+        super().__init__()
+        self._lora = lora
+
+
+
     def request_item_image_generation(self, item: Item, context: AgentContext) -> Task:
         game_state = get_game_state(context)
         server_settings = get_server_settings(context)
@@ -98,16 +114,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             tags=tags,
         )
 
-        num_existing_blocks = len(context.chat_history.file.blocks)
-
-        # this has obvious flaw but hopefully that corner case is small enough
-        return utils.await_blocks_created_and_task_started(
-            num_existing_blocks,
-            context.chat_history.file,
-            task,
-            new_block_tag_kind=TagKindExtensions.ITEM,
-            new_block_tag_name=ItemTag.IMAGE,
-        )
+        task.wait()
+        return task
 
     def request_profile_image_generation(self, context: AgentContext) -> Task:
         game_state = get_game_state(context)
@@ -140,17 +148,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             tags=tags,
         )
 
-        num_existing_blocks = len(context.chat_history.file.blocks)
-
-        # this has obvious flaw but hopefully that corner case is small enough
-        updated_task = utils.await_blocks_created_and_task_started(
-            num_existing_blocks,
-            context.chat_history.file,
-            task,
-            new_block_tag_kind=TagKindExtensions.CHARACTER,
-            new_block_tag_name=CharacterTag.IMAGE,
-        )
-        return updated_task
+        task.wait()
+        return task
 
     def request_scene_image_generation(
         self, description: str, context: AgentContext
@@ -178,16 +177,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             tags=tags,
         )
 
-        num_existing_blocks = len(context.chat_history.file.blocks)
-
-        # this has obvious flaw but hopefully that corner case is small enough
-        return utils.await_blocks_created_and_task_started(
-            num_existing_blocks,
-            context.chat_history.file,
-            task,
-            new_block_tag_kind=TagKindExtensions.SCENE,
-            new_block_tag_name=SceneTag.BACKGROUND,
-        )
+        task.wait()
+        return task
 
     def request_camp_image_generation(self, context: AgentContext) -> Task:
         game_state = get_game_state(context)
@@ -210,14 +201,5 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             image_size="landscape_16_9",
             tags=tags,
         )
-
-        num_existing_blocks = len(context.chat_history.file.blocks)
-
-        # this has obvious flaw but hopefully that corner case is small enough
-        return utils.await_blocks_created_and_task_started(
-            num_known_blocks=num_existing_blocks,
-            file=context.chat_history.file,
-            task=task,
-            new_block_tag_kind=TagKindExtensions.CAMP,
-            new_block_tag_name=CampTag.IMAGE,
-        )
+        task.wait()
+        return task

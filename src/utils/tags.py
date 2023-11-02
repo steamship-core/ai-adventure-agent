@@ -84,6 +84,7 @@ class QuestTag(str, Enum):
     QUEST_SUMMARY = "quest_summary"
     ITEM_GENERATION_CONTENT = "item_generation_content"
     ITEM_GENERATION_PROMPT = "item_generation_prompt"
+    DICE_ROLL = "dice_roll"
 
 
 class ItemTag(str, Enum):

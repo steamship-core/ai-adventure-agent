@@ -117,7 +117,12 @@ class GameState(BaseModel):
         )
 
     def image_generation_requested(self) -> bool:
-        return True if self.profile_image_url else False
+        if self.player.profile_image_url:
+            return True
+        elif self.profile_image_url:
+            return True
+        else:
+            return False
 
     def camp_image_requested(self) -> bool:
         return True if self.camp.image_block_url else False
