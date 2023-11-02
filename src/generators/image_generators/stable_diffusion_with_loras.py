@@ -1,7 +1,6 @@
 import json
-from typing import Dict, Final, Optional, List
+from typing import Final, List
 
-from pydantic.fields import PrivateAttr
 from steamship import Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
@@ -68,22 +67,6 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             make_output_public=True,
             options=options,
         )
-
-    DEFAULT_LORA: Final[str] = "https://civitai.com/api/download/models/123593"
-    KNOWN_LORAS_AND_TRIGGERS: Final[Dict[str, str]] = {
-        # Pixel Art XL (https://civitai.com/models/120096/pixel-art-xl) by https://civitai.com/user/NeriJS
-        "https://civitai.com/api/download/models/135931": "(pixel art)",
-        # Pixel Art SDXL RW (https://civitai.com/models/114334/pixel-art-sdxl-rw) by https://civitai.com/user/leonnn1
-        "https://civitai.com/api/download/models/123593": "((pixelart))",
-    }
-
-    _lora: str = PrivateAttr(default=DEFAULT_LORA)
-
-    def __init__(self, lora: Optional[str] = DEFAULT_LORA):
-        super().__init__()
-        self._lora = lora
-
-
 
     def request_item_image_generation(self, item: Item, context: AgentContext) -> Task:
         game_state = get_game_state(context)
