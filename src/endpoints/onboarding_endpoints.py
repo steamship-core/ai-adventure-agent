@@ -7,7 +7,7 @@ from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
 
 from agents.onboarding_agent import OnboardingAgent
-from schema.game_state import ActiveMode, GameState
+from schema.game_state import ActiveMode
 
 # An instnace is a game instance.
 from utils.context_utils import RunNextAgentException, get_game_state

@@ -17,7 +17,6 @@ from tools.start_conversation_tool import StartConversationTool
 
 # An instance is a game instance.
 from tools.trade_tool import TradeTool
-from tools.trade_tool import TradeTool
 from utils.context_utils import get_game_state, save_game_state
 from utils.generation_utils import generate_merchant_inventory
 from utils.tags import TagKindExtensions, ItemTag

@@ -1,3 +1,4 @@
+import re
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -7,6 +8,12 @@ from schema.stable_diffusion_theme import StableDiffusionTheme
 
 
 def validate_prompt_args(prompt: str, valid_args: List[str]):
+    regex = r"\{(.*?)\}"
+    matches = re.finditer(regex, prompt)
+    variable_names = sorted(list(set([match.group(1) for match in matches])))
+    for variable_name in variable_names:
+        if variable_name not in valid_args:
+            return False
     return True
 
 

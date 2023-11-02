@@ -3,7 +3,6 @@ from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
 from generators.generator_context_utils import get_image_generator, get_music_generator
-from generators.utils import find_new_block
 from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from utils.context_utils import (
@@ -14,7 +13,6 @@ from utils.context_utils import (
     save_game_state,
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent
-from utils.tags import CampTag, CharacterTag, StoryContextTag, TagKindExtensions
 from utils.moderation_utils import mark_block_as_excluded
 from utils.tags import CampTag, CharacterTag, StoryContextTag, TagKindExtensions
 
@@ -259,15 +257,9 @@ class OnboardingAgent(InterruptiblePythonAgent):
             game_state.tone and game_state.genre
         ):
             if image_gen := get_image_generator(context):
-                num_known_blocks = len(context.chat_history.file.blocks)
-                image_gen.request_camp_image_generation(context=context)
+                task = image_gen.request_camp_image_generation(context=context)
                 context.chat_history.file.refresh()
-                camp_image_block = find_new_block(
-                    file=context.chat_history.file,
-                    num_known_blocks=num_known_blocks,
-                    new_block_tag_kind=TagKindExtensions.CAMP,
-                    new_block_tag_name=CampTag.IMAGE,
-                )
+                camp_image_block = task.wait().blocks[0]
                 game_state.camp.image_block_url = camp_image_block.raw_data_url
                 save_game_state(game_state, context)
 
@@ -275,15 +267,9 @@ class OnboardingAgent(InterruptiblePythonAgent):
             game_state.tone and game_state.genre
         ):
             if music_gen := get_music_generator(context):
-                num_known_blocks = len(context.chat_history.file.blocks)
-                music_gen.request_camp_music_generation(context=context)
+                task = music_gen.request_camp_music_generation(context=context)
                 context.chat_history.file.refresh()
-                camp_audio_block = find_new_block(
-                    file=context.chat_history.file,
-                    num_known_blocks=num_known_blocks,
-                    new_block_tag_kind=TagKindExtensions.CAMP,
-                    new_block_tag_name=CampTag.AUDIO,
-                )
+                camp_audio_block = task.wait().blocks[0]
                 game_state.camp.audio_block_url = camp_audio_block.raw_data_url
                 save_game_state(game_state, context)
 
