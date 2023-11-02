@@ -253,67 +253,6 @@ class OnboardingAgent(InterruptiblePythonAgent):
             game_state.chat_history_for_onboarding_complete = True
             save_game_state(game_state, context)
 
-        if not game_state.camp_image_requested() and (
-            game_state.tone and game_state.genre
-        ):
-            if image_gen := get_image_generator(context):
-                task = image_gen.request_camp_image_generation(context=context)
-                context.chat_history.file.refresh()
-                camp_image_block = task.wait().blocks[0]
-                game_state.camp.image_block_url = camp_image_block.raw_data_url
-                save_game_state(game_state, context)
-
-        if not game_state.camp_audio_requested() and (
-            game_state.tone and game_state.genre
-        ):
-            if music_gen := get_music_generator(context):
-                task = music_gen.request_camp_music_generation(context=context)
-                context.chat_history.file.refresh()
-                camp_audio_block = task.wait().blocks[0]
-                game_state.camp.audio_block_url = camp_audio_block.raw_data_url
-                save_game_state(game_state, context)
-
-        if not game_state.chat_history_for_onboarding_complete:
-            # TODO: We could save a lot of round trips by appending all these blocks at once.
-            context.chat_history.append_system_message(
-                text=f"The character's name is {player.name}",
-                tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.NAME)],
-            )
-            context.chat_history.append_system_message(
-                text=f"{player.name}'s backstory is: {player.background}",
-                tags=[
-                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.BACKGROUND)
-                ],
-            )
-            context.chat_history.append_system_message(
-                text=f"{player.name}'s motivation is: {player.motivation}",
-                tags=[
-                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.MOTIVATION)
-                ],
-            )
-            context.chat_history.append_system_message(
-                text=f"{player.name}'s physical description is: {player.description}",
-                tags=[
-                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.DESCRIPTION)
-                ],
-            )
-            context.chat_history.append_system_message(
-                text=f"The genre of the story is: {game_state.genre}",
-                tags=[
-                    Tag(
-                        kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.GENRE
-                    )
-                ],
-            )
-            context.chat_history.append_system_message(
-                text=f"The tone of the story is: {game_state.tone}",
-                tags=[
-                    Tag(kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.TONE)
-                ],
-            )
-            game_state.chat_history_for_onboarding_complete = True
-            save_game_state(game_state, context)
-
         raise RunNextAgentException(
             action=FinishAction(
                 input=[
