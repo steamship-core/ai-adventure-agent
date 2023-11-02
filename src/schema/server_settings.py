@@ -10,7 +10,7 @@ from schema.stable_diffusion_theme import StableDiffusionTheme
 def validate_prompt_args(prompt: str, valid_args: List[str]):
     regex = r"\{(.*?)\}"
     matches = re.finditer(regex, prompt)
-    variable_names = sorted(list(set([match.group(1) for match in matches])))
+    variable_names = sorted({match.group(1) for match in matches})
     for variable_name in variable_names:
         if variable_name not in valid_args:
             return False
@@ -73,12 +73,12 @@ class ServerSettings(BaseModel):
 
     # Language Generation Settings - Function calling
     default_function_capable_llm_model: str = Field("gpt-3.5-turbo", description="")
-    default_function_capable_llm_temperature: float = Field(0.4, description="")
+    default_function_capable_llm_temperature: float = Field(0.0, description="")
     default_function_capable_llm_max_tokens: int = Field(512, description="")
 
     # Language Generation Settings - Story telling
     default_story_model: str = Field("gpt-3.5-turbo", description="")
-    default_story_temperature: float = Field(0.4, description="")
+    default_story_temperature: float = Field(0.7, description="")
     default_story_max_tokens: int = Field(512, description="")
 
     # Narration Generation Settings

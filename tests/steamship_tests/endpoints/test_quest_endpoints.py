@@ -73,11 +73,11 @@ def test_calling_start_quest_causes_active_quest(
 def test_going_on_quest_consumes_energy(
     invocable_handler: Callable[[str, str, Optional[dict]], dict]
 ):
-    ENERGY = 1000
+    energy = 1000
 
-    invocable_handler("POST", "game_state", {"player": {"energy": ENERGY}})
+    invocable_handler("POST", "game_state", {"player": {"energy": energy}})
     gs = GameState.parse_obj(invocable_handler("GET", "game_state", {}).get("data"))
-    assert gs.player.energy == ENERGY
+    assert gs.player.energy == energy
 
     result = invocable_handler("POST", "start_quest", {})
     quest: Quest = Quest.parse_obj(result.get("data"))
@@ -107,10 +107,10 @@ def test_going_on_quest_impossible_if_insufficient_energy(
     assert server_settings.quest_cost > 0
 
     # Not enough energy!
-    ENERGY = server_settings.quest_cost - 1
-    invocable_handler("POST", "game_state", {"player": {"energy": ENERGY}})
+    energy = server_settings.quest_cost - 1
+    invocable_handler("POST", "game_state", {"player": {"energy": energy}})
     gs = GameState.parse_obj(invocable_handler("GET", "game_state", {}).get("data"))
-    assert gs.player.energy == ENERGY
+    assert gs.player.energy == energy
 
     # Now try to start a quest
     result = invocable_handler("POST", "start_quest", {})
