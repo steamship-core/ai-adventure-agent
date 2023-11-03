@@ -1,5 +1,6 @@
+import math
 import uuid
-from random import randrange, randint
+from random import randint
 from typing import Any, List, Optional, Union
 
 from steamship import Block, MimeTypes, SteamshipError, Task
@@ -44,7 +45,7 @@ class StartQuestTool(Tool):
         ] = "Use when the user wants to go on a quest. The input is the kind of quest, if provided. The output is the Quest Name"
         kwargs[
             "human_description"
-        ] = "Tool to initiate a quest. Modifies the global state such that the next time the agent is contacted, it will be on a quets."
+        ] = "Tool to initiate a quest. Modifies the global state such that the next time the agent is contacted, it will be on a quest."
         # It always returns.. OK! Let's go!
         kwargs["is_final"] = True
         super().__init__(**kwargs)
@@ -80,9 +81,13 @@ class StartQuestTool(Tool):
         game_state.quests.append(quest)
 
         quest_difficulty_base = 1
-        if game_state.quest_arc is not None and len(game_state.quest_arc) >= len(game_state.quests):
+        if game_state.quest_arc is not None and len(game_state.quest_arc) >= len(
+            game_state.quests
+        ):
             quest_difficulty_base = len(game_state.quests)
-        quest.num_problems_to_encounter =self.num_problems_to_encounter(quest_difficulty_base)
+        quest.num_problems_to_encounter = self.num_problems_to_encounter(
+            quest_difficulty_base
+        )
 
         quest.name = f"{uuid.uuid4()}"
 
@@ -94,10 +99,14 @@ class StartQuestTool(Tool):
 
         return quest
 
-    def num_problems_to_encounter(self, difficulty_base: int) -> int:
-        return (difficulty_base // 4) + 2 + randint(0, 2)
-
-
+    def num_problems_to_encounter(
+        self, difficulty_base: int, server_settings: ServerSettings
+    ) -> int:
+        return (
+            math.floor(difficulty_base * server_settings.problems_per_quest_scale)
+            + server_settings.min_problems_per_quest
+            + randint(0, server_settings.max_additional_problems_per_quest)
+        )
 
     def run(
         self, tool_input: List[Block], context: AgentContext
@@ -116,7 +125,7 @@ class StartQuestTool(Tool):
             action=FinishAction(
                 input=[
                     Block(
-                        text=f"", # Empty string here to not interfere with prompts in quest_agent
+                        text="",  # Empty string here to not interfere with prompts in quest_agent
                         mime_type=MimeTypes.MKD,
                     )
                 ],

@@ -20,7 +20,6 @@ from utils.tags import (
 
 
 class StableDiffusionWithLorasImageGenerator(ImageGenerator):
-
     PLUGIN_HANDLE: Final[str] = "fal-sd-lora-image-generator"
 
     def generate(
@@ -88,10 +87,9 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             prompt=server_settings.item_image_prompt,
             negative_prompt=server_settings.item_image_negative_prompt,
             template_vars={
-                "genre": game_state.genre or "Adventure",
-                "tone": game_state.tone or "Triumphant",
-                "name": item.name or "A random object",
-                "description": item.description or "Of usual character",
+                "tone": server_settings.narrative_tone,
+                "name": item.name,
+                "description": item.description,
             },
             image_size="square_hd",
             tags=tags,
@@ -124,8 +122,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             prompt=server_settings.profile_image_prompt,
             negative_prompt=server_settings.profile_image_negative_prompt,
             template_vars={
-                "name": name or "Hero",
-                "description": description or "A superhero that will save the day.",
+                "name": name,
+                "description": description,
             },
             image_size="portrait_4_3",
             tags=tags,
@@ -152,9 +150,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             prompt=server_settings.quest_background_image_prompt,
             negative_prompt=server_settings.quest_background_image_negative_prompt,
             template_vars={
-                "genre": game_state.genre or "Adventure",
-                "tone": game_state.tone or "Triumphant",
-                "description": description or "An interesting place far away.",
+                "tone": server_settings.narrative_tone,
+                "description": description,
             },
             image_size="landscape_16_9",
             tags=tags,
@@ -164,7 +161,6 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         return task
 
     def request_camp_image_generation(self, context: AgentContext) -> Task:
-        game_state = get_game_state(context)
         server_settings = get_server_settings(context)
 
         tags = [
@@ -178,8 +174,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             prompt=server_settings.camp_image_prompt,
             negative_prompt=server_settings.camp_image_negative_prompt,
             template_vars={
-                "genre": game_state.genre or "Adventure",
-                "tone": game_state.tone or "Triumphant",
+                "tone": server_settings.narrative_tone,
             },
             image_size="landscape_16_9",
             tags=tags,

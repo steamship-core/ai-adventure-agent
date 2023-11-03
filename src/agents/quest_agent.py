@@ -14,15 +14,18 @@ from schema.game_state import GameState
 from schema.quest import Quest, QuestDescription
 from tools.end_quest_tool import EndQuestTool
 from utils.context_utils import (
+    FinishActionException,
     await_ask,
     get_current_quest,
     get_game_state,
-    save_game_state, FinishActionException,
+    get_server_settings,
+    save_game_state,
 )
 from utils.generation_utils import (
     await_streamed_block,
+    generate_likelihood_estimation,
     generate_quest_arc,
-    send_story_generation, generate_likelihood_estimation,
+    send_story_generation,
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 from utils.moderation_utils import mark_block_as_excluded
@@ -62,6 +65,7 @@ class QuestAgent(InterruptiblePythonAgent):
         game_state = get_game_state(context)
         player = game_state.player
         quest = get_current_quest(context)
+        server_settings = get_server_settings(context)
 
         if not game_state.quest_arc:
             game_state.quest_arc = generate_quest_arc(game_state.player, context)
@@ -107,7 +111,9 @@ class QuestAgent(InterruptiblePythonAgent):
             )
             await_streamed_block(block, context)
 
-            self.create_problem(game_state, context, quest, quest_description=quest_description)
+            self.create_problem(
+                game_state, context, quest, quest_description=quest_description
+            )
 
             save_game_state(game_state, context)
         else:
@@ -176,7 +182,9 @@ class QuestAgent(InterruptiblePythonAgent):
                     )
 
             if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
-                self.create_problem(game_state, context, quest, quest_description=quest_description)
+                self.create_problem(
+                    game_state, context, quest, quest_description=quest_description
+                )
                 quest.user_problem_solutions.append(
                     await_ask(
                         f"What does {player.name} do next?",
@@ -192,7 +200,7 @@ class QuestAgent(InterruptiblePythonAgent):
             if quest_description is not None:
                 prompt = f"How does this mission end? {player.name} should achieve their goal of {quest_description.goal}"
             else:
-                prompt = f"How does this mission end? {player.name} should not yet achieve their overall goal of {game_state.player.motivation}"
+                prompt = f"How does this mission end? {player.name} should not yet achieve their overall goal of {server_settings.adventure_goal}"
             story_end_block = send_story_generation(
                 prompt,
                 quest_name=quest.name,
@@ -209,9 +217,13 @@ class QuestAgent(InterruptiblePythonAgent):
         return [Tag(kind=TagKindExtensions.QUEST, name=part), QuestIdTag(quest.name)]
 
     def create_problem(
-        self, game_state: GameState, context: AgentContext, quest: Quest, quest_description: QuestDescription
+        self,
+        game_state: GameState,
+        context: AgentContext,
+        quest: Quest,
+        quest_description: QuestDescription,
     ):
-        if len(quest.user_problem_solutions) == quest.num_problems_to_encounter -1:
+        if len(quest.user_problem_solutions) == quest.num_problems_to_encounter - 1:
             # if last problem, try to make it make sense for wrapping things up
             prompt = f"Describe the last problem {game_state.player.name} needs to overcome in order to finish the quest: {quest_description.goal}."
         else:
@@ -232,7 +244,10 @@ class QuestAgent(InterruptiblePythonAgent):
                 description=updated_problem_block.text, context=context
             )
 
-    def evaluate_solution(self, game_state: GameState, context: AgentContext, quest: Quest):
+    def evaluate_solution(
+        self, game_state: GameState, context: AgentContext, quest: Quest
+    ):
+        server_settings = get_server_settings(context)
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}. How likely is this to succeed? "
             f"Please consider their abilities and whether any referenced objects are nearby or in their inventory. "
@@ -254,20 +269,18 @@ class QuestAgent(InterruptiblePythonAgent):
             required_roll = 0.1
         else:
             required_roll = 0.5
+        required_roll = 1 - (
+            (1 - required_roll) / server_settings.problem_solution_difficulty
+        )
         roll = random()
         succeeded = roll > required_roll
-        dice_roll_message = json.dumps ({
-            "required" : required_roll,
-            "rolled" : roll,
-            "success" : succeeded
-        })
+        dice_roll_message = json.dumps(
+            {"required": required_roll, "rolled": roll, "success": succeeded}
+        )
         context.chat_history.append_system_message(
-            dice_roll_message,
-            tags=self.tags(QuestTag.DICE_ROLL, quest)
+            dice_roll_message, tags=self.tags(QuestTag.DICE_ROLL, quest)
         )
         return succeeded
-
-
 
     def generate_solution(
         self, game_state: GameState, context: AgentContext, quest: Quest

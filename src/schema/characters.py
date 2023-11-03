@@ -20,9 +20,6 @@ class Character(BaseModel):
     inventory_last_updated: Optional[str] = Field(
         None, description="The timestamp of the last update of the inventory"
     )
-    motivation: Optional[str] = Field(
-        None, description="The motivation of the character."
-    )
     profile_image_url: Optional[str] = Field(
         default=None, description="The URL for the character image"
     )
@@ -41,8 +38,6 @@ class Character(BaseModel):
             self.background = other.background
         if other.inventory:
             self.inventory = other.inventory
-        if other.motivation:
-            self.motivation = other.motivation
 
     def inventory_description(self) -> str:
         result = f"{self.name} has the following items in their inventory:"
@@ -60,7 +55,6 @@ class Character(BaseModel):
             self.name is not None
             and self.description is not None
             and self.background is not None
-            and self.motivation is not None
             and self.inventory is not None
             # and len(self.inventory) > 0
         )

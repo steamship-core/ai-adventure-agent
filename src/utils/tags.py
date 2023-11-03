@@ -26,7 +26,6 @@ class TagKindExtensions(str, Enum):
     QUEST_ARC = "quest_arc"
 
 
-
 class AgentStatusMessageTag(str, Enum):
     # The quest is complete
     QUEST_COMPLETE = "quest-complete"
@@ -68,15 +67,15 @@ class CharacterTag(str, Enum):
     INTRODUCTION = "introduction"
     INTRODUCTION_PROMPT = "introduction_prompt"
 
-class StoryContextTag(str, Enum):
 
-    GENRE = "genre"
+class StoryContextTag(str, Enum):
     TONE = "tone"
     CAMP = "camp"
+    BACKGROUND = "background"
+    VOICE = "voice"
 
 
 class QuestTag(str, Enum):
-
     QUEST_CONTENT = "quest_content"
     QUEST_PROMPT = "quest_prompt"
     USER_SOLUTION = "user_solution"

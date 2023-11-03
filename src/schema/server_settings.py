@@ -1,22 +1,50 @@
 import re
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
 from steamship import SteamshipError
 
+from schema.quest import QuestDescription
 from schema.stable_diffusion_theme import StableDiffusionTheme
 
 
-def validate_prompt_args(prompt: str, valid_args: List[str]):
+def validate_prompt_args(
+    prompt: str, valid_args: List[str], prompt_name: str
+) -> Optional[str]:
     regex = r"\{(.*?)\}"
     matches = re.finditer(regex, prompt)
     variable_names = sorted(list(set([match.group(1) for match in matches])))
+    missing_vars = []
     for variable_name in variable_names:
         if variable_name not in valid_args:
-            return False
-    return True
+            missing_vars.append(variable_name)
+
+    if len(missing_vars) > 0:
+        return f"{prompt_name} uses the following variable names which are not available: [{' '.join(missing_vars)}]"
+    else:
+        return None
+
+
+class AvailableVoice(str, Enum):
+    DOROTHY = "dorothy"
+    KNIGHTLY = "knightly"
+    OSWALD = "oswald"
+    MARCUS = "marcus"
+    BRIA = "bria"
+    ALEX = "alex"
+    VALENTINO = "valentino"
+    NATASHA = "natasha"
+    BRIAN = "brian"
+    JOANNE = "joanne"
+
 
 _SUPPORTED_ELEVEN_VOICES = {
+    "dorothy": {
+        "id": "ThT5KcBeYPX3keUQqHPh",
+        "label": "Dorothy",
+        "description": "A young female british voice, good for children's stories.",
+    },
     "knightly": {
         "id": "qk9eXb51CntEhbbRU1ny",
         "label": "Knightly",
@@ -85,31 +113,58 @@ class ServerSettings(BaseModel):
     default_narration_model: str = Field("elevenlabs", description="")
 
     # Narrative settings
-    narrative_tone: str = Field(default="silly", description="What is the narrative tone of the story? For example: silly, serious, gritty, etc.")
+    narrative_tone: str = Field(
+        default="silly",
+        description="What is the narrative tone of the story? For example: silly, serious, gritty, etc.",
+    )
 
-    adventure_background: Optional[str] = Field(description="Description of the background setting in which the adventure will take place.  Can include descriptions of genre, characters, specific items and locations that exist in the world, references to real-world things, etc.")
+    adventure_background: Optional[str] = Field(
+        description="Description of the background setting in which the adventure will take place.  Can include descriptions of genre, characters, specific items and locations that exist in the world, references to real-world things, etc."
+    )
 
-    narrative_voice: Optional[str] = Field(description="What is the narrative voice of the adventure?  Some possibilities: children’s book, young adult novel, fanfic, high literature")
+    narrative_voice: Optional[str] = Field(
+        description="What is the narrative voice of the adventure?  Some possibilities: children’s book, young adult novel, fanfic, high literature"
+    )
 
+    adventure_goal: str = Field(
+        description="What is the ultimate goal / motivation of this story?"
+    )
 
-
+    fixed_quest_arc: Optional[List[QuestDescription]] = Field(
+        default=None,
+        description="If you wish for your adventure to have a fixed set of quests, define them here.",
+    )
 
     # Quest settings
-    quests_per_arc: int = Field(default=10, description="How many quests must the player complete to finish the adventure?")
+    quests_per_arc: int = Field(
+        default=10,
+        description="How many quests must the player complete to finish the adventure?",
+    )
 
-    min_problems_per_quest: int = Field(default=2, description="""What is the minimum number of problems a player must solve to complete a quest?  
+    min_problems_per_quest: int = Field(
+        default=2,
+        description="""What is the minimum number of problems a player must solve to complete a quest?
 
-Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + randint(0, max_additional_problems_per_quest)""")
+Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + randint(0, max_additional_problems_per_quest)""",
+    )
 
-    problems_per_quest_scale: float = Field(default=0.25, description="""How does the number of problems per quest scale with the quest # in sequence?  
+    problems_per_quest_scale: float = Field(
+        default=0.25,
+        description="""How does the number of problems per quest scale with the quest # in sequence?
 
-Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + randint(0, max_additional_problems_per_quest)""")
+Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + randint(0, max_additional_problems_per_quest)""",
+    )
 
-    max_additional_problems_per_quest: int = Field(default=2, description="""How many additional problems may be added randomly to a quest?
+    max_additional_problems_per_quest: int = Field(
+        default=2,
+        description="""How many additional problems may be added randomly to a quest?
 
-Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + randint(0, max_additional_problems_per_quest)""")
+Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + randint(0, max_additional_problems_per_quest)""",
+    )
 
-    problem_solution_difficulty: float = Field(default=1, description="""The difficulty scale factor applied to the LLM’s estimation of how likely a user’s solution is to solve the problem.  User’s random number between (0,1) must exceed the modified value to succeed.  
+    problem_solution_difficulty: float = Field(
+        default=1,
+        description="""The difficulty scale factor applied to the LLM’s estimation of how likely a user’s solution is to solve the problem.  User’s random number between (0,1) must exceed the modified value to succeed.
 
 Base Values:
 VERY UNLIKELY=0.9
@@ -120,7 +175,8 @@ VERY LIKELY = 0.1
 Difficulty modified value:
 1 - ((1-BASE_VALUE) / problem_solution_difficulty)
 
-Result - Doubling difficulty makes success 1/2 as likely; halving difficulty makes success twice as likely.""")
+Result - Doubling difficulty makes success 1/2 as likely; halving difficulty makes success twice as likely.""",
+    )
 
     # Energy Management
     quest_cost: int = Field(10, description="The cost of going on one quest")
@@ -129,6 +185,14 @@ Result - Doubling difficulty makes success 1/2 as likely; halving difficulty mak
         "{tone} {genre} camp.",
         description="Prompt for generating camp images.",
     )
+
+    # Narration settings
+    narration_voice: AvailableVoice = Field(
+        AvailableVoice.DOROTHY,
+        description="The voice to use for narration of quest blocks",
+    )
+
+    # Image model settings
 
     camp_image_negative_prompt: str = Field(
         "",
@@ -165,9 +229,14 @@ Result - Doubling difficulty makes success 1/2 as likely; halving difficulty mak
         description="Negative prompt for generating quest background images.",
     )
 
-    music_prompt: str = Field(
-        "16-bit game score for a quest game scene. {genre} genre. {tone}. Scene description: {description}",
-        description="Prompt for generating music.",
+    scene_music_generation_prompt: str = Field(
+        "16-bit game score for a quest game scene. {tone}. Scene description: {description}",
+        description="The prompt used to generate music for a scene.  Game tone and scene description will be filled in as {tone} and {description}.",
+    )
+
+    camp_music_generation_prompt: str = Field(
+        "background music for a quest game camp scene. {tone}.",
+        description="The prompt used to generate music for camp.  Game tone will be filled in as {tone}.",
     )
 
     image_themes: List[StableDiffusionTheme] = Field(
@@ -194,6 +263,10 @@ Result - Doubling difficulty makes success 1/2 as likely; halving difficulty mak
         description="The Stable Diffusion theme for generating quest images.",
     )
 
+    @property
+    def narration_voice_id(self) -> str:
+        return _SUPPORTED_ELEVEN_VOICES.get(self.narration_voice.value).get("id")
+
     def _select_model(
         self,
         allowed: List[str],
@@ -212,83 +285,84 @@ Result - Doubling difficulty makes success 1/2 as likely; halving difficulty mak
         """Perform a gentle update so that the website doesn't accidentally blast over this if it diverges in
         structure."""
 
-        if other.default_function_capable_llm_model:
-            self.default_function_capable_llm_model = (
-                other.default_function_capable_llm_model
-            )
+        validation_errors = other.validate_prompts()
+        if len(validation_errors) > 0:
+            raise SteamshipError("\n".join(validation_errors))
 
-        if other.default_function_capable_llm_temperature:
-            self.default_function_capable_llm_temperature = (
-                other.default_function_capable_llm_temperature
-            )
+        # Override values if they're present in the new version, but not in the old
+        # Possible clobber here if the web doesn't send a value for a field with a default,
+        # since it will be filled in when the ServerSettings object is init'd
+        for k, v in other.dict().items():
+            if v is not None:
+                setattr(self, k, v)
 
-        if other.default_function_capable_llm_max_tokens:
-            self.default_function_capable_llm_max_tokens = (
-                other.default_function_capable_llm_max_tokens
-            )
-
-        if other.default_story_model:
-            self.default_story_model = other.default_story_model
-
-        if other.default_story_temperature:
-            self.default_story_temperature = other.default_story_temperature
-
-        if other.default_story_max_tokens:
-            self.default_story_max_tokens = other.default_story_max_tokens
-
-        if other.default_narration_model:
-            self.default_narration_model = other.default_narration_model
-
-        if other.quest_cost:
-            self.quest_cost = other.quest_cost
-
-        # TODO: Validate that they don't have bad interpolated variables below.
-
-        if other.camp_image_prompt:
-            validate_prompt_args(other.camp_image_prompt, ["tone", "genre"])
-            self.camp_image_prompt = other.camp_image_prompt
-
-        if other.camp_image_theme:
-            self.camp_image_theme = other.camp_image_theme
-
-        if other.camp_image_negative_prompt is not None:
-            self.camp_image_negative_prompt = other.camp_image_negative_prompt
-
-        if other.item_image_prompt:
-            validate_prompt_args(other.item_image_prompt, ["name", "description"])
-            self.item_image_prompt = other.item_image_prompt
-
-        if other.item_image_theme:
-            self.item_image_theme = other.item_image_theme
-
-        if other.item_image_negative_prompt is not None:
-            self.camp_image_negative_prompt = other.camp_image_negative_prompt
-
-        if other.profile_image_prompt:
+    # Returns list of validation issues.
+    def validate_prompts(self) -> List[str]:
+        result = []
+        result.append(
+            validate_prompt_args(self.camp_image_prompt, ["tone"], "Camp image prompt")
+        )
+        result.append(
             validate_prompt_args(
-                other.profile_image_prompt,
+                self.camp_image_negative_prompt, ["tone"], "Camp image negative prompt"
+            )
+        )
+        result.append(
+            validate_prompt_args(
+                self.item_image_prompt, ["name", "description"], "Item image prompt"
+            )
+        )
+        result.append(
+            validate_prompt_args(
+                self.item_image_negative_prompt,
                 ["name", "description"],
+                "Item image negative prompt",
             )
-            self.profile_image_prompt = other.profile_image_prompt
-
-        if other.profile_image_negative_prompt is not None:
-            self.profile_image_negative_prompt = other.profile_image_negative_prompt
-
-        if other.profile_image_theme:
-            self.profile_image_theme = other.profile_image_theme
-
-        if other.quest_background_image_prompt:
-            validate_prompt_args(other.quest_background_image_prompt, ["description"])
-            self.quest_background_image_prompt = other.quest_background_image_prompt
-
-        if other.quest_background_image_negative_prompt is not None:
-            self.quest_background_image_negative_prompt = (
-                other.quest_background_image_negative_prompt
+        )
+        result.append(
+            validate_prompt_args(
+                self.profile_image_prompt,
+                ["name", "description"],
+                "Profile image prompt",
             )
-
-        if other.quest_background_theme:
-            self.quest_background_theme = other.quest_background_theme
-
-        if other.music_prompt:
-            validate_prompt_args(other.music_prompt, ["genre", "tone", "description"])
-            self.music_prompt = other.music_prompt
+        )
+        result.append(
+            validate_prompt_args(
+                self.profile_image_prompt,
+                ["name", "description"],
+                "Profile image negative prompt",
+            )
+        )
+        result.append(
+            validate_prompt_args(
+                self.quest_background_image_prompt,
+                ["description"],
+                "Quest background image prompt",
+            )
+        )
+        result.append(
+            validate_prompt_args(
+                self.quest_background_image_prompt,
+                ["description"],
+                "Quest background image negative prompt",
+            )
+        )
+        result.append(
+            validate_prompt_args(
+                self.scene_music_generation_prompt,
+                ["tone", "description"],
+                "Quest scene music prompt",
+            )
+        )
+        result.append(
+            validate_prompt_args(
+                self.camp_music_generation_prompt,
+                ["tone", "description"],
+                "Camp music prompt",
+            )
+        )
+        return [
+            validation_error
+            for validation_error in result
+            if validation_error is not None
+        ]

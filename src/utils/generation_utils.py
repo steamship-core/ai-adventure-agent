@@ -28,11 +28,7 @@ from utils.ChatHistoryFilter import (
     TagFilter,
     UnionFilter,
 )
-from utils.context_utils import (
-    emit,
-    get_audio_narration_generator,
-    get_story_text_generator,
-)
+from utils.context_utils import emit, get_server_settings, get_story_text_generator
 from utils.tags import (
     AgentStatusMessageTag,
     CharacterTag,
@@ -82,8 +78,9 @@ def send_story_generation(
                         (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
                         (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                         (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                         (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.VOICE),
                         (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
                     ]
                 ),
@@ -95,6 +92,7 @@ def send_story_generation(
         stop_tokens=["\n"],
     )
     return block
+
 
 def generate_likelihood_estimation(
     prompt: str, quest_name: str, context: AgentContext
@@ -116,8 +114,8 @@ def generate_likelihood_estimation(
                         (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
                         (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                         (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                         (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
                         (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
                     ]
                 ),
@@ -131,6 +129,7 @@ def generate_likelihood_estimation(
         streaming=False,
     )
     return block
+
 
 def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[Block]:
     """Generates and sends a quest summary to the player."""
@@ -208,8 +207,8 @@ def generate_merchant_inventory(
                         (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
                         (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                         (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                         (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
                         (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
                         (
                             TagKindExtensions.MERCHANT,
@@ -241,7 +240,8 @@ def generate_merchant_inventory(
 def generate_quest_arc(
     player: HumanCharacter, context: AgentContext
 ) -> List[QuestDescription]:
-    prompt = f"Please list 10 quests of increasing difficulty that {player.name} will go in to achieve their overall goal of {player.motivation}. They should fit the setting of the story. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location name>"
+    server_settings = get_server_settings(context)
+    prompt = f"Please list {server_settings.quests_per_arc} quests of increasing difficulty that {player.name} will go in to achieve their overall goal of {server_settings.adventure_goal}. They should fit the setting of the story. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location name>"
     block = do_generation(
         context,
         prompt,
@@ -257,8 +257,8 @@ def generate_quest_arc(
                 (TagKindExtensions.CHARACTER, CharacterTag.NAME),
                 (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                 (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
                 (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT),
             ]
         ),
@@ -279,27 +279,32 @@ def generate_quest_arc(
     return result
 
 
-def generate_story_intro(
-        player: HumanCharacter,
-        context: AgentContext
-) -> str:
-    prompt = f"Please write a few sentences of introduction to the character {player.name} as they embark on their journey to {player.motivation}."
+def generate_story_intro(player: HumanCharacter, context: AgentContext) -> str:
+    server_settings = get_server_settings(context)
+    prompt = f"Please write a few sentences of introduction to the character {player.name} as they embark on their journey to {server_settings.adventure_goal}."
     block = do_generation(
         context,
         prompt,
-        prompt_tags=[Tag(
-            kind=TagKindExtensions.CHARACTER,
-            name=CharacterTag.INTRODUCTION_PROMPT,
-        )],
-        output_tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INTRODUCTION)],
-        filter = TagFilter([
+        prompt_tags=[
+            Tag(
+                kind=TagKindExtensions.CHARACTER,
+                name=CharacterTag.INTRODUCTION_PROMPT,
+            )
+        ],
+        output_tags=[
+            Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INTRODUCTION)
+        ],
+        filter=TagFilter(
+            [
                 (TagKindExtensions.CHARACTER, CharacterTag.NAME),
                 (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                 (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-                (TagKindExtensions.CHARACTER, CharacterTag.INTRODUCTION_PROMPT)
-            ]),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.VOICE),
+                (TagKindExtensions.CHARACTER, CharacterTag.INTRODUCTION_PROMPT),
+            ]
+        ),
         generation_for="Character Introduction",
         streaming=False,
     )

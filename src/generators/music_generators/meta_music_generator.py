@@ -3,7 +3,6 @@ from typing import Final
 from steamship import Tag, Task
 from steamship.agents.schema import AgentContext
 
-from generators import utils
 from generators.music_generator import MusicGenerator
 from generators.utils import safe_format
 from utils.context_utils import get_game_state, get_server_settings
@@ -21,10 +20,9 @@ class MetaMusicGenerator(MusicGenerator):
         server_settings = get_server_settings(context)
 
         prompt = safe_format(
-            server_settings.music_prompt,
+            server_settings.scene_music_generation_prompt,
             {
-                "genre": game_state.genre or "Adventure",
-                "tone": game_state.tone or "Triumphant",
+                "tone": server_settings.narrative_tone,
                 "description": description,
             },
         )
@@ -49,10 +47,14 @@ class MetaMusicGenerator(MusicGenerator):
     def request_camp_music_generation(self, context: AgentContext) -> Task:
         music_gen = context.client.use_plugin(self.PLUGIN_HANDLE)
         game_state = get_game_state(context)
-        genre = game_state.genre or "Adventure"
-        tone = game_state.tone or "Triumphant"
+        server_settings = get_server_settings(context)
 
-        prompt = f"background music for a quest game camp scene. {genre} genre. {tone}."
+        prompt = safe_format(
+            server_settings.camp_music_generation_prompt,
+            {
+                "tone": server_settings.narrative_tone,
+            },
+        )
 
         tags = [
             Tag(kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.CAMP),

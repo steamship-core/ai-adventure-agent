@@ -40,8 +40,6 @@ class GameState(BaseModel):
         Preferences(), description="Player's game preferences"
     )
 
-    tone: Optional[str] = Field(None, description="The tone of the story being told.")
-    genre: Optional[str] = Field(None, description="The genre of the story being told.")
     # END ONBOARDING FIELDS
 
     # NOTE: The fields below are not intended to be settable BY the user themselves.
@@ -94,10 +92,6 @@ class GameState(BaseModel):
         # Allow zeroing out even if it's None
         self.diagnostic_mode = other.diagnostic_mode
 
-        if other.genre:
-            self.genre = other.genre
-        if other.tone:
-            self.tone = other.tone
         if other.player:
             self.player.update_from_web(other.player)
         if other.preferences:
