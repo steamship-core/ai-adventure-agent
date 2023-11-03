@@ -36,6 +36,44 @@ class ServerSettings(BaseModel):
     # Narration Generation Settings
     default_narration_model: str = Field("elevenlabs", description="")
 
+    # Narrative settings
+    narrative_tone: str = Field(default="silly", description="What is the narrative tone of the story? For example: silly, serious, gritty, etc.")
+
+    adventure_background: Optional[str] = Field(description="Description of the background setting in which the adventure will take place.  Can include descriptions of genre, characters, specific items and locations that exist in the world, references to real-world things, etc.")
+
+    narrative_voice: Optional[str] = Field(description="What is the narrative voice of the adventure?  Some possibilities: children’s book, young adult novel, fanfic, high literature")
+
+
+
+
+    # Quest settings
+    quests_per_arc: int = Field(default=10, description="How many quests must the player complete to finish the adventure?")
+
+    min_problems_per_quest: int = Field(default=2, description="""What is the minimum number of problems a player must solve to complete a quest?  
+
+Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + randint(0, max_additional_problems_per_quest)""")
+
+    problems_per_quest_scale: float = Field(default=0.25, description="""How does the number of problems per quest scale with the quest # in sequence?  
+
+Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + randint(0, max_additional_problems_per_quest)""")
+
+    max_additional_problems_per_quest: int = Field(default=2, description="""How many additional problems may be added randomly to a quest?
+
+Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + randint(0, max_additional_problems_per_quest)""")
+
+    problem_solution_difficulty: float = Field(default=1, description="""The difficulty scale factor applied to the LLM’s estimation of how likely a user’s solution is to solve the problem.  User’s random number between (0,1) must exceed the modified value to succeed.  
+
+Base Values:
+VERY UNLIKELY=0.9
+UNLIKELY = 0.7
+LIKELY = 0.3
+VERY LIKELY = 0.1
+
+Difficulty modified value:
+1 - ((1-BASE_VALUE) / problem_solution_difficulty)
+
+Result - Doubling difficulty makes success 1/2 as likely; halving difficulty makes success twice as likely.""")
+
     # Energy Management
     quest_cost: int = Field(10, description="The cost of going on one quest")
 
