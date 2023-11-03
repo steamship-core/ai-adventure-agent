@@ -86,7 +86,7 @@ class StartQuestTool(Tool):
         ):
             quest_difficulty_base = len(game_state.quests)
         quest.num_problems_to_encounter = self.num_problems_to_encounter(
-            quest_difficulty_base
+            quest_difficulty_base, server_settings
         )
 
         quest.name = f"{uuid.uuid4()}"

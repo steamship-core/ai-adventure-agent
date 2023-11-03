@@ -209,11 +209,8 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
         # FOR QUICK DEBUGGING
         # game_state.player = HumanCharacter()
         # game_state.player.name = "Dave"
-        # game_state.player.motivation = "Doing cool things"
         # game_state.player.description = "he is tall"
         # game_state.player.background = "he's a guy"
-        # game_state.tone = "funny"
-        # game_state.genre = "adventure"
         ####
 
         return game_state

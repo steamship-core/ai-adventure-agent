@@ -105,8 +105,6 @@ class GameState(BaseModel):
         return (
             self.player is not None
             and self.player.is_onboarding_complete()
-            and self.genre is not None
-            and self.tone is not None
             and self.chat_history_for_onboarding_complete
         )
 

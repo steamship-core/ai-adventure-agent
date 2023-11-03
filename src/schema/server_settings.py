@@ -127,7 +127,8 @@ class ServerSettings(BaseModel):
     )
 
     adventure_goal: str = Field(
-        description="What is the ultimate goal / motivation of this story?"
+        default="To rid the world of evil",
+        description="What is the ultimate goal / motivation of this story?",
     )
 
     fixed_quest_arc: Optional[List[QuestDescription]] = Field(

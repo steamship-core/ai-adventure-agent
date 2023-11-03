@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import List, Optional, Type, cast
+import time
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from pydantic import Field
 from steamship import Steamship, SteamshipError
@@ -16,6 +17,8 @@ from steamship.agents.mixins.transports.telegram import (
     TelegramTransportConfig,
 )
 from steamship.agents.schema import Agent, AgentContext, Tool
+from steamship.data import TagKind
+from steamship.data.block import Block, StreamState
 from steamship.invocable import Config
 from steamship.utils.repl import AgentREPL
 
@@ -246,6 +249,41 @@ class AdventureGameService(AgentService):
         return sub_agent
 
 
+class GameREPL(AgentREPL):
+    last_seen_block = 0
+
+    def print_object_or_objects(
+        self, output: Union[List, Any], metadata: Optional[Dict[str, Any]] = None
+    ):
+        context = AgentContext.get_or_create(
+            client=self.agent_instance.client,
+            context_keys={"id": "default"},
+            searchable=False,
+        )
+        for block in context.chat_history.file.blocks:
+            if block.index_in_file > self.last_seen_block:
+                if block.stream_state == StreamState.STARTED:
+                    while block.stream_state not in [
+                        StreamState.COMPLETE,
+                        StreamState.ABORTED,
+                    ]:
+                        time.sleep(0.4)
+                        block = Block.get(block.client, _id=block.id)
+            self.print_new_block(block)
+        self.last_seen_block = context.chat_history.file.blocks[-1].index_in_file
+        super().print_object_or_objects(output, metadata)
+
+    def print_new_block(self, block: Block):
+        if TagKind.STATUS_MESSAGE not in [tag.kind for tag in block.tags]:
+            tag_texts = "".join(
+                sorted(set([f"[{tag.kind},{tag.name}]" for tag in block.tags]))
+            )
+            if block.is_text():
+                print(f"{tag_texts} {block.text}")
+            else:
+                print(f"{tag_texts} {block.raw_data_url}")
+
+
 if __name__ == "__main__":
     # AgentREPL provides a mechanism for local execution of an AgentService method.
     # This is used for simplified debugging as agents and tools are developed and
@@ -253,7 +291,7 @@ if __name__ == "__main__":
 
     # NOTE: There's a bug in the repl where it doesn't respect my workspace selection below. It always creates a new one.
     client = Steamship(workspace="snugly-crater-i8mli")
-    repl = AgentREPL(
+    repl = GameREPL(
         cast(AgentService, AdventureGameService), agent_package_config={}, client=client
     )
     repl.run(dump_history_on_exit=True)
