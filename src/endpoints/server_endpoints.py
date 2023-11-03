@@ -7,6 +7,7 @@ from steamship.invocable.package_mixin import PackageMixin
 from schema.server_settings import ServerSettings
 from utils.agent_service import AgentService
 from utils.context_utils import get_server_settings, save_server_settings
+from utils.fields import get_model_schema
 
 
 class ServerSettingsMixin(PackageMixin):
@@ -38,3 +39,13 @@ class ServerSettingsMixin(PackageMixin):
         """Get the server settings."""
         context = self.agent_service.build_default_context()
         return get_server_settings(context).dict()
+
+    @get("/server_settings/schema")
+    def get_server_settings_schema(self) -> dict:
+        model_schema = get_model_schema(ServerSettings)
+        return {
+            "package_name": "",
+            "package_version": "",
+            "model_name": "ServerSettings",
+            "schema": model_schema
+        }

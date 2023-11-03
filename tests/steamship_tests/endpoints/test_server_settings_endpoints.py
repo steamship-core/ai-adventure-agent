@@ -31,3 +31,13 @@ def test_server_settings_endpoint(
     server_settings2 = gs2.get("data")
 
     assert server_settings2.get("default_story_model") == "BOO"
+
+
+@pytest.mark.parametrize("invocable_handler", [AdventureGameService], indirect=True)
+def test_server_settings_schema_endpoint(
+    invocable_handler: Callable[[str, str, Optional[dict]], dict]
+):
+    gs = invocable_handler("GET", "server_settings_schema", {})
+    assert gs
+
+    print(gs)
