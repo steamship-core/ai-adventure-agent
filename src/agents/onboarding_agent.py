@@ -3,7 +3,6 @@ from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
 from generators.generator_context_utils import get_image_generator, get_music_generator
-from generators.utils import find_new_block
 from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from utils.context_utils import (
@@ -111,15 +110,9 @@ class OnboardingAgent(InterruptiblePythonAgent):
 
         if not game_state.image_generation_requested():
             if image_gen := get_image_generator(context):
-                num_known_blocks = len(context.chat_history.file.blocks)
-                image_gen.request_profile_image_generation(context=context)
+                task = image_gen.request_profile_image_generation(context=context)
+                character_image_block = task.wait().blocks[0]
                 context.chat_history.file.refresh()
-                character_image_block = find_new_block(
-                    file=context.chat_history.file,
-                    num_known_blocks=num_known_blocks,
-                    new_block_tag_kind=TagKindExtensions.CHARACTER,
-                    new_block_tag_name=CharacterTag.IMAGE,
-                )
                 game_state.player.profile_image_url = character_image_block.raw_data_url
                 game_state.profile_image_url = character_image_block.raw_data_url
                 save_game_state(game_state, context)
@@ -203,15 +196,9 @@ class OnboardingAgent(InterruptiblePythonAgent):
             game_state.tone and game_state.genre
         ):
             if image_gen := get_image_generator(context):
-                num_known_blocks = len(context.chat_history.file.blocks)
-                image_gen.request_camp_image_generation(context=context)
+                task = image_gen.request_camp_image_generation(context=context)
+                camp_image_block = task.wait().blocks[0]
                 context.chat_history.file.refresh()
-                camp_image_block = find_new_block(
-                    file=context.chat_history.file,
-                    num_known_blocks=num_known_blocks,
-                    new_block_tag_kind=TagKindExtensions.CAMP,
-                    new_block_tag_name=CampTag.IMAGE,
-                )
                 game_state.camp.image_block_url = camp_image_block.raw_data_url
                 save_game_state(game_state, context)
 
@@ -219,15 +206,9 @@ class OnboardingAgent(InterruptiblePythonAgent):
             game_state.tone and game_state.genre
         ):
             if music_gen := get_music_generator(context):
-                num_known_blocks = len(context.chat_history.file.blocks)
-                music_gen.request_camp_music_generation(context=context)
+                task = music_gen.request_camp_music_generation(context=context)
+                camp_audio_block = task.wait().blocks[0]
                 context.chat_history.file.refresh()
-                camp_audio_block = find_new_block(
-                    file=context.chat_history.file,
-                    num_known_blocks=num_known_blocks,
-                    new_block_tag_kind=TagKindExtensions.CAMP,
-                    new_block_tag_name=CampTag.AUDIO,
-                )
                 game_state.camp.audio_block_url = camp_audio_block.raw_data_url
                 save_game_state(game_state, context)
 

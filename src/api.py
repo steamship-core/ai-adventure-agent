@@ -62,7 +62,7 @@ class AdventureGameService(AgentService):
     RUNNING
     =======
 
-    The entire game can be played from the cammand line (ship run local) in text mode, however
+    The entire game can be played from the command line (ship run local) in text mode, however
     it is designed to be played with a graphical front-end you can deploy to Vercel. This adds a lot of awesome
     above and beyond text-mode: music, images, voice... But look: if you want to be an 80s kid and command-line it,
     we salute you.
@@ -161,7 +161,11 @@ class AdventureGameService(AgentService):
         # -----------------------------
 
         # API for getting and setting server settings
-        self.add_mixin(ServerSettingsMixin(client=self.client))
+        self.add_mixin(
+            ServerSettingsMixin(
+                client=self.client, agent_service=cast(AgentService, self)
+            )
+        )
 
         # API for getting and setting game state
         self.add_mixin(

@@ -7,11 +7,9 @@ from steamship.data.tags.tag_constants import RoleTag
 from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
 
-from generators import utils
 from tools.end_quest_tool import EndQuestTool
 from tools.start_quest_tool import StartQuestTool
 
-# An instnace is a game instance.
 from utils.context_utils import get_audio_narration_generator, get_game_state, save_game_state
 from utils.generation_utils import generate_quest_arc
 from utils.tags import QuestIdTag, TagKindExtensions, SceneTag
@@ -112,13 +110,5 @@ class QuestMixin(PackageMixin):
             tags=[Tag(kind=TagKindExtensions.SCENE, name=SceneTag.NARRATION)]
         )
 
-        utils.await_blocks_created_and_task_started(
-            0,
-            file,
-            generation,
-            new_block_tag_kind=TagKindExtensions.SCENE,
-            new_block_tag_name=SceneTag.NARRATION,
-        )
-
-        return file.refresh().blocks[0]
+        return generation.wait().blocks[0]
 

@@ -96,6 +96,41 @@ def send_story_generation(
     )
     return block
 
+def generate_likelihood_estimation(
+    prompt: str, quest_name: str, context: AgentContext
+) -> Optional[Block]:
+    """Generates and sends a background image to the player."""
+    block = do_generation(
+        context,
+        prompt,
+        prompt_tags=[
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT),
+            QuestIdTag(quest_name),
+        ],
+        output_tags=[],
+        filter=UnionFilter(
+            [
+                TagFilter(
+                    tag_types=[
+                        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
+                    ]
+                ),
+                QuestNameFilter(quest_name=quest_name),
+                LastInventoryFilter(),
+            ]
+        ),
+        generation_for="Dice Roll",
+        stop_tokens=["\n"],
+        new_file=True,
+        streaming=False,
+    )
+    return block
 
 def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[Block]:
     """Generates and sends a quest summary to the player."""
@@ -138,6 +173,7 @@ def generate_quest_item(
             [QuestNameFilter(quest_name=quest_name), LastInventoryFilter()]
         ),
         generation_for="Quest Item",
+        streaming=False,
     )
     parts = block.text.split("ITEM DESCRIPTION:")
     if len(parts) == 2:
@@ -185,6 +221,7 @@ def generate_merchant_inventory(
             ]
         ),
         generation_for="Merchant Inventory",
+        streaming=False,
     )
     result = []
     items = block.text.split("ITEM NAME:")
@@ -226,6 +263,7 @@ def generate_quest_arc(
             ]
         ),
         generation_for="Quest Arc",
+        streaming=False,
     )
     result: List[QuestDescription] = []
     items = block.text.split("QUEST GOAL:")
@@ -254,7 +292,7 @@ def generate_story_intro(
             name=CharacterTag.INTRODUCTION_PROMPT,
         )],
         output_tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INTRODUCTION)],
-        filter= TagFilter([
+        filter = TagFilter([
                 (TagKindExtensions.CHARACTER, CharacterTag.NAME),
                 (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                 (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
@@ -262,7 +300,8 @@ def generate_story_intro(
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
                 (TagKindExtensions.CHARACTER, CharacterTag.INTRODUCTION_PROMPT)
             ]),
-        generation_for="Character Introduction"
+        generation_for="Character Introduction",
+        streaming=False,
     )
     return block.text
 
@@ -275,6 +314,8 @@ def do_generation(
     filter: ChatHistoryFilter,
     generation_for: str,  # For debugging output
     stop_tokens: Optional[List[str]] = None,
+    new_file: bool = False,
+    streaming: bool = True,
 ) -> Block:
     """Generates the inventory for a merchant"""
 
@@ -306,12 +347,14 @@ def do_generation(
     if stop_tokens:
         options["stop"] = stop_tokens
 
+    output_file_id = None if new_file else context.chat_history.file.id
+
     task = generator.generate(
         tags=output_tags,
         append_output_to_file=True,
         input_file_id=context.chat_history.file.id,
-        output_file_id=context.chat_history.file.id,
-        streaming=True,
+        output_file_id=output_file_id,
+        streaming=streaming,
         input_file_block_index_list=block_indices,
         options=options,
     )
