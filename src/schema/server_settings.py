@@ -16,6 +16,54 @@ def validate_prompt_args(prompt: str, valid_args: List[str]):
             return False
     return True
 
+_SUPPORTED_ELEVEN_VOICES = {
+    "knightly": {
+        "id": "qk9eXb51CntEhbbRU1ny",
+        "label": "Knightly",
+        "description": "Old male british man. A deep and smooth voice for storytelling and podcast.",
+    },
+    "oswald": {
+        "id": "Gc2LOaLVvOzXc6nU30Eg",
+        "label": "Oswald",
+        "description": "Intelligent Professor.",
+    },
+    "marcus": {
+        "id": "IdZRgDjRZjFkdCn6m1Nl",
+        "label": "Marcus",
+        "description": "An authoritative and deep voice. Great for audio books or news.",
+    },
+    "bria": {
+        "id": "Y4j1j6KUWh4GF02bCvVL",
+        "label": "Bria",
+        "description": "A young female with a softly spoken tone, perfect for storytelling or ASMR.",
+    },
+    "alex": {
+        "id": "7Y4ogNdqWsNlFymJ9lZw",
+        "label": "Alex",
+        "description": "Young american man. Is a strong and expressive narrator.",
+    },
+    "valentino": {
+        "id": "15zz9lmuNt401tH3HZ8E",
+        "label": "Valentino",
+        "description": "A great voice with depth. The voice is deep with a great accent, and works well for meditations.",
+    },
+    "natasha": {
+        "id": "YmNvmviYqx1g64e2stQC",
+        "label": "Natasha",
+        "description": "A valley girl female voice. Great for shorts.",
+    },
+    "brian": {
+        "id": "EKwMQkKDRzyT7h19ccvV",
+        "label": "Brian",
+        "description": "Great voice for nature documentaries.",
+    },
+    "joanne": {
+        "id": "p7toRxCsJYlANtoQG286",
+        "label": "Joanne",
+        "description": "Young american woman. A soft and pleasant voice for a great character.",
+    },
+}
+
 
 class ServerSettings(BaseModel):
     """Server Settings for the AI Adventure Game set by the Game Host.
