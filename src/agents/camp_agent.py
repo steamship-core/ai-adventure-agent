@@ -6,7 +6,6 @@ from steamship.agents.schema import AgentContext
 from steamship.agents.schema.message_selectors import MessageWindowMessageSelector
 
 from schema.game_state import GameState
-from tools.start_conversation_tool import StartConversationTool
 from tools.start_quest_tool import StartQuestTool
 from utils.context_utils import get_game_state
 from utils.moderation_utils import is_block_excluded
@@ -34,7 +33,7 @@ class CampAgent(FunctionsBasedAgent):
 
     def __init__(self, **kwargs):
         super().__init__(
-            tools=[StartQuestTool(), StartConversationTool()],
+            tools=[StartQuestTool()],  # , StartConversationTool()],
             message_selector=NonExcludedMessageWindowSelector(k=10),
             **kwargs,
         )

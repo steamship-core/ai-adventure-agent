@@ -14,8 +14,8 @@ class StableDiffusionTheme(BaseModel):
 
     This allows someone to separate:
      - the prompt (e.g. "a chest of pirate gold") from
-     - the theme (SDXL w/ Lora 1, 2, a particula negative prompt addition, etc
-    ."""
+     - the theme (SDXL w/ Lora 1, 2, a particula negative prompt addition, etc.
+    """
 
     name: str = Field(description="The name of this theme")
 

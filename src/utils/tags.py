@@ -25,6 +25,8 @@ class TagKindExtensions(str, Enum):
 
     QUEST_ARC = "quest_arc"
 
+    # This tag is used to identify a set of instructions for a portion of the story
+    INSTRUCTIONS = "instructions"
 
 
 class AgentStatusMessageTag(str, Enum):
@@ -68,6 +70,7 @@ class CharacterTag(str, Enum):
     INTRODUCTION = "introduction"
     INTRODUCTION_PROMPT = "introduction_prompt"
 
+
 class StoryContextTag(str, Enum):
 
     GENRE = "genre"
@@ -84,6 +87,7 @@ class QuestTag(str, Enum):
     QUEST_SUMMARY = "quest_summary"
     ITEM_GENERATION_CONTENT = "item_generation_content"
     ITEM_GENERATION_PROMPT = "item_generation_prompt"
+    LIKELIHOOD_EVALUATION = "likelihood_evaluation"
     DICE_ROLL = "dice_roll"
 
 
@@ -120,3 +124,8 @@ class QuestIdTag(Tag):
 class QuestArcTag(str, Enum):
     PROMPT = "prompt"
     RESULT = "result"
+
+
+class InstructionsTag(str, Enum):
+    ONBOARDING = "onboarding"
+    QUEST = "quest"
