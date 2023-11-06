@@ -16,6 +16,7 @@ def validate_prompt_args(prompt: str, valid_args: List[str]):
             return False
     return True
 
+
 _SUPPORTED_ELEVEN_VOICES = {
     "knightly": {
         "id": "qk9eXb51CntEhbbRU1ny",
@@ -85,7 +86,9 @@ class ServerSettings(BaseModel):
     default_narration_model: str = Field("elevenlabs", description="")
 
     # Energy Management
-    quest_cost: int = Field(10, description="The cost of going on one quest")
+    # NOTE: quest_cost is now set to zero becuase we're managing energy consumption from the web side of things.
+    # TODO: Remove quest_cost entirely to reduce dead code?
+    quest_cost: int = Field(0, description="The cost of going on one quest")
 
     camp_image_prompt: str = Field(
         "{tone} {genre} camp.",
