@@ -15,7 +15,7 @@ from utils.context_utils import (
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 from utils.moderation_utils import mark_block_as_excluded
-from utils.tags import CharacterTag, StoryContextTag, TagKindExtensions
+from utils.tags import CharacterTag, InstructionsTag, StoryContextTag, TagKindExtensions
 
 
 def _is_allowed_by_moderation(user_input: str, context: AgentContext) -> bool:
@@ -147,49 +147,50 @@ class OnboardingAgent(InterruptiblePythonAgent):
 
         if not game_state.chat_history_for_onboarding_complete:
             # TODO: We could save a lot of round trips by appending all these blocks at once.
-            context.chat_history.append_system_message(
-                text=f"The character's name is {player.name}",
-                tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.NAME)],
+
+            onboarding_message = (
+                f"You are a game master for an online quest game. In this game, players go on "
+                f"multiple quests in order to achieve an overall goal. You will tell the story of "
+                f"each quest. By completing quests, players build progress towards an overall goal. "
+                f"Quests take place in a specific location, involve obstacles that must be overcome "
+                f"throughout the quest, and end with the player having either found an item that will "
+                f"help them in subsequent quests, or having achieved their ultimate goal.\n"
+                f"A player has requested a new game with the following attributes:\n"
+                f"Tone: {server_settings.narrative_tone}\n"
+                f"Background on the world of the story:\n"
+                f"{server_settings.adventure_background}"
+                f"The player is playing as a character named {game_state.player.name}. "
+                f"{game_state.player.name} has the following background: "
+                f"{game_state.player.background}\n"
+                f"{game_state.player.name}'s overall goal is to: {server_settings.adventure_goal}."
+                f"Each quest that {game_state.player.name} goes on MUST further them towards that "
+                f"overall goal."
+                f"Please always return content in the narrative voice: {server_settings.narrative_voice}"
             )
+
             context.chat_history.append_system_message(
-                text=f"{player.name}'s backstory is: {player.background}",
-                tags=[
-                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.BACKGROUND)
-                ],
-            )
-            context.chat_history.append_system_message(
-                text=f"{player.name}'s motivation is: {server_settings.adventure_goal}",
-                tags=[
-                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.MOTIVATION)
-                ],
-            )
-            context.chat_history.append_system_message(
-                text=f"{player.name}'s physical description is: {player.description}",
-                tags=[
-                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.DESCRIPTION)
-                ],
-            )
-            context.chat_history.append_system_message(
-                text=f"The tone of the story is: {server_settings.narrative_tone}",
-                tags=[
-                    Tag(kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.TONE)
-                ],
-            )
-            context.chat_history.append_system_message(
-                text=f"Please always speak in the voice of: {server_settings.narrative_voice}",
+                text=onboarding_message,
                 tags=[
                     Tag(
-                        kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.VOICE
-                    )
-                ],
-            )
-            context.chat_history.append_system_message(
-                text=f"More background about the world of the story follows. \n {server_settings.adventure_background}",
-                tags=[
+                        kind=TagKindExtensions.INSTRUCTIONS,
+                        name=InstructionsTag.ONBOARDING,
+                    ),
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.NAME),
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.BACKGROUND),
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.MOTIVATION),
+                    Tag(
+                        kind=TagKindExtensions.CHARACTER, name=CharacterTag.DESCRIPTION
+                    ),
                     Tag(
                         kind=TagKindExtensions.STORY_CONTEXT,
                         name=StoryContextTag.BACKGROUND,
-                    )
+                    ),
+                    Tag(
+                        kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.TONE
+                    ),
+                    Tag(
+                        kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.VOICE
+                    ),
                 ],
             )
             game_state.chat_history_for_onboarding_complete = True

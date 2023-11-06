@@ -22,7 +22,7 @@ from utils.generation_utils import (
     generate_quest_summary,
     send_agent_status_message,
 )
-from utils.tags import AgentStatusMessageTag, CharacterTag, ItemTag, TagKindExtensions
+from utils.tags import AgentStatusMessageTag, CharacterTag, TagKindExtensions
 
 
 class EndQuestTool(Tool):

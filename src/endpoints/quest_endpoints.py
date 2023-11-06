@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from steamship import Block, Steamship, SteamshipError, File, Tag
+from steamship import Block, File, Steamship, SteamshipError, Tag
 from steamship.agents.schema import AgentContext
 from steamship.agents.service.agent_service import AgentService
 from steamship.data.tags.tag_constants import RoleTag
@@ -9,10 +9,13 @@ from steamship.invocable.package_mixin import PackageMixin
 
 from tools.end_quest_tool import EndQuestTool
 from tools.start_quest_tool import StartQuestTool
-
-from utils.context_utils import get_audio_narration_generator, get_game_state, save_game_state
+from utils.context_utils import (
+    get_audio_narration_generator,
+    get_game_state,
+    save_game_state,
+)
 from utils.generation_utils import generate_quest_arc
-from utils.tags import QuestIdTag, TagKindExtensions, SceneTag
+from utils.tags import QuestIdTag, SceneTag, TagKindExtensions
 
 
 class QuestMixin(PackageMixin):
@@ -24,7 +27,6 @@ class QuestMixin(PackageMixin):
     def __init__(self, client: Steamship, agent_service: AgentService):
         self.client = client
         self.agent_service = agent_service
-
 
     @post("/generate_quest_arc")
     def generate_quest_arc(self) -> List[dict]:
@@ -107,8 +109,7 @@ class QuestMixin(PackageMixin):
             append_output_to_file=True,
             output_file_id=file.id,
             streaming=True,
-            tags=[Tag(kind=TagKindExtensions.SCENE, name=SceneTag.NARRATION)]
+            tags=[Tag(kind=TagKindExtensions.SCENE, name=SceneTag.NARRATION)],
         )
 
         return generation.wait().blocks[0]
-

@@ -15,6 +15,7 @@ from typing import List, Optional, Tuple
 
 from steamship import Block, Tag
 from steamship.agents.schema import AgentContext
+from steamship.agents.schema.message_selectors import tokens
 from steamship.data import TagKind
 from steamship.data.block import StreamState
 from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagValueKey
@@ -26,9 +27,15 @@ from utils.ChatHistoryFilter import (
     LastInventoryFilter,
     QuestNameFilter,
     TagFilter,
+    TrimmingStoryContextFilter,
     UnionFilter,
 )
-from utils.context_utils import emit, get_server_settings, get_story_text_generator
+from utils.context_utils import (
+    emit,
+    get_game_state,
+    get_server_settings,
+    get_story_text_generator,
+)
 from utils.tags import (
     AgentStatusMessageTag,
     CharacterTag,
@@ -59,7 +66,7 @@ def send_story_generation(
     prompt: str, quest_name: str, context: AgentContext
 ) -> Optional[Block]:
     """Generates and sends a background image to the player."""
-    block = do_generation(
+    block = do_token_trimmed_generation(
         context,
         prompt,
         prompt_tags=[
@@ -89,7 +96,7 @@ def send_story_generation(
             ]
         ),
         generation_for="Quest Content",
-        stop_tokens=["\n"],
+        # stop_tokens=["\n"],
     )
     return block
 
@@ -97,12 +104,12 @@ def send_story_generation(
 def generate_likelihood_estimation(
     prompt: str, quest_name: str, context: AgentContext
 ) -> Optional[Block]:
-    """Generates and sends a background image to the player."""
-    block = do_generation(
+    """Generates a likelihood calculation of success for an event."""
+    block = do_token_trimmed_generation(
         context,
         prompt,
         prompt_tags=[
-            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.QUEST_PROMPT),
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.LIKELIHOOD_EVALUATION),
             QuestIdTag(quest_name),
         ],
         output_tags=[],
@@ -134,7 +141,7 @@ def generate_likelihood_estimation(
 def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[Block]:
     """Generates and sends a quest summary to the player."""
     prompt = "Please summarize the above quest in one to two sentences."
-    block = do_generation(
+    block = do_token_trimmed_generation(
         context,
         prompt,
         prompt_tags=[
@@ -147,7 +154,7 @@ def generate_quest_summary(quest_name: str, context: AgentContext) -> Optional[B
         ],
         filter=QuestNameFilter(quest_name=quest_name),
         generation_for="Quest Summary",
-        stop_tokens=["\n"],
+        # stop_tokens=["\n"],
     )
     return block
 
@@ -156,7 +163,7 @@ def generate_quest_item(
     quest_name: str, player: HumanCharacter, context: AgentContext
 ) -> (str, str):
     """Generates a found item from a quest, returning a tuple of its name and description"""
-    prompt = f"What object or item did {player.name} find during that story? It should fit the setting of the story and help {player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
+    prompt = f"What item did {player.name} find during that story? It should fit the setting of the story and help {player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
     block = do_generation(
         context,
         prompt,
@@ -241,7 +248,22 @@ def generate_quest_arc(
     player: HumanCharacter, context: AgentContext
 ) -> List[QuestDescription]:
     server_settings = get_server_settings(context)
-    prompt = f"Please list {server_settings.quests_per_arc} quests of increasing difficulty that {player.name} will go in to achieve their overall goal of {server_settings.adventure_goal}. They should fit the setting of the story. Please respond only with QUEST GOAL: <goal> QUEST LOCATION: <location name>"
+    prompt = (
+        f"Please list {server_settings.quests_per_arc} quests of increasing difficulty that {player.name} will go in to achieve their overall "
+        f"goal of {server_settings.adventure_goal}. They should fit the setting of the story. Responses should only be in the "
+        f"form of: QUEST GOAL: <goal> QUEST LOCATION: <location name>\n"
+        f"Example (for a quest game for a dog):\n"
+        f"QUEST GOAL: find a treat QUEST LOCATION: Dog Park\n"
+        f"QUEST GOAL: make a friend QUEST LOCATION: Main Street\n"
+        f"QUEST GOAL: get bacon from the butcher QUEST LOCATION: Butcher Shop\n"
+        f"QUEST GOAL: learn a new trick QUEST LOCATION: Trainer's Office\n"
+        f"QUEST GOAL: fetch the newspaper QUEST LOCATION: Owner's House\n"
+        f"QUEST GOAL: prevent a robbery QUEST LOCATION: Owner's Store\n"
+        f"QUEST GOAL: impress the teacher during a show and tell QUEST LOCATION: Owner's Kid's School\n"
+        f"QUEST GOAL: steal some turkey QUEST LOCATION: Thanksgiving Dinner at Grandma's\n"
+        f"QUEST GOAL: get your nails trimmed QUEST LOCATION: Dog Wash\n"
+        f"QUEST GOAL: win an award QUEST LOCATION: Westminister Dog Show\n"
+    )
     block = do_generation(
         context,
         prompt,
@@ -272,7 +294,7 @@ def generate_quest_arc(
             parts = item.split("QUEST LOCATION:")
             if len(parts) == 2:
                 goal = parts[0].strip()
-                location = parts[1].strip()
+                location = parts[1].strip().rstrip(".")
                 if "\n" in location:
                     location = location[: location.index("\n")]
                 result.append(QuestDescription(goal=goal, location=location))
@@ -311,6 +333,41 @@ def generate_story_intro(player: HumanCharacter, context: AgentContext) -> str:
     return block.text
 
 
+def do_token_trimmed_generation(
+    context: AgentContext,
+    prompt: str,
+    prompt_tags: List[Tag],
+    output_tags: List[Tag],
+    filter: ChatHistoryFilter,
+    generation_for: str,  # For debugging output
+    stop_tokens: Optional[List[str]] = None,
+    new_file: bool = False,
+    streaming: bool = True,
+) -> Block:
+    game_state = get_game_state(context=context)
+    server_settings = get_server_settings(context)
+    avail_tokens = 4096 - server_settings.default_story_max_tokens
+    avail_tokens -= tokens(Block(text=prompt))
+
+    block = do_generation(
+        context,
+        prompt,
+        prompt_tags=prompt_tags,
+        output_tags=output_tags,
+        filter=TrimmingStoryContextFilter(
+            base_filter=filter,
+            current_quest_id=game_state.current_quest,
+            game_state=game_state,
+            max_tokens=avail_tokens,
+        ),
+        generation_for=generation_for,
+        stop_tokens=stop_tokens,
+        new_file=new_file,
+        streaming=streaming,
+    )
+    return block
+
+
 def do_generation(
     context: AgentContext,
     prompt: str,
@@ -339,7 +396,7 @@ def do_generation(
         ]
     )
 
-    context.chat_history.append_system_message(
+    prompt_block = context.chat_history.append_system_message(
         text=prompt,
         tags=prompt_tags,
     )
@@ -348,15 +405,21 @@ def do_generation(
         chat_history_file=context.chat_history.file, filter_for=generation_for
     )
 
+    if prompt_block.index_in_file not in block_indices:
+        block_indices.append(prompt_block.index_in_file)
+
     options = {}
     if stop_tokens:
         options["stop"] = stop_tokens
 
     output_file_id = None if new_file else context.chat_history.file.id
 
+    # don't pollute workspace with temporary/working files that contain data like: "LIKELY"
+    append_output_to_file = False if not output_file_id else True
+
     task = generator.generate(
         tags=output_tags,
-        append_output_to_file=True,
+        append_output_to_file=append_output_to_file,
         input_file_id=context.chat_history.file.id,
         output_file_id=output_file_id,
         streaming=streaming,
@@ -366,8 +429,10 @@ def do_generation(
     task.wait()
     blocks = task.output.blocks
     block = blocks[0]
-    block = Block.get(block.client, _id=block.id)
-    emit(output=block, context=context)
+    # only re-fetch block if it is not ephemeral...
+    if block.client and block.id:
+        block = Block.get(block.client, _id=block.id)
+    emit(output=block, context=context)  # todo: should emit be optional ?
     return block
 
 

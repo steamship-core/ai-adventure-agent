@@ -2,10 +2,20 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 
-from steamship import Block, File
+from steamship import Block, File, Tag
+from steamship.agents.schema.message_selectors import tokens
+from steamship.data.tags.tag_constants import RoleTag, TagValueKey
+from steamship.data.tags.tag_utils import get_tag, get_tag_value_key
 
+from schema.game_state import GameState
 from utils.moderation_utils import is_block_excluded
-from utils.tags import CharacterTag, QuestIdTag, TagKindExtensions
+from utils.tags import (
+    CharacterTag,
+    InstructionsTag,
+    QuestIdTag,
+    QuestTag,
+    TagKindExtensions,
+)
 
 
 class ChatHistoryFilter(ABC):
@@ -48,7 +58,7 @@ class TagFilter(ChatHistoryFilter):
         result: List[Tuple[Block, Optional[str]]] = []
         for block in chat_history_file.blocks:
             for tag in block.tags:
-                for (kind, name) in self.tag_types:
+                for kind, name in self.tag_types:
                     if tag.kind == kind and tag.name == name:
                         result.append((block, f"{tag.kind} {tag.name}"))
         return result
@@ -113,7 +123,152 @@ class UnionFilter(ChatHistoryFilter):
             else:
                 last_appended = result[-1]
                 if last_appended[0].index_in_file == included[0].index_in_file:
-                    last_appended[1] = f"{last_appended[1]} && {included[1]}"
+                    result[-1] = (
+                        last_appended[0],
+                        f"{last_appended[1]} && {included[1]}",
+                    )
                 else:
                     result.append(included)
         return result
+
+
+class TrimmingStoryContextFilter(ChatHistoryFilter):
+    def __init__(
+        self,
+        base_filter: ChatHistoryFilter,
+        current_quest_id: str,
+        game_state: GameState,
+        max_tokens: int,
+    ):
+        self._base_filter = base_filter
+        self._current_quest_id = current_quest_id
+        self._game_state = game_state
+        self._max_tokens = max_tokens
+
+    def _calculate_and_store_token_count(self, block: Block) -> int:
+        if not block.text:
+            return 0
+        if value := get_tag_value_key(
+            block.tags, key=TagValueKey.NUMBER_VALUE, kind=TagKindExtensions.TOKEN_COUNT
+        ):
+            return value
+        block_tokens = tokens(block)
+        if block.client and block.id:
+            tag = Tag.create(
+                block.client,
+                file_id=block.file_id,
+                block_id=block.id,
+                kind=TagKindExtensions.TOKEN_COUNT,
+                value={TagValueKey.NUMBER_VALUE: block_tokens},
+            )
+        else:
+            tag = Tag(
+                kind=TagKindExtensions.TOKEN_COUNT,
+                value={TagValueKey.NUMBER_VALUE: block_tokens},
+            )
+        block.tags.append(tag)
+        return block_tokens
+
+    def filter_blocks(  # noqa: C901
+        self, chat_history_file: File
+    ) -> List[Tuple[Block, Optional[str]]]:
+        block_tuples = self._base_filter.filter_blocks(
+            chat_history_file=chat_history_file
+        )
+
+        # drop the unwanted ones
+        block_tuples = [
+            block_tuple
+            for block_tuple in block_tuples
+            if (not is_block_excluded(block_tuple[0]) and block_tuple[0].text)
+        ]
+
+        id_to_reasons = {t[0].id: t[1] for t in block_tuples}
+        blocks = [t[0] for t in block_tuples]
+
+        total_tokens = 0
+
+        # MUST include onboarding message, as it provides the proper overall context.
+        selected_blocks = []
+        for block in blocks:
+            if get_tag(
+                tags=block.tags,
+                kind=TagKindExtensions.INSTRUCTIONS,
+                name=InstructionsTag.ONBOARDING,
+            ):
+                logging.debug(
+                    f"Selecting block: ({block.index_in_file}) [{block.chat_role}] {block.text}"
+                )
+                selected_blocks.append(block)
+                total_tokens += self._calculate_and_store_token_count(block)
+                logging.debug(f"Total tokens: {total_tokens }")
+                break
+
+        # Also, MUST include quest beginning prompt
+        for block in reversed(blocks):
+            if not get_tag(
+                tags=block.tags,
+                kind=TagKindExtensions.INSTRUCTIONS,
+                name=InstructionsTag.QUEST,
+            ):
+                continue
+            if value := get_tag_value_key(
+                tags=block.tags,
+                kind=TagKindExtensions.QUEST,
+                name=QuestTag.QUEST_ID,
+                key="id",
+            ):
+                if value == self._current_quest_id:
+                    logging.debug(
+                        f"Selecting block: ({block.index_in_file}) [{block.chat_role}] {block.text}"
+                    )
+                    selected_blocks.append(block)
+                    total_tokens += self._calculate_and_store_token_count(block)
+                    logging.debug(f"Total tokens: {total_tokens}")
+                    break
+
+        # Now include any assistant/user messages that provide the context.
+        for block in reversed(blocks):
+            if block.chat_role not in [RoleTag.ASSISTANT, RoleTag.USER]:
+                continue
+            if value := get_tag_value_key(
+                tags=block.tags,
+                kind=TagKindExtensions.QUEST,
+                name=QuestTag.QUEST_ID,
+                key="id",
+            ):
+                if value == self._current_quest_id:
+                    if total_tokens < self._max_tokens:
+                        block_tokens = self._calculate_and_store_token_count(block)
+                        if block_tokens + total_tokens < self._max_tokens:
+                            logging.debug(
+                                f"Selecting block: ({block.index_in_file}) [{block.chat_role}] {block.text}"
+                            )
+                            selected_blocks.append(block)
+                            total_tokens += block_tokens
+                            logging.debug(f"Total tokens: {total_tokens}")
+
+        if total_tokens < self._max_tokens:
+            for block in reversed(blocks):
+                if not get_tag(
+                    tags=block.tags,
+                    kind=TagKindExtensions.QUEST,
+                    name=QuestTag.QUEST_SUMMARY,
+                ):
+                    continue
+                if total_tokens < self._max_tokens:
+                    block_tokens = self._calculate_and_store_token_count(block)
+                    if block_tokens + total_tokens < self._max_tokens:
+                        logging.debug(
+                            f"Selecting block: ({block.index_in_file}) [{block.chat_role}] {block.text}"
+                        )
+                        selected_blocks.append(block)
+                        total_tokens += block_tokens
+                        logging.debug(f"Total tokens: {total_tokens}")
+
+        logging.debug(f"TOTAL_TOKENS = {total_tokens}, MAX_TOKENS = {self._max_tokens}")
+        block_list = sorted(selected_blocks, key=lambda b: b.index_in_file)
+        return_tuples = []
+        for block in block_list:
+            return_tuples.append((block, id_to_reasons.get(block.id)))
+        return return_tuples

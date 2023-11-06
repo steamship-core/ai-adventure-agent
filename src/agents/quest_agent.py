@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime, timezone
-from random import random
+from random import randint, random
 from typing import List
 
 from steamship import Tag
@@ -29,7 +29,7 @@ from utils.generation_utils import (
 )
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 from utils.moderation_utils import mark_block_as_excluded
-from utils.tags import QuestIdTag, QuestTag, TagKindExtensions
+from utils.tags import InstructionsTag, QuestIdTag, QuestTag, TagKindExtensions
 
 
 class QuestAgent(InterruptiblePythonAgent):
@@ -73,6 +73,7 @@ class QuestAgent(InterruptiblePythonAgent):
         if len(game_state.quest_arc) >= len(game_state.quests):
             quest_description = game_state.quest_arc[len(game_state.quests) - 1]
         else:
+            logging.warning("QUEST DESCRIPTION IS NONE.")
             quest_description = None
 
         logging.debug(
@@ -100,10 +101,30 @@ class QuestAgent(InterruptiblePythonAgent):
             )
 
             if quest_description is not None:
-                prompt = f"{game_state.player.name} is about to go on a mission to {quest_description.goal} at {quest_description.location}. Describe the first few things they do in a few sentences"
+                context.chat_history.append_system_message(
+                    text=f"{game_state.player.name} is embarking on a quest to {quest_description.goal} "
+                    f"at {quest_description.location}.",
+                    tags=[
+                        Tag(
+                            kind=TagKindExtensions.INSTRUCTIONS,
+                            name=InstructionsTag.QUEST,
+                        ),
+                        QuestIdTag(quest_id=quest.name),
+                    ],
+                )
+                num_paragraphs = randint(1, 2)  # noqa: S311
+                prompt = (
+                    f"Describe the first few things they do in a {num_paragraphs} short paragraphs. "
+                    f"DO NOT present them with a challenge or obstacle in this description. Just set the scene."
+                    f"{game_state.player.name} MUST NOT achieve their goal in the generated paragraphs."
+                )
             else:
                 # here as a fallback
-                prompt = f"{game_state.player.name} is about to go on a mission. Describe the first few things they do in a few sentences"
+                num_paragraphs = randint(1, 2)  # noqa: S311
+                prompt = (
+                    f"{game_state.player.name} is embarking on a quest. Describe the first few things they do "
+                    f"in a {num_paragraphs} short paragraphs."
+                )
             block = send_story_generation(
                 prompt=prompt,
                 quest_name=quest.name,
@@ -139,7 +160,9 @@ class QuestAgent(InterruptiblePythonAgent):
             try:
                 if self.evaluate_solution(game_state, context, quest):
                     # TODO: tag last user message as solution
-                    self.generate_solution(game_state, context, quest)
+                    self.generate_solution(
+                        game_state, context, quest, quest_description.goal
+                    )
                 else:
                     self.describe_failure(game_state, context, quest)
                     quest.user_problem_solutions.pop()
@@ -198,9 +221,15 @@ class QuestAgent(InterruptiblePythonAgent):
             save_game_state(game_state, context)
 
             if quest_description is not None:
-                prompt = f"How does this mission end? {player.name} should achieve their goal of {quest_description.goal}"
+                prompt = (
+                    f"Complete the story of the {player.name}'s current quest. {player.name} should achieve "
+                    f"the goal of '{quest_description.goal}', but NOT their overall goal of {server_settings.adventure_goal}"
+                )
             else:
-                prompt = f"How does this mission end? {player.name} should not yet achieve their overall goal of {server_settings.adventure_goal}"
+                prompt = (
+                    f"Complete the story of the {player.name}'s current quest. {player.name} should not yet "
+                    f"achieve their overall goal of '{server_settings.adventure_goal}'"
+                )
             story_end_block = send_story_generation(
                 prompt,
                 quest_name=quest.name,
@@ -225,9 +254,26 @@ class QuestAgent(InterruptiblePythonAgent):
     ):
         if len(quest.user_problem_solutions) == quest.num_problems_to_encounter - 1:
             # if last problem, try to make it make sense for wrapping things up
-            prompt = f"Describe the last problem {game_state.player.name} needs to overcome in order to finish the quest: {quest_description.goal}."
+            num_paragraphs = randint(1, 2)  # noqa: S311
+            prompt = (
+                f"Continue the story of {game_state.player.name} quest. Write about them encountering a "
+                f"challenge that prevents them from completing their current quest.\n"
+                f"DO NOT SOLVE the challenge for {game_state.player.name}. "
+                f"The story should allow {game_state.player.name} to decide how to attempt to complete their "
+                f"quest. The story MUST continue the current story arc of the quest. The story should be a "
+                f"total of {num_paragraphs} short paragraphs."
+            )
         else:
-            prompt = f"Oh no! {game_state.player.name} encounters a new problem. Describe the problem."
+            num_paragraphs = randint(1, 2)  # noqa: S311
+            prompt = (
+                f"Write {num_paragraphs} short paragraphs that present {game_state.player.name} with a single "
+                f"challenge on their current quest ({quest_description.location}, {quest_description.goal}). The "
+                f"challenge MUST NOT repeat (or be equivalent to) a prior challenge faced by "
+                f"{game_state.player.name}.\n"
+                f"DO NOT introduce more than one problem. DO NOT SOLVE the challenge for {game_state.player.name}. "
+                f"The story MUST continue the current story arc of the quest. The story SHOULD allow "
+                f"{game_state.player.name} to decide how to attempt to solve the challenge."
+            )
         problem_block = send_story_generation(
             prompt=prompt,
             quest_name=quest.name,
@@ -249,7 +295,8 @@ class QuestAgent(InterruptiblePythonAgent):
     ):
         server_settings = get_server_settings(context)
         prompt = (
-            f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}. How likely is this to succeed? "
+            f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}. "
+            f"How likely is this to succeed? "
             f"Please consider their abilities and whether any referenced objects are nearby or in their inventory. "
             f"ONLY RESPOND WITH ONE OF [VERY UNLIKELY, UNLIKELY, LIKELY, VERY LIKELY]"
         )
@@ -272,7 +319,7 @@ class QuestAgent(InterruptiblePythonAgent):
         required_roll = 1 - (
             (1 - required_roll) / server_settings.problem_solution_difficulty
         )
-        roll = random()
+        roll = random()  # noqa: S311
         succeeded = roll > required_roll
         dice_roll_message = json.dumps(
             {"required": required_roll, "rolled": roll, "success": succeeded}
@@ -283,11 +330,17 @@ class QuestAgent(InterruptiblePythonAgent):
         return succeeded
 
     def generate_solution(
-        self, game_state: GameState, context: AgentContext, quest: Quest
+        self,
+        game_state: GameState,
+        context: AgentContext,
+        quest: Quest,
+        quest_goal: str,
     ):
+        num_paragraphs = randint(1, 2)  # noqa: S311
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it totally works.\n"
-            f"Describe what happens."
+            f"Describe what happens in {num_paragraphs} short paragraphs. As part of the description, DO NOT have "
+            f"{game_state.player.name} completing the quest goal of {quest_goal}"
         )
         solution_block = send_story_generation(
             prompt=prompt,
@@ -299,9 +352,10 @@ class QuestAgent(InterruptiblePythonAgent):
     def describe_failure(
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
+        num_paragraphs = randint(1, 2)  # noqa: S311
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it fails.\n"
-            f"Describe what happens."
+            f"Describe what happens in {num_paragraphs} short paragraphs."
         )
         solution_block = send_story_generation(
             prompt=prompt,

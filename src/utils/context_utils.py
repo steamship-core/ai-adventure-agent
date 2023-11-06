@@ -27,7 +27,6 @@ from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
 from steamship.utils.kv_store import KeyValueStore
 
-# from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from schema.server_settings import ServerSettings
 from utils.tags import QuestIdTag
@@ -331,7 +330,7 @@ def switch_history_to_current_quest(
 
     if quest:
         logging.info(
-            f"Switching to Quest Chat History: {quest.name}.",
+            f"Switching to Quest Chat History: {quest.name}",
             extra={
                 AgentLogging.IS_MESSAGE: True,
                 AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
@@ -432,7 +431,7 @@ def await_ask(
     key = _key_for_question(output) + key_suffix
 
     logging.info(
-        f"Seeking input with await_ask key: {key}.",
+        f"Seeking input with await_ask key: {key}",
         extra={
             AgentLogging.IS_MESSAGE: True,
             AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
@@ -442,7 +441,7 @@ def await_ask(
 
     if game_state.await_ask_key == key:
         logging.info(
-            f"Last await_ask key matches: {game_state.await_ask_key}.",
+            f"Last await_ask key matches: {game_state.await_ask_key}",
             extra={
                 AgentLogging.IS_MESSAGE: True,
                 AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
@@ -457,7 +456,7 @@ def await_ask(
                 save_game_state(game_state, context)
                 answer = context.chat_history.last_user_message.text
                 logging.info(
-                    f"Using last user input as answer: {answer}.",
+                    f"Using last user input as answer: {answer}",
                     extra={
                         AgentLogging.IS_MESSAGE: True,
                         AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
@@ -470,7 +469,7 @@ def await_ask(
     game_state.await_ask_key = key
 
     logging.info(
-        f"Awaiting user response with await_ask key: {game_state.await_ask_key}.",
+        f"Awaiting user response with await_ask key: {game_state.await_ask_key}",
         extra={
             AgentLogging.IS_MESSAGE: True,
             AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,

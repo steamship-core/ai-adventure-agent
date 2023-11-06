@@ -8,8 +8,6 @@ from steamship.agents.logging import AgentLogging, StreamingOpts
 from steamship.agents.schema import Action, Agent, FinishAction
 from steamship.agents.schema.context import AgentContext, EmitFunc, Metadata
 from steamship.agents.utils import with_llm
-
-# from steamship.base.client import API_TIMINGS
 from steamship.data import TagKind
 from steamship.data.tags.tag_constants import ChatTag
 from steamship.invocable import PackageService, post
@@ -23,8 +21,6 @@ from utils.context_utils import (
     with_game_state,
     with_server_settings,
 )
-
-# from utils.timing_utils import pretty_print_timings
 from utils.tags import QuestIdTag
 
 
