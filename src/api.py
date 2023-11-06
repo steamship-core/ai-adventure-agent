@@ -24,6 +24,7 @@ from agents.diagnostic_agent import DiagnosticAgent
 from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
+from endpoints.camp_endpoints import CampMixin
 from endpoints.game_state_endpoints import GameStateMixin
 from endpoints.npc_endpoints import NpcMixin
 from endpoints.onboarding_endpoints import OnboardingMixin
@@ -96,6 +97,7 @@ class AdventureGameService(AgentService):
         GameStateMixin,  # Provides API Endpoints for User Management (used by the associated web app)
         ServerSettingsMixin,  # Provides API Endpoints for Server Management (used by the associated web app)
         QuestMixin,  # Provides API Endpoints for Quest Management (used by the associated web app)
+        CampMixin,  # Provides API Endpoints for Camp Management (used by the associated web app)
         NpcMixin,  # Provides API Endpoints for NPC Chat Management (used by the associated web app)
         OnboardingMixin,  # Provide API Endpoints for Onboarding
     ]
@@ -167,17 +169,18 @@ class AdventureGameService(AgentService):
             )
         )
 
-        # API for getting and setting game state
         self.add_mixin(
             GameStateMixin(client=self.client, agent_service=cast(AgentService, self))
         )
 
-        # API for getting and setting game state
+        self.add_mixin(
+            CampMixin(client=self.client, agent_service=cast(AgentService, self))
+        )
+
         self.add_mixin(
             QuestMixin(client=self.client, agent_service=cast(AgentService, self))
         )
 
-        # API for getting and setting game state
         self.add_mixin(
             NpcMixin(client=self.client, agent_service=cast(AgentService, self))
         )
