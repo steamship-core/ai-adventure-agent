@@ -109,8 +109,8 @@ class QuestAgent(InterruptiblePythonAgent):
                     optional_desc = f"\n\nAuthor's notes for this quest are: {quest_description.description}"
 
                 context.chat_history.append_system_message(
-                    text=f"{game_state.player.name} is embarking on a quest to {quest_description.goal}{optional_desc}"
-                    f"at {quest_description.location}.",
+                    text=f"{game_state.player.name} is embarking on a quest to {quest_description.goal} "
+                    f"at {quest_description.location}.{optional_desc}",
                     tags=[
                         Tag(
                             kind=TagKindExtensions.INSTRUCTIONS,
