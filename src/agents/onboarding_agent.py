@@ -9,6 +9,7 @@ from utils.context_utils import (
     RunNextAgentException,
     await_ask,
     get_game_state,
+    get_server_settings,
     get_story_text_generator,
     save_game_state,
 )
@@ -41,6 +42,7 @@ class OnboardingAgent(InterruptiblePythonAgent):
 
     def run(self, context: AgentContext) -> Action:  # noqa: C901
         game_state: GameState = get_game_state(context)
+        server_settings = get_server_settings(context)
         player: HumanCharacter = game_state.player
 
         if not player.name:
@@ -124,77 +126,7 @@ class OnboardingAgent(InterruptiblePythonAgent):
             # player.inventory.append(Item(name=name))
             save_game_state(game_state, context)
 
-        if not player.motivation:
-            player.motivation = await_ask(
-                f"What is {player.name} motivated to achieve?", context
-            )
-            if not _is_allowed_by_moderation(player.motivation, context):
-                msgs = context.chat_history.messages
-                for m in msgs:
-                    if m.text == player.motivation:
-                        mark_block_as_excluded(m)
-                player.motivation = None
-                save_game_state(game_state, context)
-                raise RunNextAgentException(
-                    FinishAction(
-                        output=[
-                            Block(
-                                text="Your player's motivation was flagged by the game's moderation engine. Please provide another."
-                            )
-                        ]
-                    )
-                )
-            save_game_state(game_state, context)
-
-        if not game_state.genre:
-            game_state.genre = await_ask(
-                "What is the genre of the story (Adventure, Fantasy, Thriller, Sci-Fi)?",
-                context,
-            )
-            if not _is_allowed_by_moderation(game_state.genre, context):
-                msgs = context.chat_history.messages
-                for m in msgs:
-                    if m.text == game_state.genre:
-                        mark_block_as_excluded(m)
-                game_state.genre = None
-                save_game_state(game_state, context)
-                raise RunNextAgentException(
-                    FinishAction(
-                        output=[
-                            Block(
-                                text="Your genre was flagged by the game's moderation engine. Please provide another genre."
-                            )
-                        ]
-                    )
-                )
-            save_game_state(game_state, context)
-
-        if not game_state.tone:
-            game_state.tone = await_ask(
-                "What is the tone of the story (Hollywood style, Dark, Funny, Romantic)?",
-                context,
-            )
-            if not _is_allowed_by_moderation(game_state.tone, context):
-                msgs = context.chat_history.messages
-                for m in msgs:
-                    if m.text == game_state.genre:
-                        mark_block_as_excluded(m)
-                game_state.tone = None
-                save_game_state(game_state, context)
-                raise RunNextAgentException(
-                    FinishAction(
-                        output=[
-                            Block(
-                                text="Your tone was flagged by the game's moderation engine. Please provide another tone."
-                            )
-                        ]
-                    )
-                )
-            save_game_state(game_state, context)
-
-        if not game_state.camp_image_requested() and (
-            game_state.tone and game_state.genre
-        ):
+        if not game_state.camp_image_requested() and (server_settings.narrative_tone):
             if image_gen := get_image_generator(context):
                 task = image_gen.request_camp_image_generation(context=context)
                 camp_image_block = task.wait().blocks[0]
@@ -202,15 +134,16 @@ class OnboardingAgent(InterruptiblePythonAgent):
                 game_state.camp.image_block_url = camp_image_block.raw_data_url
                 save_game_state(game_state, context)
 
-        if not game_state.camp_audio_requested() and (
-            game_state.tone and game_state.genre
-        ):
+        if not game_state.camp_audio_requested() and (server_settings.narrative_tone):
             if music_gen := get_music_generator(context):
                 task = music_gen.request_camp_music_generation(context=context)
                 camp_audio_block = task.wait().blocks[0]
                 context.chat_history.file.refresh()
                 game_state.camp.audio_block_url = camp_audio_block.raw_data_url
                 save_game_state(game_state, context)
+
+        if server_settings.fixed_quest_arc is not None:
+            game_state.quest_arc = server_settings.fixed_quest_arc
 
         if not game_state.chat_history_for_onboarding_complete:
             # TODO: We could save a lot of round trips by appending all these blocks at once.
@@ -223,14 +156,16 @@ class OnboardingAgent(InterruptiblePythonAgent):
                 f"throughout the quest, and end with the player having either found an item that will "
                 f"help them in subsequent quests, or having achieved their ultimate goal.\n"
                 f"A player has requested a new game with the following attributes:\n"
-                f"Genre: {game_state.genre}\n"
-                f"Tone: {game_state.tone}\n"
+                f"Tone: {server_settings.narrative_tone}\n"
+                f"Background on the world of the story:\n"
+                f"{server_settings.adventure_background}"
                 f"The player is playing as a character named {game_state.player.name}. "
                 f"{game_state.player.name} has the following background: "
                 f"{game_state.player.background}\n"
-                f"{game_state.player.name}'s overall goal is to: {game_state.player.motivation}."
+                f"{game_state.player.name}'s overall goal is to: {server_settings.adventure_goal}."
                 f"Each quest that {game_state.player.name} goes on MUST further them towards that "
                 f"overall goal."
+                f"Please always return content in the narrative voice: {server_settings.narrative_voice}"
             )
 
             context.chat_history.append_system_message(
@@ -247,10 +182,14 @@ class OnboardingAgent(InterruptiblePythonAgent):
                         kind=TagKindExtensions.CHARACTER, name=CharacterTag.DESCRIPTION
                     ),
                     Tag(
-                        kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.GENRE
+                        kind=TagKindExtensions.STORY_CONTEXT,
+                        name=StoryContextTag.BACKGROUND,
                     ),
                     Tag(
                         kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.TONE
+                    ),
+                    Tag(
+                        kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.VOICE
                     ),
                 ],
             )

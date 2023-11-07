@@ -27,7 +27,6 @@ from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
 from steamship.utils.kv_store import KeyValueStore
 
-# from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from schema.server_settings import ServerSettings
 from utils.tags import QuestIdTag
@@ -127,7 +126,7 @@ def get_audio_narration_generator(
     context: AgentContext, default: Optional[PluginInstance] = None
 ) -> Optional[PluginInstance]:
     generator = context.metadata.get(_NARRATION_GENERATOR_KEY, default)
-
+    server_settings = get_server_settings(context)
     if not generator:
         # Lazily create
         server_settings = get_server_settings(context)
@@ -141,7 +140,7 @@ def get_audio_narration_generator(
         )
         config = {}
         if plugin_handle == "elevenlabs":
-            config["voice_id"] = "ThT5KcBeYPX3keUQqHPh"
+            config["voice_id"] = server_settings.narration_voice_id
         generator = context.client.use_plugin(plugin_handle, config=config)
         context.metadata[_NARRATION_GENERATOR_KEY] = generator
 
@@ -150,7 +149,7 @@ def get_audio_narration_generator(
 
 def get_server_settings(
     context: AgentContext,
-) -> Optional["ServerSettings"]:  # noqa: F821
+) -> "ServerSettings":  # noqa: F821
     logging.debug(
         f"Refreshing Server Settings from workspace {context.client.config.workspace_handle}.",
         extra={
@@ -168,13 +167,12 @@ def get_server_settings(
     value = kv.get(_SERVER_SETTINGS_KEY)
 
     if value:
-        print("Parsing Server Settings from stored value")
-        print(value)
+        logging.debug(f"Parsing Server Settings from stored value: {value}")
         server_settings = ServerSettings.parse_obj(value)
         context.metadata[_SERVER_SETTINGS_KEY] = server_settings
         return server_settings
     else:
-        print("Creating new Server Settings -- one didn't exist!")
+        logging.debug("Creating new Server Settings -- one didn't exist!")
         server_settings = ServerSettings()
         context.metadata[_SERVER_SETTINGS_KEY] = server_settings
         return server_settings
@@ -210,11 +208,8 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
         # FOR QUICK DEBUGGING
         # game_state.player = HumanCharacter()
         # game_state.player.name = "Dave"
-        # game_state.player.motivation = "Doing cool things"
         # game_state.player.description = "he is tall"
         # game_state.player.background = "he's a guy"
-        # game_state.tone = "funny"
-        # game_state.genre = "adventure"
         ####
 
         return game_state

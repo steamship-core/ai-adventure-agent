@@ -18,6 +18,7 @@ from utils.context_utils import (
     await_ask,
     get_current_quest,
     get_game_state,
+    get_server_settings,
     save_game_state,
 )
 from utils.generation_utils import (
@@ -64,6 +65,7 @@ class QuestAgent(InterruptiblePythonAgent):
         game_state = get_game_state(context)
         player = game_state.player
         quest = get_current_quest(context)
+        server_settings = get_server_settings(context)
 
         if not game_state.quest_arc:
             game_state.quest_arc = generate_quest_arc(game_state.player, context)
@@ -221,12 +223,12 @@ class QuestAgent(InterruptiblePythonAgent):
             if quest_description is not None:
                 prompt = (
                     f"Complete the story of the {player.name}'s current quest. {player.name} should achieve "
-                    f"the goal of '{quest_description.goal}', but NOT their overall goal of {player.motivation}"
+                    f"the goal of '{quest_description.goal}', but NOT their overall goal of {server_settings.adventure_goal}"
                 )
             else:
                 prompt = (
                     f"Complete the story of the {player.name}'s current quest. {player.name} should not yet "
-                    f"achieve their overall goal of '{player.motivation}'"
+                    f"achieve their overall goal of '{server_settings.adventure_goal}'"
                 )
             story_end_block = send_story_generation(
                 prompt,
@@ -291,6 +293,7 @@ class QuestAgent(InterruptiblePythonAgent):
     def evaluate_solution(
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
+        server_settings = get_server_settings(context)
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}. "
             f"How likely is this to succeed? "
@@ -313,6 +316,9 @@ class QuestAgent(InterruptiblePythonAgent):
             required_roll = 0.1
         else:
             required_roll = 0.5
+        required_roll = 1 - (
+            (1 - required_roll) / server_settings.problem_solution_difficulty
+        )
         roll = random()  # noqa: S311
         succeeded = roll > required_roll
         dice_roll_message = json.dumps(

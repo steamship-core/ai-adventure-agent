@@ -28,6 +28,9 @@ class TagKindExtensions(str, Enum):
     # This tag is used to identify a set of instructions for a portion of the story
     INSTRUCTIONS = "instructions"
 
+    # This tag is used to identify the token count for a block
+    TOKEN_COUNT = "token_count"
+
 
 class AgentStatusMessageTag(str, Enum):
     # The quest is complete
@@ -72,14 +75,13 @@ class CharacterTag(str, Enum):
 
 
 class StoryContextTag(str, Enum):
-
-    GENRE = "genre"
     TONE = "tone"
     CAMP = "camp"
+    BACKGROUND = "background"
+    VOICE = "voice"
 
 
 class QuestTag(str, Enum):
-
     QUEST_CONTENT = "quest_content"
     QUEST_PROMPT = "quest_prompt"
     USER_SOLUTION = "user_solution"

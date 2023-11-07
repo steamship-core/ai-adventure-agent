@@ -85,8 +85,9 @@ def send_story_generation(
                         (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
                         (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                         (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                         (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.VOICE),
                         (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
                     ]
                 ),
@@ -120,8 +121,8 @@ def generate_likelihood_estimation(
                         (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
                         (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                         (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                         (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
                         (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
                     ]
                 ),
@@ -213,8 +214,8 @@ def generate_merchant_inventory(
                         (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
                         (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                         (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                         (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
                         (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
                         (
                             TagKindExtensions.MERCHANT,
@@ -246,9 +247,10 @@ def generate_merchant_inventory(
 def generate_quest_arc(
     player: HumanCharacter, context: AgentContext
 ) -> List[QuestDescription]:
+    server_settings = get_server_settings(context)
     prompt = (
-        f"Please list 10 quests of increasing difficulty that {player.name} will go in to achieve their overall "
-        f"goal of {player.motivation}. They should fit the setting of the story. Responses should only be in the "
+        f"Please list {server_settings.quests_per_arc} quests of increasing difficulty that {player.name} will go in to achieve their overall "
+        f"goal of {server_settings.adventure_goal}. They should fit the setting of the story. Responses should only be in the "
         f"form of: QUEST GOAL: <goal> QUEST LOCATION: <location name>\n"
         f"Example (for a quest game for a dog):\n"
         f"QUEST GOAL: find a treat QUEST LOCATION: Dog Park\n"
@@ -262,7 +264,6 @@ def generate_quest_arc(
         f"QUEST GOAL: get your nails trimmed QUEST LOCATION: Dog Wash\n"
         f"QUEST GOAL: win an award QUEST LOCATION: Westminister Dog Show\n"
     )
-
     block = do_generation(
         context,
         prompt,
@@ -278,8 +279,8 @@ def generate_quest_arc(
                 (TagKindExtensions.CHARACTER, CharacterTag.NAME),
                 (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                 (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
                 (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT),
             ]
         ),
@@ -301,7 +302,8 @@ def generate_quest_arc(
 
 
 def generate_story_intro(player: HumanCharacter, context: AgentContext) -> str:
-    prompt = f"Please write a few sentences of introduction to the character {player.name} as they embark on their journey to {player.motivation}."
+    server_settings = get_server_settings(context)
+    prompt = f"Please write a few sentences of introduction to the character {player.name} as they embark on their journey to {server_settings.adventure_goal}."
     block = do_generation(
         context,
         prompt,
@@ -319,8 +321,9 @@ def generate_story_intro(player: HumanCharacter, context: AgentContext) -> str:
                 (TagKindExtensions.CHARACTER, CharacterTag.NAME),
                 (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
                 (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.GENRE),
                 (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
+                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.VOICE),
                 (TagKindExtensions.CHARACTER, CharacterTag.INTRODUCTION_PROMPT),
             ]
         ),

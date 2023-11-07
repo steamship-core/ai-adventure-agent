@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 
 from steamship import Block, File, Tag
 from steamship.agents.schema.message_selectors import tokens
-from steamship.data.tags.tag_constants import RoleTag, TagKind, TagValueKey
+from steamship.data.tags.tag_constants import RoleTag, TagValueKey
 from steamship.data.tags.tag_utils import get_tag, get_tag_value_key
 
 from schema.game_state import GameState
@@ -58,7 +58,7 @@ class TagFilter(ChatHistoryFilter):
         result: List[Tuple[Block, Optional[str]]] = []
         for block in chat_history_file.blocks:
             for tag in block.tags:
-                for (kind, name) in self.tag_types:
+                for kind, name in self.tag_types:
                     if tag.kind == kind and tag.name == name:
                         result.append((block, f"{tag.kind} {tag.name}"))
         return result
@@ -149,7 +149,7 @@ class TrimmingStoryContextFilter(ChatHistoryFilter):
         if not block.text:
             return 0
         if value := get_tag_value_key(
-            block.tags, key=TagValueKey.NUMBER_VALUE, kind=TagKind.TOKEN_COUNT
+            block.tags, key=TagValueKey.NUMBER_VALUE, kind=TagKindExtensions.TOKEN_COUNT
         ):
             return value
         block_tokens = tokens(block)
@@ -158,12 +158,12 @@ class TrimmingStoryContextFilter(ChatHistoryFilter):
                 block.client,
                 file_id=block.file_id,
                 block_id=block.id,
-                kind=TagKind.TOKEN_COUNT,
+                kind=TagKindExtensions.TOKEN_COUNT,
                 value={TagValueKey.NUMBER_VALUE: block_tokens},
             )
         else:
             tag = Tag(
-                kind=TagKind.TOKEN_COUNT,
+                kind=TagKindExtensions.TOKEN_COUNT,
                 value={TagValueKey.NUMBER_VALUE: block_tokens},
             )
         block.tags.append(tag)
