@@ -1,7 +1,7 @@
 {
 	"type": "package",
-	"handle": "ai-adventure-doug",
-	"version": "1.0.4-rc.17",
+	"handle": "ai-adventure-staging",
+	"version": "1.0.4-rc.18",
 	"description": "",
 	"author": "",
 	"entrypoint": "Unused",

@@ -60,7 +60,7 @@ class StableDiffusionTheme(BaseModel):
         description="Increasing the number of steps tells Stable Diffusion that it should take more steps to generate your final result which can increase the amount of detail in your image.",
     )
 
-    guidance_scale: int = Field(
+    guidance_scale: float = Field(
         7.5,
         description="The CFG(Classifier Free Guidance) scale is a measure of how close you want the model to stick to your prompt when looking for a related image to show you.",
     )
