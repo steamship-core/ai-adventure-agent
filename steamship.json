@@ -1,7 +1,7 @@
 {
 	"type": "package",
-	"handle": "ai-adventure-staging",
-	"version": "1.0.4-rc.18",
+	"handle": "ai-adventure",
+	"version": "1.0.4-rc.17",
 	"description": "",
 	"author": "",
 	"entrypoint": "Unused",
