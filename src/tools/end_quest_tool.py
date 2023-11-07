@@ -18,6 +18,7 @@ from utils.context_utils import (
     save_game_state,
 )
 from utils.generation_utils import (
+    await_streamed_block,
     generate_quest_item,
     generate_quest_summary,
     send_agent_status_message,
@@ -114,8 +115,8 @@ class EndQuestTool(Tool):
             player.energy = 0
 
         summary_block = generate_quest_summary(quest.name, context)
-        summary = summary_block.text
-        quest.text_summary = summary
+        summary_block = await_streamed_block(summary_block, context)
+        quest.text_summary = summary_block.text
 
         if social_gen := get_social_media_generator(context=context):
             social_summary = social_gen.generate_shareable_quest_snippet(
