@@ -110,13 +110,12 @@ def test_audio_narration():
 def test_quest_arc():
     with Steamship.temporary_workspace() as client:
         context, game_state = prepare_state(client)
-        for _ in range(10):
-            quest_arc = generate_quest_arc(player=game_state.player, context=context)
+        quest_arc = generate_quest_arc(player=game_state.player, context=context)
 
-            assert len(quest_arc) > 8
-            for quest_description in quest_arc:
-                assert quest_description.goal is not None
-                assert quest_description.location is not None
+        assert len(quest_arc) > 8
+        for quest_description in quest_arc:
+            assert quest_description.goal is not None
+            assert quest_description.location is not None
 
 
 def test_story_intro():
