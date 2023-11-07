@@ -306,14 +306,14 @@ class QuestAgent(InterruptiblePythonAgent):
             context=context,
         )
         likelihood_text = likelihood_block.text.upper()
-        if likelihood_text.startswith("VERY UNLIKELY"):
+        if "VERY UNLIKELY" in likelihood_text:
             required_roll = 0.9
-        elif likelihood_text.startswith("UNLIKELY"):
-            required_roll = 0.7
-        elif likelihood_text.startswith("LIKELY"):
-            required_roll = 0.3
-        elif likelihood_text.startswith("VERY LIKELY"):
+        elif "VERY LIKELY" in likelihood_text:
             required_roll = 0.1
+        elif "UNLIKELY" in likelihood_text:
+            required_roll = 0.7
+        elif "LIKELY" in likelihood_text:
+            required_roll = 0.3
         else:
             required_roll = 0.5
         required_roll = 1 - (

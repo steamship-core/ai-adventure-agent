@@ -110,12 +110,13 @@ def test_audio_narration():
 def test_quest_arc():
     with Steamship.temporary_workspace() as client:
         context, game_state = prepare_state(client)
-        quest_arc = generate_quest_arc(player=game_state.player, context=context)
+        for _ in range(10):
+            quest_arc = generate_quest_arc(player=game_state.player, context=context)
 
-        assert len(quest_arc) > 8
-        for quest_description in quest_arc:
-            assert quest_description.goal is not None
-            assert quest_description.location is not None
+            assert len(quest_arc) > 8
+            for quest_description in quest_arc:
+                assert quest_description.goal is not None
+                assert quest_description.location is not None
 
 
 def test_story_intro():
@@ -144,11 +145,8 @@ def create_test_game_state(context: AgentContext) -> GameState:
 
     game_state.player = HumanCharacter()
     game_state.player.name = "Dave"
-    game_state.player.motivation = "Going to space"
     game_state.player.description = "he is tall"
     game_state.player.background = "he's a guy"
-    game_state.tone = "funny"
-    game_state.genre = "adventure"
     game_state.camp = Camp()
     game_state.camp.npcs = [
         NpcCharacter(
