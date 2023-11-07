@@ -49,7 +49,7 @@ class Character(BaseModel):
     def is_onboarding_complete(self) -> bool:
         """Return True if the player onboarding has been completed.
 
-        This is used by api.pyu to decide whether to route to the ONBOARDING AGENT.
+        This is used by api.py to decide whether to route to the ONBOARDING AGENT.
         """
         return (
             self.name is not None
