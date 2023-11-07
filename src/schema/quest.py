@@ -12,6 +12,8 @@ class QuestDescription(BaseModel):
 
     location: str = Field(description="The location of the quest")
 
+    description: Optional[str] = Field(None, description="A description of the quest")
+
 
 class Quest(BaseModel):
     """Information about a quest."""

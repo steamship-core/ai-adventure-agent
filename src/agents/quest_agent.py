@@ -101,9 +101,16 @@ class QuestAgent(InterruptiblePythonAgent):
             )
 
             if quest_description is not None:
+                optional_desc = ""
+                if (
+                    quest_description.description
+                    and quest_description.description.strip()
+                ):
+                    optional_desc = f"\n\nAuthor's notes for this quest are: {quest_description.description}"
+
                 context.chat_history.append_system_message(
                     text=f"{game_state.player.name} is embarking on a quest to {quest_description.goal} "
-                    f"at {quest_description.location}.",
+                    f"at {quest_description.location}.{optional_desc}",
                     tags=[
                         Tag(
                             kind=TagKindExtensions.INSTRUCTIONS,
@@ -265,6 +272,7 @@ class QuestAgent(InterruptiblePythonAgent):
             )
         else:
             num_paragraphs = randint(1, 2)  # noqa: S311
+
             prompt = (
                 f"Write {num_paragraphs} short paragraphs that present {game_state.player.name} with a single "
                 f"challenge on their current quest ({quest_description.location}, {quest_description.goal}). The "
