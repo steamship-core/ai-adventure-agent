@@ -39,7 +39,6 @@ class AvailableVoice(str, Enum):
     JOANNE = "joanne"
 
 
-
 _SUPPORTED_ELEVEN_VOICES = {
     "dorothy": {
         "id": "ThT5KcBeYPX3keUQqHPh",
@@ -106,7 +105,7 @@ class ServerSettings(BaseModel):
     default_function_capable_llm_max_tokens: int = Field(512, description="")
 
     # Language Generation Settings - Story telling
-    default_story_model: str = Field("gpt-3.5-turbo", description="")
+    default_story_model: str = Field("gpt-4-1106-preview", description="")
     default_story_temperature: float = Field(0.7, description="")
     default_story_max_tokens: int = Field(512, description="")
 

@@ -71,7 +71,7 @@ def get_story_text_generator(
         game_state = get_game_state(context)
         preferences = game_state.preferences
 
-        open_ai_models = ["gpt-3.5-turbo", "gpt-4"]
+        open_ai_models = ["gpt-3.5-turbo", "gpt-4-1106-preview"]
         replicate_models = ["dolly_v2", "llama_v2"]
 
         model_name = server_settings._select_model(

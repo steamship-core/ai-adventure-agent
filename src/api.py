@@ -266,10 +266,15 @@ class GameREPL(AgentREPL):
         for block in context.chat_history.file.blocks:
             if block.index_in_file > self.last_seen_block:
                 if block.stream_state == StreamState.STARTED:
-                    while block.stream_state not in [
-                        StreamState.COMPLETE,
-                        StreamState.ABORTED,
-                    ]:
+                    start_time = time.perf_counter()
+                    while (
+                        block.stream_state
+                        not in [
+                            StreamState.COMPLETE,
+                            StreamState.ABORTED,
+                        ]
+                        and (time.perf_counter() - start_time) < 30
+                    ):
                         time.sleep(0.4)
                         block = Block.get(block.client, _id=block.id)
             self.print_new_block(block)
