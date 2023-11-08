@@ -498,7 +498,7 @@ class AgentService(PackageService):
         self.run_agent(agent, context)
 
     @post("prompt")
-    def prompt(
+    def prompt(  # noqa: C901
         self, prompt: Optional[str] = None, context_id: Optional[str] = None, **kwargs
     ) -> List[Block]:
         """Run an agent with the provided text as the input."""
@@ -519,14 +519,22 @@ class AgentService(PackageService):
                 nonlocal output_blocks
                 output_blocks.extend(blocks)
 
-            context.emit_funcs.append(sync_emit)
+            if sum(fn.__name__ == "sync_emit" for fn in context.emit_funcs) == 0:
+                context.emit_funcs.append(sync_emit)
 
             # NOTE: we make blocks public on output here to allow for ease of testing and sharing
-            context.emit_funcs.append(
-                build_context_appending_emit_func(
-                    context=context, make_blocks_public=True
+            if (
+                sum(
+                    fn.__name__ == "chat_history_append_func"
+                    for fn in context.emit_funcs
                 )
-            )
+                == 0
+            ):
+                context.emit_funcs.append(
+                    build_context_appending_emit_func(
+                        context=context, make_blocks_public=True
+                    )
+                )
 
             had_exception = (
                 True  # Not true, but it causes the loop to execute at least once.

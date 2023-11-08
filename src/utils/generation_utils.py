@@ -10,6 +10,7 @@ While at the same time not committing to any huge abstraction overhead: this is 
 functions whose mechanics can change under the hood as we discover better ways to do things, and the game developer
 doesn't need to know.
 """
+import logging
 import time
 from typing import List, Optional, Tuple
 
@@ -308,7 +309,7 @@ def generate_quest_arc(
 def generate_story_intro(player: HumanCharacter, context: AgentContext) -> str:
     server_settings = get_server_settings(context)
     prompt = f"Please write a few sentences of introduction to the character {player.name} as they embark on their journey to {server_settings.adventure_goal}."
-    block = do_generation(
+    block = do_token_trimmed_generation(
         context,
         prompt,
         prompt_tags=[
@@ -421,13 +422,18 @@ def do_generation(
     # don't pollute workspace with temporary/working files that contain data like: "LIKELY"
     append_output_to_file = False if not output_file_id else True
 
+    logging.debug(
+        f"current prompt({prompt_block.index_in_file}, {tokens(prompt_block)}): {prompt}"
+    )
+    logging.debug(f"selected blocks: {sorted(block_indices)}")
+
     task = generator.generate(
         tags=output_tags,
         append_output_to_file=append_output_to_file,
         input_file_id=context.chat_history.file.id,
         output_file_id=output_file_id,
         streaming=streaming,
-        input_file_block_index_list=block_indices,
+        input_file_block_index_list=sorted(block_indices),
         options=options,
     )
     task.wait()
