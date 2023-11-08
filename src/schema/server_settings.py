@@ -21,7 +21,7 @@ def validate_prompt_args(
             missing_vars.append(variable_name)
 
     if len(missing_vars) > 0:
-        return f"{prompt_name} uses the following variable names which are not available: [{' '.join(missing_vars)}]"
+        return f"{prompt_name} uses the following variable names which are not available: [{' '.join(missing_vars)}]. The prompt was: {prompt}"
     else:
         return None
 
@@ -37,7 +37,6 @@ class AvailableVoice(str, Enum):
     NATASHA = "natasha"
     BRIAN = "brian"
     JOANNE = "joanne"
-
 
 
 _SUPPORTED_ELEVEN_VOICES = {
@@ -186,7 +185,7 @@ Result - Doubling difficulty makes success 1/2 as likely; halving difficulty mak
     quest_cost: int = Field(0, description="The cost of going on one quest")
 
     camp_image_prompt: str = Field(
-        "{tone} {genre} camp.",
+        "{tone} camp.",
         description="Prompt for generating camp images.",
     )
 
@@ -214,7 +213,7 @@ Result - Doubling difficulty makes success 1/2 as likely; halving difficulty mak
     )
 
     profile_image_prompt: str = Field(
-        "16-bit retro-game style profile picture of a hero on an adventure. The hero's name is: {name}. The hero has the following background: {background}. The hero has a description of: {description}.",
+        "16-bit retro-game style profile picture of a hero on an adventure. The hero's name is: {name}. The hero has a description of: {description}.",
         description="Prompt for generating profile images.",
     )
 
