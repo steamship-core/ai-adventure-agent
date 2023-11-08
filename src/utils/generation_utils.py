@@ -386,6 +386,7 @@ def do_generation(
     """Generates the inventory for a merchant"""
 
     generator = get_story_text_generator(context)
+    server_settings = get_server_settings(context)
 
     output_tags.extend(
         [
@@ -401,7 +402,8 @@ def do_generation(
     )
 
     prompt_block = context.chat_history.append_user_message(
-        text=prompt,
+        text=prompt
+        + f" Respond in the tone of {server_settings.narrative_tone} and in the narrative voice of {server_settings.narrative_voice}.",
         tags=prompt_tags,
     )
     # Intentionally reuse the filtering for the quest CONTENT
