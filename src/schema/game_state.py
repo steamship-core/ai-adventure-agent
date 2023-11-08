@@ -15,6 +15,7 @@ class ActiveMode(str, Enum):
     QUEST = "quest"
     NPC_CONVERSATION = "npc-conversation"
     DIAGNOSTIC = "diagnostic"
+    ERROR = "error"  # Indicates that the game has hit an unrecoverable error.
 
 
 class GameState(BaseModel):
@@ -65,6 +66,11 @@ class GameState(BaseModel):
     in_conversation_with: Optional[str] = Field(
         None,
         description="The name of the NPC that the user is currently in conversation with.",
+    )
+
+    unrecoverable_error: Optional[str] = Field(
+        None,
+        description="If not null, the description of an unrecoverable error causing a halted game.",
     )
 
     await_ask_key: Optional[str] = Field(
@@ -130,6 +136,8 @@ class GameState(BaseModel):
 
     @property
     def active_mode(self) -> ActiveMode:
+        if self.unrecoverable_error is not None:
+            return ActiveMode.ERROR
         if self.diagnostic_mode is not None:
             return ActiveMode.DIAGNOSTIC  # Diagnostic mode takes precedence
         if not self.is_onboarding_complete():

@@ -1,5 +1,3 @@
-import logging
-
 from steamship import Steamship, SteamshipError
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.service.agent_service import AgentService
@@ -11,6 +9,7 @@ from schema.game_state import ActiveMode
 
 # An instnace is a game instance.
 from utils.context_utils import RunNextAgentException, get_game_state
+from utils.error_utils import record_and_throw_unrecoverable_error
 from utils.generation_utils import generate_story_intro
 
 
@@ -47,12 +46,18 @@ class OnboardingMixin(PackageMixin):
         except RunNextAgentException:
             return game_state.chat_history_for_onboarding_complete
         except BaseException as e:
-            logging.exception(e)
-            raise e
+            context = self.agent_service.build_default_context()
+            record_and_throw_unrecoverable_error(e, context)
 
     @post("/generate_story_intro")
     def generate_story_intro(self) -> str:
-        context = self.agent_service.build_default_context()
-        game_state = get_game_state(context)
-        story_intro = generate_story_intro(player=game_state.player, context=context)
-        return story_intro
+        try:
+            context = self.agent_service.build_default_context()
+            game_state = get_game_state(context)
+            story_intro = generate_story_intro(
+                player=game_state.player, context=context
+            )
+            return story_intro
+        except BaseException as e:
+            context = self.agent_service.build_default_context()
+            record_and_throw_unrecoverable_error(e, context)
