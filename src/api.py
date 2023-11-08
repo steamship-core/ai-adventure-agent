@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+import uuid
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from pydantic import Field
@@ -345,6 +346,7 @@ if __name__ == "__main__":
         character = parse_yaml_raw_as(HumanCharacter, yaml_string)
 
     client = Steamship()
+    client.switch_workspace(workspace_handle=str(uuid.uuid4()))
     repl = GameREPL(
         cast(AgentService, AdventureGameService), agent_package_config={}, client=client
     )
