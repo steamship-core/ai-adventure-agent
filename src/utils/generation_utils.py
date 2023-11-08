@@ -264,40 +264,44 @@ def generate_quest_arc(
         f"QUEST GOAL: get your nails trimmed QUEST LOCATION: Dog Wash\n"
         f"QUEST GOAL: win an award QUEST LOCATION: Westminister Dog Show\n"
     )
-    block = do_generation(
-        context,
-        prompt,
-        prompt_tags=[
-            Tag(
-                kind=TagKindExtensions.QUEST_ARC,
-                name=QuestArcTag.PROMPT,
-            )
-        ],
-        output_tags=[Tag(kind=TagKindExtensions.QUEST_ARC, name=QuestArcTag.RESULT)],
-        filter=TagFilter(
-            [
-                (TagKindExtensions.CHARACTER, CharacterTag.NAME),
-                (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
-                (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
-                (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT),
-            ]
-        ),
-        generation_for="Quest Arc",
-        streaming=False,
-    )
     result: List[QuestDescription] = []
-    items = block.text.split("QUEST GOAL:")
-    for item in items:
-        if len(item.strip()) > 0 and "QUEST LOCATION" in item:
-            parts = item.split("QUEST LOCATION:")
-            if len(parts) == 2:
-                goal = parts[0].strip()
-                location = parts[1].strip().rstrip(".")
-                if "\n" in location:
-                    location = location[: location.index("\n")]
-                result.append(QuestDescription(goal=goal, location=location))
+    while len(result) != server_settings.quests_per_arc:
+        block = do_generation(
+            context,
+            prompt,
+            prompt_tags=[
+                Tag(
+                    kind=TagKindExtensions.QUEST_ARC,
+                    name=QuestArcTag.PROMPT,
+                )
+            ],
+            output_tags=[
+                Tag(kind=TagKindExtensions.QUEST_ARC, name=QuestArcTag.RESULT)
+            ],
+            filter=TagFilter(
+                [
+                    (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                    (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                    (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                    (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                    (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
+                    (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT),
+                ]
+            ),
+            generation_for="Quest Arc",
+            streaming=False,
+        )
+        result = []
+        items = block.text.split("QUEST GOAL:")
+        for item in items:
+            if len(item.strip()) > 0 and "QUEST LOCATION" in item:
+                parts = item.split("QUEST LOCATION:")
+                if len(parts) == 2:
+                    goal = parts[0].strip()
+                    location = parts[1].strip().rstrip(".")
+                    if "\n" in location:
+                        location = location[: location.index("\n")]
+                    result.append(QuestDescription(goal=goal, location=location))
     return result
 
 

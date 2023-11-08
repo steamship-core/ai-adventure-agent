@@ -144,11 +144,8 @@ def create_test_game_state(context: AgentContext) -> GameState:
 
     game_state.player = HumanCharacter()
     game_state.player.name = "Dave"
-    game_state.player.motivation = "Going to space"
     game_state.player.description = "he is tall"
     game_state.player.background = "he's a guy"
-    game_state.tone = "funny"
-    game_state.genre = "adventure"
     game_state.camp = Camp()
     game_state.camp.npcs = [
         NpcCharacter(
