@@ -14,6 +14,7 @@ from utils.context_utils import (
     get_game_state,
     save_game_state,
 )
+from utils.error_utils import record_and_throw_unrecoverable_error
 from utils.generation_utils import generate_quest_arc
 from utils.tags import QuestIdTag, SceneTag, TagKindExtensions
 
@@ -31,52 +32,63 @@ class QuestMixin(PackageMixin):
     @post("/generate_quest_arc")
     def generate_quest_arc(self) -> List[dict]:
         context = self.agent_service.build_default_context()
-        game_state = get_game_state(context)
-        quest_arc = generate_quest_arc(player=game_state.player, context=context)
-        game_state.quest_arc = quest_arc
-        save_game_state(game_state, context)
-        return [quest_description.dict() for quest_description in quest_arc]
+        try:
+            game_state = get_game_state(context)
+            quest_arc = generate_quest_arc(player=game_state.player, context=context)
+            game_state.quest_arc = quest_arc
+            save_game_state(game_state, context)
+            return [quest_description.dict() for quest_description in quest_arc]
+        except BaseException as e:
+            record_and_throw_unrecoverable_error(e, context)
 
     @post("/start_quest")
     def start_quest(self, purpose: Optional[str] = None, **kwargs) -> dict:
         """Starts a quest."""
         context = self.agent_service.build_default_context()
-        game_state = get_game_state(context)
-        quest_tool = StartQuestTool()
-        quest = quest_tool.start_quest(game_state, context, purpose)
-
-        return quest.dict()
+        try:
+            game_state = get_game_state(context)
+            quest_tool = StartQuestTool()
+            quest = quest_tool.start_quest(game_state, context, purpose)
+            return quest.dict()
+        except BaseException as e:
+            record_and_throw_unrecoverable_error(e, context)
 
     @post("/end_quest")
     def end_quest(self, **kwargs) -> str:
         """Starts a quest."""
         context = self.agent_service.build_default_context()
-        game_state = get_game_state(context)
-        quest_tool = EndQuestTool()
-        return quest_tool.end_quest(game_state, context)
+        try:
+            game_state = get_game_state(context)
+            quest_tool = EndQuestTool()
+            return quest_tool.end_quest(game_state, context)
+        except BaseException as e:
+            record_and_throw_unrecoverable_error(e, context)
 
     @post("/get_quest")
     def get_quest(self, quest_id: str, **kwargs) -> List[dict]:
         """Gets the blocks for an existing quest."""
         context = self.agent_service.build_default_context()
-        blocks = []
+        try:
+            blocks = []
 
-        def matches_quest(_block: Block, _quest_id: str) -> bool:
-            for tag in _block.tags or []:
-                if QuestIdTag.matches(tag, _quest_id):
-                    return True
-            return False
+            def matches_quest(_block: Block, _quest_id: str) -> bool:
+                for tag in _block.tags or []:
+                    if QuestIdTag.matches(tag, _quest_id):
+                        return True
+                return False
 
-        if (
-            context.chat_history
-            and context.chat_history.file
-            and context.chat_history.file.blocks
-        ):
-            for block in context.chat_history.file.blocks:
-                if matches_quest(block, quest_id):
-                    blocks.append(block)
+            if (
+                context.chat_history
+                and context.chat_history.file
+                and context.chat_history.file.blocks
+            ):
+                for block in context.chat_history.file.blocks:
+                    if matches_quest(block, quest_id):
+                        blocks.append(block)
 
-        return [block.dict(by_alias=True) for block in blocks]
+            return [block.dict(by_alias=True) for block in blocks]
+        except BaseException as e:
+            record_and_throw_unrecoverable_error(e, context)
 
     @post("/narrate_block")
     def narrate_block(self, block_id: str, **kwargs) -> dict:

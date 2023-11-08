@@ -21,6 +21,7 @@ from utils.context_utils import (
     with_game_state,
     with_server_settings,
 )
+from utils.error_utils import record_and_throw_unrecoverable_error
 from utils.tags import QuestIdTag
 
 
@@ -558,6 +559,8 @@ class AgentService(PackageService):
                     prompt = "Hi."
                     if e.action.input:
                         prompt = e.action.input[0].text
+                except BaseException as e:
+                    record_and_throw_unrecoverable_error(e, context)
 
             # timings = API_TIMINGS
             # pretty_print_timings(timings)

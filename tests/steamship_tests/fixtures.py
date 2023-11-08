@@ -122,6 +122,9 @@ def invocable_handler_with_client(
     # NOTE: get_steamship_client takes either `workspace_handle` or `workspace_id`, but NOT `workspace` as a keyword arg
     new_client = get_steamship_client(workspace_handle=workspace_handle)
 
+    assert workspace.id == new_client.config.workspace_id
+    assert workspace.handle == new_client.config.workspace_handle
+
     def handle(
         verb: str, invocation_path: str, arguments: Optional[dict] = None
     ) -> dict:
