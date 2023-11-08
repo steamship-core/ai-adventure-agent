@@ -90,7 +90,7 @@ class EndQuestTool(Tool):
         if not player.inventory:
             player.inventory = []
         player.inventory.append(item)
-        context.chat_history.append_system_message(
+        context.chat_history.append_user_message(
             text=player.inventory_description(),
             tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INVENTORY)],
         )

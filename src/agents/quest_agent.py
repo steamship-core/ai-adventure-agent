@@ -108,7 +108,7 @@ class QuestAgent(InterruptiblePythonAgent):
                 ):
                     optional_desc = f"\n\nAuthor's notes for this quest are: {quest_description.description}"
 
-                context.chat_history.append_system_message(
+                context.chat_history.append_user_message(
                     text=f"{game_state.player.name} is embarking on a quest to {quest_description.goal} "
                     f"at {quest_description.location}.{optional_desc}",
                     tags=[
@@ -332,7 +332,7 @@ class QuestAgent(InterruptiblePythonAgent):
         dice_roll_message = json.dumps(
             {"required": required_roll, "rolled": roll, "success": succeeded}
         )
-        context.chat_history.append_system_message(
+        context.chat_history.append_user_message(
             dice_roll_message, tags=self.tags(QuestTag.DICE_ROLL, quest)
         )
         return succeeded

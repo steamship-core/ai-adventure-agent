@@ -400,7 +400,7 @@ def do_generation(
         ]
     )
 
-    prompt_block = context.chat_history.append_system_message(
+    prompt_block = context.chat_history.append_user_message(
         text=prompt,
         tags=prompt_tags,
     )
