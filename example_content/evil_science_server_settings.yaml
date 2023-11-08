@@ -1,0 +1,30 @@
+adventure_name: Evil Science
+adventure_description: On this adventure, you will be an employee at Science
+  Ventures Inc, where you will work to stealthily take over the world.
+adventure_short_description: Take over the world through evil science.
+adventure_image: https://ywo4zgeb2hydwgmk.public.blob.vercel-storage.com/d1bc9af7-9e32-470b-b1e6-7513f784fa99-3798b049-404e-474d-9f85-704a800defd3-00026-3364392659-niu2ELs4oszt8MWSmeNcO3MLI9rad0.png
+adventure_goal: To create a product that will allow mind control of the entire
+  population of earth.
+adventure_tags:
+  - sci-fi
+  - comedy
+  - modern-day
+narrative_tone: humorous science fiction, similar to Hitchhiker's Guide
+narrative_voice: dry humor young adult novel
+adventure_background: >-
+  The main characters work for Science Ventures, Inc., a company whose goal is
+  to stealthily take over the world through scientific discovery. The company
+  underpays its employees and works them very hard, with the promise that they
+  will be part of the elite once they've achieved world domination.
+
+
+  The office buildng for Science Ventures is very bland, however.  It is a very standard office builidng in Reston, Virginia, that no one notices from the outside.
+
+
+  The CEO of Science Ventures is Meredith Martin, whose lack of empathy is famous.  Her ruthlessness is both her strength and weakness, as she does not care about the employees wellbeing.
+
+
+  The main character's boss is Michael Stern, a clueless middle manager who does not understand the science.
+camp_music_generation_prompt: smooth jazz, elevator music, appropriate for office
+scene_music_generation_prompt: techno background  music for doing science
+adventure_player_singular_noun: Scientist

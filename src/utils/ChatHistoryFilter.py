@@ -43,7 +43,9 @@ class ChatHistoryFilter(ABC):
                 f"{block.index_in_file} [{inclusion_reason}] {block.text}"
             )
         logging.debug("\n".join(debug_messages))
-        return [filtered_block[0].index_in_file for filtered_block in filtered_blocks]
+        return list(
+            {filtered_block[0].index_in_file for filtered_block in filtered_blocks}
+        )
 
 
 class TagFilter(ChatHistoryFilter):
