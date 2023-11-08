@@ -4,6 +4,7 @@ import time
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from pydantic import Field
+from pydantic_yaml import parse_yaml_raw_as
 from steamship import Steamship, SteamshipError
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
@@ -33,9 +34,11 @@ from endpoints.npc_endpoints import NpcMixin
 from endpoints.onboarding_endpoints import OnboardingMixin
 from endpoints.quest_endpoints import QuestMixin
 from endpoints.server_endpoints import ServerSettingsMixin
+from schema.characters import HumanCharacter
 from schema.game_state import ActiveMode
+from schema.server_settings import ServerSettings
 from utils.agent_service import AgentService
-from utils.context_utils import get_game_state
+from utils.context_utils import get_game_state, save_game_state, save_server_settings
 
 
 class AdventureGameService(AgentService):
@@ -255,6 +258,46 @@ class AdventureGameService(AgentService):
 class GameREPL(AgentREPL):
     last_seen_block = 0
 
+    def __init__(
+        self,
+        agent_class: Type[AgentService],
+        method: Optional[str] = None,
+        agent_package_config: Optional[Dict[str, Any]] = None,
+        client: Optional[Steamship] = None,
+        context_id: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            agent_class=agent_class,
+            method=method,
+            agent_package_config=agent_package_config,
+            client=client,
+            context_id=context_id,
+            **kwargs,
+        )
+        self.agent_instance = self.agent_class(client=client, config=self.config)
+
+    def run_with_client(self, client: Steamship, **kwargs):
+        # Override so we can not clobber self.agent_instance
+        try:
+            from termcolor import colored  # noqa: F401
+        except ImportError:
+
+            def colored(text: str, color: str, **kwargs):
+                return text
+
+        print("Starting REPL for Agent...")
+        print(
+            "If you make code changes, restart this REPL. Press CTRL+C to exit at any time.\n"
+        )
+
+        # Determine the responder, which may have been custom-supplied on the agent.
+        responder = getattr(self.agent_instance, self.method or "prompt")
+        while True:
+            input_text = input(colored(text="Input: ", color="blue"))  # noqa: F821
+            output = responder(prompt=input_text, context_id=self.context_id, **kwargs)
+            self.print_object_or_objects(output)
+
     def print_object_or_objects(
         self, output: Union[List, Any], metadata: Optional[Dict[str, Any]] = None
     ):
@@ -266,10 +309,15 @@ class GameREPL(AgentREPL):
         for block in context.chat_history.file.blocks:
             if block.index_in_file > self.last_seen_block:
                 if block.stream_state == StreamState.STARTED:
-                    while block.stream_state not in [
-                        StreamState.COMPLETE,
-                        StreamState.ABORTED,
-                    ]:
+                    start_time = time.perf_counter()
+                    while (
+                        block.stream_state
+                        not in [
+                            StreamState.COMPLETE,
+                            StreamState.ABORTED,
+                        ]
+                        and (time.perf_counter() - start_time) < 30
+                    ):
                         time.sleep(0.4)
                         block = Block.get(block.client, _id=block.id)
             self.print_new_block(block)
@@ -288,13 +336,23 @@ class GameREPL(AgentREPL):
 
 
 if __name__ == "__main__":
-    # AgentREPL provides a mechanism for local execution of an AgentService method.
-    # This is used for simplified debugging as agents and tools are developed and
-    # added.
+    with open("../example_content/evil_science_server_settings.yaml") as settings_file:
+        yaml_string = settings_file.read()
+        server_settings = parse_yaml_raw_as(ServerSettings, yaml_string)
 
-    # NOTE: There's a bug in the repl where it doesn't respect my workspace selection below. It always creates a new one.
-    client = Steamship(workspace="snugly-crater-i8mli")
+    with open("../example_content/evil_science_character.yaml") as character_file:
+        yaml_string = character_file.read()
+        character = parse_yaml_raw_as(HumanCharacter, yaml_string)
+
+    client = Steamship()
     repl = GameREPL(
         cast(AgentService, AdventureGameService), agent_package_config={}, client=client
     )
+
+    context = repl.agent_instance.build_default_context()
+    save_server_settings(server_settings, context)
+    game_state = get_game_state(context)
+    game_state.player = character
+    save_game_state(game_state, context)
+
     repl.run(dump_history_on_exit=True)
