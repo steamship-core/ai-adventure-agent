@@ -112,6 +112,7 @@ PIXEL_ART_THEME_2 = StableDiffusionTheme(
     loras=["https://civitai.com/api/download/models/123593"],
 )
 
+# From https://www.fal.ai/models/sd-loras
 PIXEL_ART_THEME_3 = StableDiffusionTheme(
     name="pixel_art_3",
     prompt_prefix="isometric, ",
@@ -123,7 +124,7 @@ PIXEL_ART_THEME_3 = StableDiffusionTheme(
     loras=["https://civitai.com/api/download/models/130580"],
 )
 
-
+# From https://www.fal.ai/models/sd-loras
 CINEMATIC_ANIMATION = StableDiffusionTheme(
     name="cinematic_animation",
     model="https://civitai.com/api/download/models/46846",
@@ -136,6 +137,7 @@ CINEMATIC_ANIMATION = StableDiffusionTheme(
     clip_skip=2,
 )
 
+# From https://www.fal.ai/models/sd-loras
 FF7R = StableDiffusionTheme(
     name="ff7r",
     model="https://civitai.com/api/download/models/95489",
@@ -149,6 +151,7 @@ FF7R = StableDiffusionTheme(
     loras=["https://civitai.com/api/download/models/60948"],
 )
 
+# From https://www.fal.ai/models/sd-loras
 EPIC_REALISM = StableDiffusionTheme(
     name="epic_realism",
     model="emilianJR/epiCRealism",
@@ -159,7 +162,6 @@ EPIC_REALISM = StableDiffusionTheme(
     guidance_scale=5,
     clip_skip=0,
 )
-
 
 # Premade themes that we know work well
 PREMADE_THEMES = [
