@@ -5,7 +5,6 @@ from steamship.agents.schema import AgentContext
 from generators.image_generators.stable_diffusion_with_loras import (
     StableDiffusionWithLorasImageGenerator,
 )
-from schema.stable_diffusion_theme import CRAYON
 from utils.context_utils import (
     get_game_state,
     get_server_settings,
@@ -24,10 +23,9 @@ def test_profile_pic_generation(client: Steamship):
     gs.player.description = "A pickle as tall as a building that wears suspenders."
 
     ss = get_server_settings(context)
-    ss.profile_image_theme = CRAYON.name
-    ss.profile_image_prompt = (
-        "an ant holding up a sign that says crayons <lora:crayons_v1_sdxl:1>"
-    )
+    ss.profile_image_theme = "pixel_art_3"
+
+    ss.profile_image_prompt = "Richard Stallman at y combinator headquarters"
     save_server_settings(ss, context)
 
     generator = StableDiffusionWithLorasImageGenerator()
