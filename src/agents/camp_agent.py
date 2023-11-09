@@ -6,7 +6,7 @@ from tools.start_quest_tool import StartQuestTool
 
 class CampAgent(Agent):
     """The Camp Agent is currently just
-    the
+    the default agent for CLI debugging.  It is not used in the web game.
     """
 
     def __init__(self, **kwargs):
