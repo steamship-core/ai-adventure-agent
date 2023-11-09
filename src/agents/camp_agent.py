@@ -23,7 +23,7 @@ class CampAgent(Agent):
             if last_message_block.text is not None:
                 last_message = last_message_block.text
 
-        if last_message.lower() == "quest":
+        if "quest" in last_message.lower():
             return Action(tool=self.tools[0].name, output=[], input=[])
         else:
             return FinishAction(
