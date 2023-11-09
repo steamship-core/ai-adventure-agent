@@ -1,7 +1,7 @@
 import math
 import uuid
 from random import randint
-from typing import Any, List, Optional, Union
+from typing import Any, List, Union
 
 from steamship import Block, MimeTypes, SteamshipError, Task
 from steamship.agents.schema import AgentContext, FinishAction, Tool
@@ -54,7 +54,6 @@ class StartQuestTool(Tool):
         self,
         game_state: GameState,
         context: AgentContext,
-        purpose: Optional[str] = None,
     ) -> Quest:
         server_settings: ServerSettings = get_server_settings(context)
         player = game_state.player
@@ -111,13 +110,9 @@ class StartQuestTool(Tool):
     def run(
         self, tool_input: List[Block], context: AgentContext
     ) -> Union[List[Block], Task[Any]]:
-        purpose = None
         game_state = get_game_state(context)
 
-        if tool_input:
-            purpose = tool_input[0].text
-
-        self.start_quest(game_state, context, purpose)
+        self.start_quest(game_state, context)
 
         player = game_state.player
 
