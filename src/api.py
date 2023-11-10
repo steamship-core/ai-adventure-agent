@@ -1,5 +1,6 @@
 import json
 import logging
+import pathlib
 import time
 import uuid
 from typing import Any, Dict, List, Optional, Type, Union, cast
@@ -21,6 +22,7 @@ from steamship.agents.mixins.transports.telegram import (
 from steamship.agents.schema import Agent, AgentContext, Tool
 from steamship.data import TagKind
 from steamship.data.block import Block, StreamState
+from steamship.data.tags.tag_constants import RoleTag
 from steamship.invocable import Config
 from steamship.utils.repl import AgentREPL
 
@@ -40,6 +42,7 @@ from schema.game_state import ActiveMode
 from schema.server_settings import ServerSettings
 from utils.agent_service import AgentService
 from utils.context_utils import get_game_state, save_game_state, save_server_settings
+from utils.tags import TagKindExtensions
 
 
 class AdventureGameService(AgentService):
@@ -326,35 +329,46 @@ class GameREPL(AgentREPL):
         super().print_object_or_objects(output, metadata)
 
     def print_new_block(self, block: Block):
-        if TagKind.STATUS_MESSAGE not in [tag.kind for tag in block.tags]:
+        tag_kinds = {tag.kind for tag in block.tags}
+        # tag_names = {tag.name for tag in block.tags}
+        if (
+            TagKind.STATUS_MESSAGE not in tag_kinds
+            and TagKindExtensions.INSTRUCTIONS not in tag_kinds
+            and block.chat_role not in [RoleTag.USER]
+        ):
             tag_texts = "".join(
-                sorted(set([f"[{tag.kind},{tag.name}]" for tag in block.tags]))
+                sorted({f"[{tag.kind},{tag.name}]" for tag in block.tags})
             )
             if block.is_text():
-                print(f"{tag_texts} {block.text}")
+                print(f"{tag_texts} {block.text}\n")
             else:
                 print(f"{tag_texts} {block.raw_data_url}")
 
 
 if __name__ == "__main__":
-    with open("../example_content/evil_science_server_settings.yaml") as settings_file:
+    basepath = pathlib.Path(__file__).parent.resolve()
+    with open(
+        basepath / "../example_content/evil_science_server_settings.yaml"
+    ) as settings_file:
         yaml_string = settings_file.read()
         server_settings = parse_yaml_raw_as(ServerSettings, yaml_string)
 
-    with open("../example_content/evil_science_character.yaml") as character_file:
+    with open(
+        basepath / "../example_content/evil_science_character.yaml"
+    ) as character_file:
         yaml_string = character_file.read()
         character = parse_yaml_raw_as(HumanCharacter, yaml_string)
 
-    client = Steamship()
-    client.switch_workspace(workspace_handle=str(uuid.uuid4()))
-    repl = GameREPL(
-        cast(AgentService, AdventureGameService), agent_package_config={}, client=client
-    )
+    with Steamship.temporary_workspace() as client:
+        repl = GameREPL(
+            cast(AgentService, AdventureGameService),
+            agent_package_config={},
+            client=client,
+        )
+        context = repl.agent_instance.build_default_context()
+        save_server_settings(server_settings, context)
+        game_state = get_game_state(context)
+        game_state.player = character
+        save_game_state(game_state, context)
 
-    context = repl.agent_instance.build_default_context()
-    save_server_settings(server_settings, context)
-    game_state = get_game_state(context)
-    game_state.player = character
-    save_game_state(game_state, context)
-
-    repl.run(dump_history_on_exit=True)
+        repl.run()  # dumping history seems to provide empty results, so removing
