@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from steamship import Block, File, Steamship, SteamshipError, Tag
 from steamship.agents.schema import AgentContext
@@ -42,13 +42,13 @@ class QuestMixin(PackageMixin):
             record_and_throw_unrecoverable_error(e, context)
 
     @post("/start_quest")
-    def start_quest(self, purpose: Optional[str] = None, **kwargs) -> dict:
+    def start_quest(self, **kwargs) -> dict:
         """Starts a quest."""
         context = self.agent_service.build_default_context()
         try:
             game_state = get_game_state(context)
             quest_tool = StartQuestTool()
-            quest = quest_tool.start_quest(game_state, context, purpose)
+            quest = quest_tool.start_quest(game_state, context)
             return quest.dict()
         except BaseException as e:
             record_and_throw_unrecoverable_error(e, context)
