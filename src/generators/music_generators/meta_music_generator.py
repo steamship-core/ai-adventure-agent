@@ -15,9 +15,11 @@ class MetaMusicGenerator(MusicGenerator):
     def request_scene_music_generation(
         self, description: str, context: AgentContext
     ) -> Task:
-        music_gen = context.client.use_plugin(self.PLUGIN_HANDLE)
         game_state = get_game_state(context)
         server_settings = get_server_settings(context)
+        music_gen = context.client.use_plugin(
+            self.PLUGIN_HANDLE, config={"duration": server_settings.music_duration}
+        )
 
         prompt = safe_format(
             server_settings.scene_music_generation_prompt,
@@ -45,9 +47,11 @@ class MetaMusicGenerator(MusicGenerator):
         return task
 
     def request_camp_music_generation(self, context: AgentContext) -> Task:
-        music_gen = context.client.use_plugin(self.PLUGIN_HANDLE)
         game_state = get_game_state(context)
         server_settings = get_server_settings(context)
+        music_gen = context.client.use_plugin(
+            self.PLUGIN_HANDLE, config={"duration": server_settings.music_duration}
+        )
 
         prompt = safe_format(
             server_settings.camp_music_generation_prompt,

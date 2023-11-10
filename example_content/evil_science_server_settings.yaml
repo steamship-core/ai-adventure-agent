@@ -25,3 +25,4 @@ adventure_background: >-
 camp_music_generation_prompt: smooth jazz, elevator music, appropriate for office
 scene_music_generation_prompt: techno background music for doing science
 adventure_player_singular_noun: Scientist
+# music_duration: 15
