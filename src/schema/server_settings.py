@@ -266,6 +266,13 @@ Result - Doubling difficulty makes success 1/2 as likely; halving difficulty mak
         description="The Stable Diffusion theme for generating quest images.",
     )
 
+    music_duration: int = Field(
+        default=10,
+        description="Length of music to generate in seconds. Must be less than 30.",
+        le=30,
+        ge=0,
+    )
+
     @property
     def narration_voice_id(self) -> str:
         return _SUPPORTED_ELEVEN_VOICES.get(self.narration_voice.value).get("id")
