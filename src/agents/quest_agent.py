@@ -231,7 +231,7 @@ class QuestAgent(InterruptiblePythonAgent):
 
             if quest_description is not None:
                 prompt = (
-                    f"Complete the story of the {player.name}'s current quest. {player.name} should achieve "
+                    f"Complete the story of the {player.name}'s current quest in 3 or fewer paragraphs. {player.name} should achieve "
                     f"the goal of '{quest_description.goal}', but NOT their overall goal of {server_settings.adventure_goal}. "
                     f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
                     f"'{server_settings.narrative_voice}'."
