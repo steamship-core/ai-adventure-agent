@@ -112,43 +112,65 @@ PIXEL_ART_THEME_2 = StableDiffusionTheme(
     loras=["https://civitai.com/api/download/models/123593"],
 )
 
-# https://civitai.com/models/120853/crayon-style-sdxl-and-sd15
-# Note: This isn't included in the list below because we haven't gotten it to work well yet.
-CRAYON = StableDiffusionTheme(
-    name="crayon",
-    guidance_scale=10,
-    scheduler="DPM++ 2M Karras",
-    steps=30,
-    seed=1397624082,
-    loras=["https://civitai.com/api/download/models/131462"],
+# From https://www.fal.ai/models/sd-loras
+PIXEL_ART_THEME_3 = StableDiffusionTheme(
+    name="pixel_art_3",
+    prompt_prefix="isometric, ",
+    negative_prompt_prefix="cartoon, painting, illustration, (worst quality, low quality, normal quality:2), (watermark), immature, child, ",
+    model_architecture="sdxl",
+    num_inference_steps=50,
+    guidance_scale=7.5,
+    clip_skip=0,
+    loras=["https://civitai.com/api/download/models/130580"],
 )
 
-# LZ-comics (https://civitai.com/models/164614/lz-comics) by https://civitai.com/user/Lunzi
-# Note: This isn't included in the list below because we haven't gotten it to work well yet.
-BW_COMIC_1 = StableDiffusionTheme(
-    name="bw_comic_1",
-    model="runwayml/stable-diffusion-v1-5",
-    prompt_prefix="line art, comic, comic, koma, text bubble, monochrome, ",
-    negative_prompt_prefix="(deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation. tattoo, watermark, ",
+# From https://www.fal.ai/models/sd-loras
+CINEMATIC_ANIMATION = StableDiffusionTheme(
+    name="cinematic_animation",
+    model="https://civitai.com/api/download/models/46846",
+    prompt_prefix="(masterpiece), (best quality), (incredible digital artwork), atmospheric scene inspired by a Peter Jackson fantasy movie, ",
+    prompt_suffix=", awe-inspiring structures, diverse and vibrant characters, engaging in a pivotal moment, dramatic lighting, vivid colors, intricate details, expertly capturing the essence of an epic cinematic experience <lora:epiNoiseoffset_v2Pynoise:1>",
+    negative_prompt_prefix="(worst quality:1.2), (low quality:1.2), (lowres:1.1), (monochrome:1.1), (greyscale), multiple views, comic, sketch, (((bad anatomy))), (((deformed))), (((disfigured))), watermark, multiple_views, mutation hands, mutation fingers, extra fingers, missing fingers, watermark, ",
     model_architecture="sd",
-    loras=["https://civitai.com/api/download/models/185379"],
+    num_inference_steps=90,
+    guidance_scale=8,
+    clip_skip=2,
 )
 
-
-# One Piece (Wano Saga) Style LoRA
-# (https://civitai.com/models/4219/one-piece-wano-saga-style-lora) by https://civitai.com/user/Lykon
-# Note: This isn't included in the list below because we haven't gotten it to work well yet.
-ONE_PIECE = StableDiffusionTheme(
-    name="one-piece",
-    model="runwayml/stable-diffusion-v1-5",
-    prompt_prefix="((wanostyle)) ",
-    negative_prompt_prefix="(deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, (mutated hands and fingers:1.4), disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation. tattoo, watermark, ",
+# From https://www.fal.ai/models/sd-loras
+FF7R = StableDiffusionTheme(
+    name="ff7r",
+    model="https://civitai.com/api/download/models/95489",
+    prompt_prefix="ff7r style, blurry background, realistic, ",
+    prompt_suffix=", ((masterpiece)) <lora:ff7r_style_ned_offset:1>",
+    negative_prompt_prefix="nsfw, (worst quality, low quality:1.3), (depth of field, blurry:1.2), (greyscale, monochrome:1.1), 3D face, nose, cropped, lowres, text, jpeg artifacts, signature, watermark, username, blurry, artist name, trademark, watermark, title, (tan, muscular, loli, petite, child, infant, toddlers, chibi, sd character:1.1), multiple view, Reference sheet,",
     model_architecture="sd",
-    scheduler="Euler A",
-    loras=["https://civitai.com/api/download/models/6331"],
+    num_inference_steps=80,
+    guidance_scale=9,
+    clip_skip=2,
+    loras=["https://civitai.com/api/download/models/60948"],
+)
+
+# From https://www.fal.ai/models/sd-loras
+EPIC_REALISM = StableDiffusionTheme(
+    name="epic_realism",
+    model="emilianJR/epiCRealism",
+    prompt_prefix="photo, ",
+    negative_prompt_prefix="cartoon, painting, illustration, (worst quality, low quality, normal quality:2)",
+    model_architecture="sd",
+    num_inference_steps=80,
+    guidance_scale=5,
+    clip_skip=0,
 )
 
 # Premade themes that we know work well
-PREMADE_THEMES = [PIXEL_ART_THEME_1, PIXEL_ART_THEME_2]
+PREMADE_THEMES = [
+    PIXEL_ART_THEME_1,
+    PIXEL_ART_THEME_2,
+    PIXEL_ART_THEME_3,
+    FF7R,
+    CINEMATIC_ANIMATION,
+    EPIC_REALISM,
+]
 
 DEFAULT_THEME = PIXEL_ART_THEME_2
