@@ -3,6 +3,9 @@ from steamship.agents.service.agent_service import AgentService
 from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
 
+from generators.editor_suggestions.editor_suggestion_generator import (
+    EditorSuggestionGenerator,
+)
 from generators.image_generators.stable_diffusion_with_loras import (
     StableDiffusionWithLorasImageGenerator,
 )
@@ -34,7 +37,7 @@ class GameEditorMixin(PackageMixin):
             task = image_generator.request_profile_image_generation(context)
         elif field_name == "scene_image":
             task = image_generator.request_scene_image_generation(
-                "A magical enchanged forest.", context
+                "A magical enchanted forest.", context
             )
         else:
             raise SteamshipError(message=f"Unknown field name: {field_name}")
@@ -42,13 +45,19 @@ class GameEditorMixin(PackageMixin):
         if task and task.output and task.output.blocks:
             return task.output.blocks[0]
 
+        raise SteamshipError(
+            message=f"Unable to generate for {field_name} - no block on output."
+        )
+
     @post("/generate_suggestion")
     def generate_suggestion(self, field_name: str = None, **kwargs) -> Block:
-        # context = self.agent_service.build_default_context()
+        context = self.agent_service.build_default_context()
+        generator = EditorSuggestionGenerator(context)
+        task = generator.generate_editor_suggestion(field_name)
 
-        if field_name == "narrative_tone":
-            block = Block(text="Silly and adventerous")
-        else:
-            raise SteamshipError(message=f"Unknown field name: {field_name}")
+        if task and task.output and task.output.blocks:
+            return task.output.blocks[0]
 
-        return block
+        raise SteamshipError(
+            message=f"Unable to generate for {field_name} - no block on output."
+        )
