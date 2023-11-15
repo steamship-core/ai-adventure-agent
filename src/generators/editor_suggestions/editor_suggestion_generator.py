@@ -5,32 +5,52 @@ from generators.utils import safe_format
 from utils.context_utils import get_server_settings, get_story_text_generator
 
 PROMPTS = {
-    "narrative_voice": """Write a short genre suggestion for a story. Be creative!
+    # Note: this is "genre" in the UI
+    "narrative_voice": """Write a short genre suggestion for a story. Be expansive, creative, but concise!
 
-Examples of good output include: fantasy adventure, children’s book, young adult novel, fanfic, high literature
+Examples of good outputs:
 
-Suggestion:""",
-    "narrative_tone": """Write a narrative tone suggestion for a story. Be creative! But keep it concise.
+- fantasy adventure
+- children’s book
+- young adult novel
+- fanfic
+- high literature
 
-Examples of god outputs include: silly, parody, dramatic, gritty, film noir, etc.""",
-    "adventure_background": """Write a few notes about an scene that is to be in a short story.
+Suggestion:
 
-Be concise but descriptive, using Markdown and bullet points. Include the sections: tone, narrative voice, characters, locations, important items, and real-world references.
+-""",
+    # Note: this is "writing style"
+    "narrative_tone": """Write a narrative tone suggestion for a story with the genre {narrative_voice}. Be creative! Wide-ranging! But keep it concise.
 
-## Tone
+Examples of good outputs:
 
-{narrative_tone}
+- silly, like a Cartoon Network show
+- parody, in the style of an HBO show
+- dramatic, with a tinge of danger
+- gritty, high contrast and real
+- film noir, with a romantic tinge of hard-boiled mystery
 
-## Narrative voice
+Suggestion:
+
+-""",
+    "adventure_background": """I need help! Write a few notes for a director about an scene in a short story.
+
+Be colorful, descriptive, but concise! Use Markdown and bullet points. Include the sections: tone, narrative voice, adventure background story, non-protagonist characters, locations, and important items to the story.
+
+## Genre
 
 {narrative_voice}
 
-## Characters
+## Writing Style
 
-- """,
-    "adventure_goal": """I need help! Write a goal for a character in an riveting story. Be short! But creative and colorful. It needs to REALLY capture attention!
+{narrative_tone}
 
-Examples:
+""",
+    "adventure_goal": """I need help! Finish the main character goal for this short story.
+
+Be short! But creative and colorful. It needs to REALLY capture attention!
+
+Examples of riveting goals:
 - destroy the Ring of Elders
 - get into Harvard
 - escape from jail
@@ -38,7 +58,19 @@ Examples:
 - fall in love with a supermodel
 - pull off the world's greatest bank heist
 
-Goal:
+Here are the story details. Finish with the goal!
+
+## Genre
+
+{narrative_voice}
+
+## Writing Style
+
+{narrative_tone}
+
+{adventure_background}
+
+## Riveting Protagonist Goal:
 -""",
 }
 
