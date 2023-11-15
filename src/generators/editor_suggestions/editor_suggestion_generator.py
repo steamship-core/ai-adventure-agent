@@ -1,7 +1,6 @@
 from steamship import SteamshipError, Task
 from steamship.agents.schema import AgentContext
 
-from generators.social_media_generator import SocialMediaGenerator
 from generators.utils import safe_format
 from utils.context_utils import get_server_settings, get_story_text_generator
 
@@ -44,7 +43,7 @@ Goal:
 }
 
 
-class EditorSuggestionGenerator(SocialMediaGenerator):
+class EditorSuggestionGenerator:
     def generate_editor_suggestion(
         self, field_name: str, context: AgentContext
     ) -> Task:
@@ -61,5 +60,11 @@ class EditorSuggestionGenerator(SocialMediaGenerator):
         # Now template it against the saved server settings
         templated_prompt = safe_format(prompt, server_settings.dict())
 
-        task = generator.generate(text=templated_prompt)
+        task = generator.generate(
+            text=templated_prompt,
+            streaming=True,
+            append_output_to_file=True,
+            make_output_public=True,
+        )
+        task.wait()
         return task

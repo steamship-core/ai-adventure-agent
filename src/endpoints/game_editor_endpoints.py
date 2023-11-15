@@ -52,8 +52,8 @@ class GameEditorMixin(PackageMixin):
     @post("/generate_suggestion")
     def generate_suggestion(self, field_name: str = None, **kwargs) -> Block:
         context = self.agent_service.build_default_context()
-        generator = EditorSuggestionGenerator(context)
-        task = generator.generate_editor_suggestion(field_name)
+        generator = EditorSuggestionGenerator()
+        task = generator.generate_editor_suggestion(field_name, context)
 
         if task and task.output and task.output.blocks:
             return task.output.blocks[0]
