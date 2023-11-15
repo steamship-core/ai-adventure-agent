@@ -45,7 +45,7 @@ Goal:
 
 class EditorSuggestionGenerator:
     def generate_editor_suggestion(
-        self, field_name: str, context: AgentContext
+        self, field_name: str, unsaved_server_settings: dict, context: AgentContext
     ) -> Task:
         server_settings = get_server_settings(context)
         generator = get_story_text_generator(context)
@@ -58,7 +58,10 @@ class EditorSuggestionGenerator:
             )
 
         # Now template it against the saved server settings
-        templated_prompt = safe_format(prompt, server_settings.dict())
+        variables = server_settings.dict()
+        variables.update(unsaved_server_settings)
+
+        templated_prompt = safe_format(prompt, variables)
 
         task = generator.generate(
             text=templated_prompt,
