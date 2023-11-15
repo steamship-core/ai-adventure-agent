@@ -1,3 +1,4 @@
+import logging
 from typing import Dict
 
 from steamship import Block, Steamship, SteamshipError
@@ -12,6 +13,8 @@ from generators.image_generators.stable_diffusion_with_loras import (
     StableDiffusionWithLorasImageGenerator,
 )
 from schema.objects import Item
+from schema.server_settings import ServerSettings
+from utils.context_utils import get_server_settings, save_server_settings
 
 
 class GameEditorMixin(PackageMixin):
@@ -25,8 +28,25 @@ class GameEditorMixin(PackageMixin):
         self.agent_service = agent_service
 
     @post("/generate_preview")
-    def generate_preview(self, field_name: str = None, **kwargs) -> Block:
+    def generate_preview(
+        self, field_name: str = None, unsaved_server_settings: Dict = None, **kwargs
+    ) -> Block:
         context = self.agent_service.build_default_context()
+
+        if unsaved_server_settings is not None:
+            logging.info(
+                "Updating the server settings to generate the preview. This should only be done on the development agent."
+            )
+            try:
+                server_settings = ServerSettings.parse_obj(unsaved_server_settings)
+                context = self.agent_service.build_default_context()
+                existing_state = get_server_settings(context)
+                existing_state.update_from_web(server_settings)
+                save_server_settings(existing_state, context)
+            except BaseException as e:
+                logging.exception(e)
+                raise e
+
         image_generator = StableDiffusionWithLorasImageGenerator()
 
         if field_name == "item_image":
@@ -56,6 +76,21 @@ class GameEditorMixin(PackageMixin):
         self, field_name: str = None, unsaved_server_settings: Dict = None, **kwargs
     ) -> Block:
         context = self.agent_service.build_default_context()
+
+        if unsaved_server_settings is not None:
+            logging.info(
+                "Updating the server settings to generate the preview. This should only be done on the development agent."
+            )
+            try:
+                server_settings = ServerSettings.parse_obj(unsaved_server_settings)
+                context = self.agent_service.build_default_context()
+                existing_state = get_server_settings(context)
+                existing_state.update_from_web(server_settings)
+                save_server_settings(existing_state, context)
+            except BaseException as e:
+                logging.exception(e)
+                raise e
+
         generator = EditorSuggestionGenerator()
         task = generator.generate_editor_suggestion(
             field_name, unsaved_server_settings or {}, context
