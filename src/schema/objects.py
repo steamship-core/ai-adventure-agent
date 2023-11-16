@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -19,6 +19,18 @@ class Item(BaseModel):
 
     def price(self) -> int:
         return 42
+
+    @classmethod
+    def editor_demo_object(cls, item_dict: Optional[Dict] = None) -> "Item":
+        if item_dict is None:
+            item_dict = {}
+        return cls(
+            name=item_dict.get("name", "Thor's Hammer"),
+            description=item_dict.get(
+                "description",
+                "A magical hammer used by Thor. Exudes power and a glistening rainbow shean. Enables the bearer to break through any obstacle.",
+            ),
+        )
 
 
 class TradeResult(BaseModel):

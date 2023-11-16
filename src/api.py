@@ -2,7 +2,6 @@ import json
 import logging
 import pathlib
 import time
-import uuid
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from pydantic import Field
@@ -32,6 +31,7 @@ from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
 from endpoints.camp_endpoints import CampMixin
+from endpoints.game_editor_endpoints import GameEditorMixin
 from endpoints.game_state_endpoints import GameStateMixin
 from endpoints.npc_endpoints import NpcMixin
 from endpoints.onboarding_endpoints import OnboardingMixin
@@ -110,6 +110,7 @@ class AdventureGameService(AgentService):
         CampMixin,  # Provides API Endpoints for Camp Management (used by the associated web app)
         NpcMixin,  # Provides API Endpoints for NPC Chat Management (used by the associated web app)
         OnboardingMixin,  # Provide API Endpoints for Onboarding
+        GameEditorMixin,
     ]
     """USED_MIXIN_CLASSES tells Steamship what additional HTTP endpoints to register on your AgentService."""
 
@@ -197,6 +198,10 @@ class AdventureGameService(AgentService):
 
         self.add_mixin(
             OnboardingMixin(client=self.client, agent_service=cast(AgentService, self))
+        )
+
+        self.add_mixin(
+            GameEditorMixin(client=self.client, agent_service=cast(AgentService, self))
         )
 
         # Instantiate the core game agents
