@@ -72,7 +72,7 @@ class AutoPlayHarness:
         set_image_generator(self.context, dummy_generator)
         set_music_generator(self.context, dummy_generator)
 
-        self.output_file = open(output_path, "w")
+        self.output_file = open(output_path, "w", encoding="utf-8")
 
     def print_object_or_objects(self, output: List[Block]):
         context = AgentContext.get_or_create(
@@ -162,8 +162,9 @@ if __name__ == "__main__":
     os.makedirs(f"harness_output/{run_name}", exist_ok=True)
     scenarios = [
         ("evil_science", "christine"),
-        ("evil_science", "bart"),
-        ("evil_science", "candace"),
+        ("saucy_escape", "mr-meatball"),
+        ("rogues_combinator", "stallman"),
+        ("stick_shift_supremacy", "rosie"),
     ]
 
     for scenario in scenarios:
