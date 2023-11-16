@@ -1,3 +1,4 @@
+import os
 import time
 from datetime import datetime
 from typing import List, TextIO
@@ -27,6 +28,8 @@ output_tags = [
     (TagKindExtensions.QUEST_ARC, QuestArcTag.RESULT),
     (TagKindExtensions.QUEST, QuestTag.QUEST_CONTENT),
     (TagKindExtensions.QUEST, QuestTag.DICE_ROLL),
+    (TagKindExtensions.QUEST, QuestTag.ITEM_GENERATION_CONTENT),
+    (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
 ]
 
 
@@ -120,6 +123,7 @@ class AutoPlayHarness:
 
         for tag in block.tags:
             if (tag.kind, tag.name) in output_tags:
+                self.output_file.write(f"{tag.name.upper()}\n")
                 self.output_file.write(block.text)
                 self.output_file.write("\n")
 
@@ -154,9 +158,20 @@ class AutoPlayHarness:
 
 
 if __name__ == "__main__":
-    harness = AutoPlayHarness(
-        "example_content/evil_science_server_settings.yaml",
-        "example_content/evil_science_character.yaml",
-        f"harness_output/{datetime.now().strftime('%Y%m%d-%H%M%S.txt')}",
-    )
-    harness.run_quest()
+    run_name = datetime.now().strftime("%Y%m%d-%H%M%S")
+    os.makedirs(f"harness_output/{run_name}", exist_ok=True)
+    scenarios = [
+        ("evil_science", "christine"),
+        ("evil_science", "bart"),
+        ("evil_science", "candace"),
+    ]
+
+    for scenario in scenarios:
+        adventure = scenario[0]
+        character = scenario[1]
+        harness = AutoPlayHarness(
+            f"example_content/{adventure}.yaml",
+            f"example_content/{character}.yaml",
+            f"harness_output/{run_name}/{adventure}-{character}.txt",
+        )
+        harness.run_quest()
