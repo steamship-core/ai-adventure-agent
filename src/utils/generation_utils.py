@@ -452,3 +452,54 @@ def await_streamed_block(block: Block, context: AgentContext) -> Block:
         block = Block.get(block.client, _id=block.id)
     context.chat_history.file.refresh()
     return block
+
+
+def generate_action_choices(context: AgentContext) -> Block:
+
+    game_state = get_game_state(context)
+    quest_name = game_state.current_quest
+
+    prompt = (
+        f"Generate a multiple choice set of four options for the user to select {game_state.player.name}'s next "
+        f'action. The actions should be relevant to the story and include a single "custom" option that '
+        f"allows the user to provide their own action in the story. "
+        "The generated actions should match the tone and narrative voice of the existing story.\n"
+        "Action choices should be returned as a JSON map that provides a single letter key for each action "
+        "choice, as follows: \n"
+        '{"A": "pet the dog", "B": "launch missiles", "C": "dance the macarana", "D": "custom" }'
+    )
+
+    block = do_token_trimmed_generation(
+        context,
+        prompt,
+        prompt_tags=[
+            # intentionally don't add this to the quest. it lives as sorta "out-of-quest" generation
+            # that still requires quest data.
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ACTION_CHOICES_PROMPT),
+        ],
+        output_tags=[
+            # provide a way to filter this out, in case this ends up in a saved file somewhere (not currently)
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ACTION_CHOICES),
+        ],
+        filter=UnionFilter(
+            [
+                TagFilter(
+                    tag_types=[
+                        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
+                        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
+                    ]
+                ),
+                QuestNameFilter(quest_name=quest_name),
+                LastInventoryFilter(),
+            ]
+        ),
+        generation_for="Action Choices",
+        new_file=True,  # don't put this in the chat history. it is help content.
+        streaming=False,
+    )
+    return block
