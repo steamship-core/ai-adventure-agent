@@ -26,11 +26,10 @@ class OnboardingMixin(PackageMixin):
         self.client = client
         self.agent_service = agent_service
 
-    @post("/onboarding/character/name")
-    def set_character_name(self, name: str, context_id: Optional[str] = None, **kwargs):
-        context = self.agent_service.build_default_context(
-            context_id=context_id, **kwargs
-        )
+    @post("/set_character_name")
+    def set_character_name(self, name: str, **kwargs):
+        """Set the character name (moderation is enabled)"""
+        context = self.agent_service.build_default_context(**kwargs)
 
         if not _is_allowed_by_moderation(name, context):
             raise SteamshipError(
@@ -41,13 +40,10 @@ class OnboardingMixin(PackageMixin):
         game_state.player.name = name
         save_game_state(game_state, context)
 
-    @post("/onboarding/character/background")
-    def set_character_background(
-        self, background: str, context_id: Optional[str] = None, **kwargs
-    ):
-        context = self.agent_service.build_default_context(
-            context_id=context_id, **kwargs
-        )
+    @post("/set_character_background")
+    def set_character_background(self, background: str, **kwargs):
+        """Set the character background (moderation is enabled)."""
+        context = self.agent_service.build_default_context(**kwargs)
 
         if not _is_allowed_by_moderation(background, context):
             raise SteamshipError(
@@ -58,17 +54,15 @@ class OnboardingMixin(PackageMixin):
         game_state.player.background = background
         save_game_state(game_state, context)
 
-    @post("/onboarding/character/description")
+    @post("/set_character_description")
     def set_character_description(
         self,
         description: str,
         update: Optional[bool] = True,
-        context_id: Optional[str] = None,
         **kwargs,
     ):
-        context = self.agent_service.build_default_context(
-            context_id=context_id, **kwargs
-        )
+        """Set the character description (moderation is enabled)."""
+        context = self.agent_service.build_default_context(**kwargs)
 
         if not _is_allowed_by_moderation(description, context):
             raise SteamshipError(
