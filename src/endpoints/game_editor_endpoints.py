@@ -79,7 +79,7 @@ class GameEditorMixin(PackageMixin):
 
         if unsaved_server_settings is not None:
             logging.info(
-                "Updating the server settings to generate the preview. This should only be done on the development agent."
+                "Updating the server settings to generate the suggestion. This should only be done on the development agent."
             )
             try:
                 server_settings = ServerSettings.parse_obj(unsaved_server_settings)
