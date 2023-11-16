@@ -1,5 +1,6 @@
 import time
-from typing import List
+from datetime import datetime
+from typing import List, TextIO
 
 from pydantic_yaml import parse_yaml_raw_as
 from steamship import Block, Steamship, Workspace
@@ -38,8 +39,11 @@ class AutoPlayHarness:
     last_seen_block = -1
     last_content_block: Block
     context: AgentContext
+    output_file: TextIO
 
-    def __init__(self, server_settings_path: str, character_path: str):
+    def __init__(
+        self, server_settings_path: str, character_path: str, output_path: str
+    ):
         with open(server_settings_path) as settings_file:
             yaml_string = settings_file.read()
             self.server_settings = parse_yaml_raw_as(ServerSettings, yaml_string)
@@ -64,6 +68,8 @@ class AutoPlayHarness:
         dummy_generator = DummyGenerator(self.client)
         set_image_generator(self.context, dummy_generator)
         set_music_generator(self.context, dummy_generator)
+
+        self.output_file = open(output_path, "w")
 
     def print_object_or_objects(self, output: List[Block]):
         context = AgentContext.get_or_create(
@@ -95,8 +101,6 @@ class AutoPlayHarness:
                 self.print_new_block(block)
         self.last_seen_block = context.chat_history.file.blocks[-1].index_in_file
         print(f"LAST SEEN BLOCK: {self.last_seen_block}")
-        # for object in output:
-        #     self.print_new_block(object)
 
     def print_new_block(self, block: Block):
         tag_kinds = {tag.kind for tag in block.tags}
@@ -113,6 +117,11 @@ class AutoPlayHarness:
                 print(f"[{block.index_in_file}] {tag_texts} {block.text}\n")
             else:
                 print(f"[{block.index_in_file}] {tag_texts} {block.raw_data_url}")
+
+        for tag in block.tags:
+            if (tag.kind, tag.name) in output_tags:
+                self.output_file.write(block.text)
+                self.output_file.write("\n")
 
     def prompt(self, prompt: str):
         self.print_object_or_objects(self.service.prompt(prompt=prompt))
@@ -136,12 +145,18 @@ class AutoPlayHarness:
             .text
         )
         print(f"SUGGESTION: {suggestion}")
+        self.output_file.write(f"USER INPUT: {suggestion}\n")
         return suggestion
+
+    def finish(self):
+        self.output_file.close()
+        self.workspace.delete()
 
 
 if __name__ == "__main__":
     harness = AutoPlayHarness(
         "example_content/evil_science_server_settings.yaml",
         "example_content/evil_science_character.yaml",
+        f"harness_output/{datetime.now().strftime('%Y%m%d-%H%M%S.txt')}",
     )
     harness.run_quest()
