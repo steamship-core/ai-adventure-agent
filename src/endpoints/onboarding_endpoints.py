@@ -87,15 +87,14 @@ class OnboardingMixin(PackageMixin):
                         character_image_block.raw_data_url
                     )
                     game_state.profile_image_url = character_image_block.raw_data_url
-                    save_game_state(game_state, context)
 
         save_game_state(game_state, context)
 
     @post("/complete_onboarding")
-    def complete_onboarding(self, context_id: Optional[str] = None, **kwargs) -> bool:
+    def complete_onboarding(self, **kwargs) -> bool:
         """Attempts to complete onboarding."""
         try:
-            context = self.agent_service.build_default_context(context_id=context_id)
+            context = self.agent_service.build_default_context()
             game_state = get_game_state(context)
 
             # TODO: streamline for mass validation ?
