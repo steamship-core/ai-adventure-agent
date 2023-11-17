@@ -44,3 +44,11 @@ def get_social_media_generator(context: AgentContext) -> Optional[SocialMediaGen
         context.metadata[_SOCIAL_MEDIA_GENERATOR_KEY] = generator
 
     return generator
+
+
+def set_image_generator(context: AgentContext, generator: ImageGenerator):
+    context.metadata[_IMAGE_GENERATOR_KEY] = generator
+
+
+def set_music_generator(context: AgentContext, generator: MusicGenerator):
+    context.metadata[_MUSIC_GENERATOR_KEY] = generator

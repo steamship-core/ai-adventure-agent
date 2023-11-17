@@ -1,14 +1,6 @@
 adventure_name: Evil Science
-adventure_description: On this adventure, you will be an employee at Science
-  Ventures Inc, where you will work to stealthily take over the world.
-adventure_short_description: Take over the world through evil science.
-adventure_image: https://ywo4zgeb2hydwgmk.public.blob.vercel-storage.com/d1bc9af7-9e32-470b-b1e6-7513f784fa99-3798b049-404e-474d-9f85-704a800defd3-00026-3364392659-niu2ELs4oszt8MWSmeNcO3MLI9rad0.png
 adventure_goal: To create a product that will allow mind control of the entire
   population of earth.
-adventure_tags:
-  - sci-fi
-  - comedy
-  - modern-day
 narrative_tone: humorous science fiction for young adults
 narrative_voice: the style of Douglas Adams
 adventure_background: >-
@@ -25,4 +17,3 @@ adventure_background: >-
 camp_music_generation_prompt: smooth jazz, elevator music, appropriate for office
 scene_music_generation_prompt: techno background music for doing science
 adventure_player_singular_noun: Scientist
-# music_duration: 15
