@@ -20,7 +20,7 @@ class HelpMixin(PackageMixin):
 
     @post("/generate_action_choices")
     def generate_action_choices(self, **kwargs) -> str:
-        """Generate (synchronously) a JSON map of multiple choice options for user actions in a quest."""
+        """Generate (synchronously) a JSON List of multiple choice options for user actions in a quest."""
 
         try:
             context = self.agent_service.build_default_context()

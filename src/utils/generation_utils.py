@@ -460,13 +460,12 @@ def generate_action_choices(context: AgentContext) -> Block:
     quest_name = game_state.current_quest
 
     prompt = (
-        f"Generate a multiple choice set of four options for the user to select {game_state.player.name}'s next "
-        f'action. The actions should be relevant to the story and include a single "custom" option that '
-        f"allows the user to provide their own action in the story. "
-        "The generated actions should match the tone and narrative voice of the existing story.\n"
-        "Action choices should be returned as a JSON map that provides a single letter key for each action "
-        "choice, as follows: \n"
-        '{"A": "pet the dog", "B": "launch missiles", "C": "dance the macarana", "D": "custom" }'
+        f"Generate a multiple choice set of three options for the user to select {game_state.player.name}'s next "
+        f"action. The actions should be relevant to the story and the current challenge "
+        f"facing {game_state.player.name}. The generated actions should match the tone and narrative voice of the "
+        f"existing story.\n"
+        f"Action choices should be returned as a simple JSON list (and NOT a JSON object).\n"
+        f'Example: ["pet the dog", "launch missiles", "dance the Macarena"]'
     )
 
     block = do_token_trimmed_generation(
