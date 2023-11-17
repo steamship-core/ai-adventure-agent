@@ -1,8 +1,9 @@
 import json
 import logging
 from datetime import datetime, timezone
+from enum import Enum
 from random import randint, random
-from typing import List
+from typing import Dict, List
 
 from steamship import Tag
 from steamship.agents.logging import AgentLogging
@@ -12,6 +13,7 @@ from steamship.agents.schema.action import FinishAction
 from generators.generator_context_utils import get_image_generator, get_music_generator
 from schema.game_state import GameState
 from schema.quest import Quest, QuestDescription
+from schema.server_settings import Difficulty
 from tools.end_quest_tool import EndQuestTool
 from utils.context_utils import (
     FinishActionException,
@@ -30,6 +32,39 @@ from utils.generation_utils import (
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 from utils.moderation_utils import mark_block_as_excluded
 from utils.tags import InstructionsTag, QuestIdTag, QuestTag, TagKindExtensions
+
+
+class Likelihood(str, Enum):
+    VERY_LIKELY = "VERY_LIKELY"
+    LIKELY = "LIKELY"
+    UNKNOWN = "UNKNOWN"
+    UNLIKELY = "UNLIKELY"
+    VERY_UNLIKELY = "VERY_UNLIKELY"
+
+
+LIKELIHOOD_MAP: Dict[Difficulty, Dict[Likelihood, float]] = {
+    Difficulty.EASY: {
+        Likelihood.VERY_LIKELY: 0.05,
+        Likelihood.LIKELY: 0.2,
+        Likelihood.UNKNOWN: 0.35,
+        Likelihood.UNLIKELY: 0.55,
+        Likelihood.VERY_UNLIKELY: 0.7,
+    },
+    Difficulty.NORMAL: {
+        Likelihood.VERY_LIKELY: 0.1,
+        Likelihood.LIKELY: 0.3,
+        Likelihood.UNKNOWN: 0.5,
+        Likelihood.UNLIKELY: 0.7,
+        Likelihood.VERY_UNLIKELY: 0.9,
+    },
+    Difficulty.HARD: {
+        Likelihood.VERY_LIKELY: 0.2,
+        Likelihood.LIKELY: 0.35,
+        Likelihood.UNKNOWN: 0.6,
+        Likelihood.UNLIKELY: 0.8,
+        Likelihood.VERY_UNLIKELY: 0.95,
+    },
+}
 
 
 class QuestAgent(InterruptiblePythonAgent):
@@ -331,19 +366,17 @@ class QuestAgent(InterruptiblePythonAgent):
             context=context,
         )
         likelihood_text = likelihood_block.text.upper()
+        likelihood_map = LIKELIHOOD_MAP.get(server_settings.problem_solution_difficulty)
         if "VERY UNLIKELY" in likelihood_text:
-            required_roll = 0.9
+            required_roll = likelihood_map[Likelihood.VERY_UNLIKELY]
         elif "VERY LIKELY" in likelihood_text:
-            required_roll = 0.1
+            required_roll = likelihood_map[Likelihood.VERY_LIKELY]
         elif "UNLIKELY" in likelihood_text:
-            required_roll = 0.7
+            required_roll = likelihood_map[Likelihood.UNLIKELY]
         elif "LIKELY" in likelihood_text:
-            required_roll = 0.3
+            required_roll = likelihood_map[Likelihood.LIKELY]
         else:
-            required_roll = 0.5
-        required_roll = 1 - (
-            (1 - required_roll) / server_settings.problem_solution_difficulty
-        )
+            required_roll = likelihood_map[Likelihood.UNKNOWN]
         roll = random()  # noqa: S311
         succeeded = roll > required_roll
         dice_roll_message = json.dumps(

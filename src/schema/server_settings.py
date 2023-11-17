@@ -39,6 +39,12 @@ class AvailableVoice(str, Enum):
     JOANNE = "joanne"
 
 
+class Difficulty(str, Enum):
+    EASY = "easy"
+    NORMAL = "normal"
+    HARD = "hard"
+
+
 _SUPPORTED_ELEVEN_VOICES = {
     "dorothy": {
         "id": "ThT5KcBeYPX3keUQqHPh",
@@ -163,20 +169,9 @@ Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + rand
 Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + randint(0, max_additional_problems_per_quest)""",
     )
 
-    problem_solution_difficulty: float = Field(
-        default=1,
-        description="""The difficulty scale factor applied to the LLM’s estimation of how likely a user’s solution is to solve the problem.  User’s random number between (0,1) must exceed the modified value to succeed.
-
-Base Values:
-VERY UNLIKELY=0.9
-UNLIKELY = 0.7
-LIKELY = 0.3
-VERY LIKELY = 0.1
-
-Difficulty modified value:
-1 - ((1-BASE_VALUE) / problem_solution_difficulty)
-
-Result - Doubling difficulty makes success 1/2 as likely; halving difficulty makes success twice as likely.""",
+    difficulty: Difficulty = Field(
+        default=Difficulty.NORMAL,
+        description="""The difficulty factor applied to the AI’s estimation of how likely a user’s solution is to solve the problem. This affects required dice rolls.""",
     )
 
     # Energy Management
