@@ -176,3 +176,4 @@ if __name__ == "__main__":
             f"harness_output/{run_name}/{adventure}-{character}.txt",
         )
         harness.run_quest()
+        harness.finish()
