@@ -112,6 +112,12 @@ class ServerSettings(BaseModel):
     # Narration Generation Settings
     default_narration_model: str = Field("elevenlabs", description="")
 
+    # Name
+    name: str = Field(
+        default="My Adventure",
+        description="What is the name of the story?",
+    )
+
     # Narrative settings
     narrative_tone: str = Field(
         default="silly",

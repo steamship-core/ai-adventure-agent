@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Dict, List
 
 from steamship import Block, Steamship, SteamshipError
 from steamship.agents.service.agent_service import AgentService
@@ -73,7 +73,11 @@ class GameEditorMixin(PackageMixin):
 
     @post("/generate_suggestion")
     def generate_suggestion(
-        self, field_name: str = None, unsaved_server_settings: Dict = None, **kwargs
+        self,
+        field_name: str = None,
+        unsaved_server_settings: Dict = None,
+        field_key_path: List = None,
+        **kwargs,
     ) -> Block:
         context = self.agent_service.build_default_context()
 
@@ -93,7 +97,7 @@ class GameEditorMixin(PackageMixin):
 
         generator = EditorSuggestionGenerator()
         task = generator.generate_editor_suggestion(
-            field_name, unsaved_server_settings or {}, context
+            field_name, unsaved_server_settings or {}, field_key_path, context
         )
 
         if task and task.output and task.output.blocks:
