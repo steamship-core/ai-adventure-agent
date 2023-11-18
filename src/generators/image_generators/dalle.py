@@ -47,7 +47,6 @@ class DalleImageGenerator(ImageGenerator):
 
         options = {
             "style": theme.style,
-            "quality": theme.quality,
         }
 
         # TODO(doug): cache plugin instance by client workspace
@@ -56,6 +55,7 @@ class DalleImageGenerator(ImageGenerator):
             config={
                 "model": theme.model,
                 "size": image_size,
+                "quality": theme.quality,
             },
         )
 
