@@ -1,21 +1,17 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from generators.utils import safe_format
 
 
-class StableDiffusionTheme(BaseModel):
-    """A Theme for a Stable diffusion model.
+class ImageTheme(BaseModel):
+    """Base model for image generation themes."""
 
-    This class is meant to completely capture a coherent set of generation config: model, loras, lora activations, etc.
-
-    The one thing it DOESN'T include is the fragment of "user prompt" that is custom to any one generation.
-
-    This allows someone to separate:
-     - the prompt (e.g. "a chest of pirate gold") from
-     - the theme (SDXL w/ Lora 1, 2, a particula negative prompt addition, etc.
-    """
+    model_config = ConfigDict(
+        # Allow extra fields (e.g. for use with base classes)
+        extra="allow"
+    )
 
     name: str = Field(description="The name of this theme")
 
@@ -26,6 +22,74 @@ class StableDiffusionTheme(BaseModel):
     prompt_suffix: Optional[str] = Field(
         description="Any extra words, including trigger words for LoRAs in this theme. Include a command and spacing if you require it."
     )
+
+    model: str = Field(
+        "stabilityai/stable-diffusion-xl-base-1.0",
+        description='Either (1) dall-e-3 or dall-e-2, or (2) URL or HuggingFace ID of the base model to generate the image. Examples: "stabilityai/stable-diffusion-xl-base-1.0", "runwayml/stable-diffusion-v1-5", "SG161222/Realistic_Vision_V2.0". ',
+    )
+
+    def make_prompt(self, prompt: str, prompt_params: Optional[dict] = None):
+        """Applies the included suffixes and then interpolates any {referenced} variables."""
+        template = f"{self.prompt_prefix or ''}{prompt}{self.prompt_suffix or ''}"
+        return safe_format(template, prompt_params or {})
+
+    @property
+    def is_dalle(self):
+        return self.model in ["dall-e-2", "dall-e-3"]
+
+
+class DalleTheme(ImageTheme):
+    """A Theme for a DALL-E model.
+
+    This class is meant to completely capture a coherent set of generation config.
+
+    The one thing it DOESN'T include is the fragment of "user prompt" that is custom to any one generation.
+
+    This allows someone to separate:
+     - the prompt (e.g. "a chest of pirate gold") from
+     - the theme (model, style, quality, etc.)
+
+     NOTE: DALL-E themes DO NOT support negative prompts. Any negative prompts will be ignored (currently)!
+    """
+
+    model: str = Field(
+        "dall-e-3",
+        description="Model to use for image generation. Must be one of: ['dall-e-2', 'dall-e-3'].",
+    )
+
+    quality: str = Field(
+        default="standard",
+        description="The quality of the image that will be generated. Must be one of: ['hd', 'standard']."
+        "'hd' creates images with finer details and greater consistency across the image. "
+        "This param is only supported for the `dall-e-3` model.",
+    )
+
+    style: str = Field(
+        default="vivid",
+        description="The style of the generated images. Must be one of: ['vivid', 'natural']. "
+        "Vivid causes the model to lean towards generating hyper-real and dramatic images. "
+        "Natural causes the model to produce more natural, less hyper-real looking images. "
+        "This param is only supported for `dall-e-3`.",
+    )
+
+    # TODO(dougreid): add validation for style and quality
+
+
+class StableDiffusionTheme(ImageTheme):
+    """A Theme for a StableDiffusion model.
+
+    This class is meant to completely capture a coherent set of generation config.
+
+    This allows someone to separate:
+     - the prompt (e.g. "a chest of pirate gold") from
+     - the theme (model, style, quality, etc.)
+
+    The one thing it DOESN'T include is the fragment of "user prompt" that is custom to any one generation.
+
+    This allows someone to separate:
+     - the prompt (e.g. "a chest of pirate gold") from
+     - the theme (SDXL w/ Lora 1, 2, a particula negative prompt addition, etc.
+    """
 
     negative_prompt_prefix: Optional[str] = Field(
         description="Any extra words, including trigger words for LoRAs in this theme. Include a comma and spacing if you require it."
@@ -84,11 +148,6 @@ class StableDiffusionTheme(BaseModel):
         "png",
         description="The format of the generated image. Possible values: ['jpeg', 'png']",
     )
-
-    def make_prompt(self, prompt: str, prompt_params: Optional[dict] = None):
-        """Applies the included suffixes and then interpolates any {referenced} variables."""
-        template = f"{self.prompt_prefix or ''}{prompt}{self.prompt_suffix or ''}"
-        return safe_format(template, prompt_params or {})
 
     def make_negative_prompt(
         self, negative_prompt: str, prompt_params: Optional[dict] = None
@@ -163,6 +222,35 @@ EPIC_REALISM = StableDiffusionTheme(
     clip_skip=0,
 )
 
+
+DALL_E_3_VIVID_STANDARD = DalleTheme(
+    name="dall_e_3_vivid_standard",
+    model="dall-e-3",
+    style="vivid",
+    quality="standard",
+)
+
+DALL_E_3_VIVID_HD = DalleTheme(
+    name="dall_e_3_vivid_hd",
+    model="dall-e-3",
+    style="vivid",
+    quality="hd",
+)
+
+DALL_E_3_NATURAL_STANDARD = DalleTheme(
+    name="dall_e_3_natural_standard",
+    model="dall-e-3",
+    style="natural",
+    quality="standard",
+)
+
+DALL_E_3_NATURAL_HD = DalleTheme(
+    name="dall_e_3_natural_hd",
+    model="dall-e-3",
+    style="natural",
+    quality="hd",
+)
+
 # Premade themes that we know work well
 PREMADE_THEMES = [
     PIXEL_ART_THEME_1,
@@ -171,6 +259,10 @@ PREMADE_THEMES = [
     FF7R,
     CINEMATIC_ANIMATION,
     EPIC_REALISM,
+    DALL_E_3_NATURAL_HD,
+    DALL_E_3_NATURAL_STANDARD,
+    DALL_E_3_VIVID_HD,
+    DALL_E_3_VIVID_STANDARD,
 ]
 
 DEFAULT_THEME = PIXEL_ART_THEME_2

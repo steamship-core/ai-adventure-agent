@@ -1,12 +1,12 @@
 import re
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 from steamship import SteamshipError
 
+from schema.image_theme import DalleTheme, StableDiffusionTheme
 from schema.quest import QuestDescription
-from schema.stable_diffusion_theme import StableDiffusionTheme
 
 
 def validate_prompt_args(
@@ -237,28 +237,28 @@ Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + rand
         description="The prompt used to generate music for camp.  Game tone will be filled in as {tone}.",
     )
 
-    image_themes: List[StableDiffusionTheme] = Field(
+    image_themes: List[Union[StableDiffusionTheme, DalleTheme]] = Field(
         [], description="A list of stable diffusion themes to make available."
     )
 
     camp_image_theme: str = Field(
         "pixel_art_2",
-        description="The Stable Diffusion theme for generating camp images.",
+        description="The image theme for generating camp images.",
     )
 
     item_image_theme: str = Field(
         "pixel_art_2",
-        description="The Stable Diffusion theme for generating item images.",
+        description="The image theme for generating item images.",
     )
 
     profile_image_theme: str = Field(
         "pixel_art_2",
-        description="The Stable Diffusion theme for generating profile images.",
+        description="The image theme for generating profile images.",
     )
 
     quest_background_theme: str = Field(
         "pixel_art_2",
-        description="The Stable Diffusion theme for generating quest images.",
+        description="The image theme for generating quest images.",
     )
 
     music_duration: int = Field(

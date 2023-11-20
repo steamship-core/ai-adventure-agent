@@ -1,4 +1,3 @@
-import json
 from typing import Final, List
 
 from steamship import SteamshipError, Tag, Task
@@ -6,7 +5,7 @@ from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
 
 from generators.image_generator import ImageGenerator
-from schema.image_theme import StableDiffusionTheme
+from schema.image_theme import DalleTheme
 from schema.objects import Item
 from utils.context_utils import get_game_state, get_server_settings, get_theme
 from utils.tags import (
@@ -20,54 +19,45 @@ from utils.tags import (
 )
 
 
-class StableDiffusionWithLorasImageGenerator(ImageGenerator):
-    PLUGIN_HANDLE: Final[str] = "fal-sd-lora-image-generator"
+class DalleImageGenerator(ImageGenerator):
+    PLUGIN_HANDLE: Final[str] = "dall-e"
 
-    def get_theme(self, theme_name: str, context) -> StableDiffusionTheme:
+    def get_theme(self, theme_name: str, context) -> DalleTheme:
         theme = get_theme(theme_name, context)
-        if theme.is_dalle:
+        if not theme.is_dalle:
             raise SteamshipError(
-                f"Theme {theme_name} is DALL-E but this is the SD Generator"
+                f"Theme {theme_name} is not DALL-E but this is the DALL-E Generator"
             )
         d = theme.dict()
-        return StableDiffusionTheme.parse_obj(d)
+        return DalleTheme.parse_obj(d)
 
     def generate(
         self,
         context,
         theme_name: str,
         prompt: str,
-        negative_prompt: str,
         template_vars: dict,
         image_size: str,
         tags: List[Tag],
     ) -> Task:
-        # TODO(doug): cache plugin instance by client workspace
-        sd = context.client.use_plugin(
-            StableDiffusionWithLorasImageGenerator.PLUGIN_HANDLE
-        )
-
         theme = self.get_theme(theme_name, context)
         prompt = theme.make_prompt(prompt, template_vars)
-        negative_prompt = theme.make_negative_prompt(negative_prompt, template_vars)
-
-        lora_list = list(map(lambda lora: {"path": lora}, theme.loras))
-        lora_json_str = json.dumps(lora_list)
 
         options = {
-            "seed": theme.seed,
-            "model_name": theme.model,
-            "loras": lora_json_str,
-            "image_size": image_size,
-            "num_inference_steps": theme.num_inference_steps,
-            "guidance_scale": theme.guidance_scale,
-            "clip_skip": theme.clip_skip,
-            "scheduler": theme.scheduler,
-            "model_architecture": theme.model_architecture,
-            "negative_prompt": negative_prompt,
+            "style": theme.style,
         }
 
-        return sd.generate(
+        # TODO(doug): cache plugin instance by client workspace
+        dalle = context.client.use_plugin(
+            DalleImageGenerator.PLUGIN_HANDLE,
+            config={
+                "model": theme.model,
+                "size": image_size,
+                "quality": theme.quality,
+            },
+        )
+
+        return dalle.generate(
             text=prompt,
             tags=tags,
             streaming=True,
@@ -95,13 +85,12 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             context=context,
             theme_name=server_settings.item_image_theme,
             prompt=server_settings.item_image_prompt,
-            negative_prompt=server_settings.item_image_negative_prompt,
             template_vars={
                 "tone": server_settings.narrative_tone,
                 "name": item.name,
                 "description": item.description,
             },
-            image_size="square_hd",
+            image_size="1024x1024",
             tags=tags,
         )
 
@@ -130,12 +119,11 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             context=context,
             theme_name=server_settings.profile_image_theme,
             prompt=server_settings.profile_image_prompt,
-            negative_prompt=server_settings.profile_image_negative_prompt,
             template_vars={
                 "name": name,
                 "description": description,
             },
-            image_size="portrait_4_3",
+            image_size="1024x1792",
             tags=tags,
         )
 
@@ -158,12 +146,11 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             context=context,
             theme_name=server_settings.quest_background_theme,
             prompt=server_settings.quest_background_image_prompt,
-            negative_prompt=server_settings.quest_background_image_negative_prompt,
             template_vars={
                 "tone": server_settings.narrative_tone,
                 "description": description,
             },
-            image_size="landscape_16_9",
+            image_size="1792x1024",
             tags=tags,
         )
 
@@ -182,11 +169,10 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             context=context,
             theme_name=server_settings.camp_image_theme,
             prompt=server_settings.camp_image_prompt,
-            negative_prompt=server_settings.camp_image_negative_prompt,
             template_vars={
                 "tone": server_settings.narrative_tone,
             },
-            image_size="landscape_16_9",
+            image_size="1792x1024",
             tags=tags,
         )
         task.wait()

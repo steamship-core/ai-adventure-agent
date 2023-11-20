@@ -11,7 +11,12 @@ from steamship.data.block import StreamState
 from steamship.data.tags.tag_constants import RoleTag
 
 from api import AdventureGameService
-from generators.generator_context_utils import set_image_generator, set_music_generator
+from generators.generator_context_utils import (
+    set_camp_image_generator,
+    set_item_image_generator,
+    set_music_generator,
+    set_profile_image_generator,
+)
 from schema.characters import HumanCharacter
 from schema.game_state import ActiveMode
 from schema.server_settings import ServerSettings
@@ -69,7 +74,9 @@ class AutoPlayHarness:
 
         # Override image and music generators
         dummy_generator = DummyGenerator(self.client)
-        set_image_generator(self.context, dummy_generator)
+        set_camp_image_generator(self.context, dummy_generator)
+        set_item_image_generator(self.context, dummy_generator)
+        set_profile_image_generator(self.context, dummy_generator)
         set_music_generator(self.context, dummy_generator)
 
         self.output_file = open(output_path, "w", encoding="utf-8")

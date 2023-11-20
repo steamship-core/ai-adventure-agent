@@ -8,7 +8,7 @@ from steamship.agents.service.agent_service import AgentService
 from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
 
-from generators.generator_context_utils import get_image_generator
+from generators.generator_context_utils import get_item_image_generator
 from schema.game_state import GameState
 from schema.objects import Item, TradeResult
 from tools.end_conversation_tool import EndConversationTool
@@ -101,7 +101,7 @@ class NpcMixin(PackageMixin):
         for item in generated_items:
             new_item = Item(name=item[0], description=item[1], id=str(uuid.uuid4()))
             npc.inventory.append(new_item)
-        if image_gen := get_image_generator(context):
+        if image_gen := get_item_image_generator(context):
             tasks = []
             for item in npc.inventory:
                 task = image_gen.request_item_image_generation(

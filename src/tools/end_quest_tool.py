@@ -6,7 +6,7 @@ from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import AgentContext, Tool
 
 from generators.generator_context_utils import (
-    get_image_generator,
+    get_item_image_generator,
     get_social_media_generator,
 )
 from schema.game_state import GameState
@@ -96,7 +96,7 @@ class EndQuestTool(Tool):
         )
         save_game_state(game_state, context)
 
-        if image_gen := get_image_generator(context):
+        if image_gen := get_item_image_generator(context):
             task = image_gen.request_item_image_generation(item=item, context=context)
             item_image_block = task.wait().blocks[0]
             context.chat_history.file.refresh()

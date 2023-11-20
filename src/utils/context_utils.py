@@ -28,6 +28,7 @@ from steamship.agents.schema.agent import AgentContext
 from steamship.utils.kv_store import KeyValueStore
 
 from schema.game_state import GameState
+from schema.image_theme import DEFAULT_THEME, PREMADE_THEMES, ImageTheme
 from schema.server_settings import ServerSettings
 from utils.tags import QuestIdTag
 
@@ -521,3 +522,14 @@ class RunNextAgentException(Exception):  # noqa: N818
     def __init__(self, action: FinishAction):
         super().__init__()
         self.action = action
+
+
+def get_theme(name: str, context: AgentContext) -> ImageTheme:
+    server_settings = get_server_settings(context)
+    for theme in server_settings.image_themes or []:
+        if name == theme.name:
+            return theme
+    for theme in PREMADE_THEMES:
+        if name == theme.name:
+            return theme
+    return DEFAULT_THEME

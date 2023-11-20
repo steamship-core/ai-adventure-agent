@@ -10,7 +10,10 @@ from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
-from generators.generator_context_utils import get_image_generator, get_music_generator
+from generators.generator_context_utils import (
+    get_camp_image_generator,
+    get_music_generator,
+)
 from schema.game_state import GameState
 from schema.quest import Quest, QuestDescription
 from schema.server_settings import Difficulty
@@ -341,7 +344,7 @@ class QuestAgent(InterruptiblePythonAgent):
         )
         updated_problem_block = await_streamed_block(problem_block, context)
 
-        if image_gen := get_image_generator(context):
+        if image_gen := get_camp_image_generator(context):
             image_gen.request_scene_image_generation(
                 description=updated_problem_block.text, context=context
             )
