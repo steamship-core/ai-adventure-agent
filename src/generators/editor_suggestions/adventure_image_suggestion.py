@@ -15,7 +15,7 @@ class AdventureImageSuggestionGenerator(EditorFieldSuggestionGenerator):
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         server_settings = get_server_settings(context)
-        theme = get_theme(server_settings.camp_image_theme)
+        theme = get_theme(server_settings.camp_image_theme, context)
         generator = get_image_generator(theme)
         task = generator.request_adventure_image_generation(context)
         task.wait()
