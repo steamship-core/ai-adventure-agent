@@ -1,4 +1,5 @@
 import json
+from typing import List
 
 from steamship import Steamship, SteamshipError
 from steamship.agents.service.agent_service import AgentService
@@ -19,16 +20,14 @@ class HelpMixin(PackageMixin):
         self.agent_service = agent_service
 
     @post("/generate_action_choices")
-    def generate_action_choices(self, **kwargs) -> str:
+    def generate_action_choices(self, **kwargs) -> List[str]:
         """Generate (synchronously) a JSON List of multiple choice options for user actions in a quest."""
-
         try:
             context = self.agent_service.build_default_context()
             choices_json_block = generate_action_choices(context=context)
-
-            # loop through encoding just to be extra sure
             choices = json.loads(choices_json_block.text)
-            return json.dumps(choices)
+            return choices
+
         except BaseException as e:
             raise SteamshipError(
                 "Could not generate next action choices. Please try again.", error=e
