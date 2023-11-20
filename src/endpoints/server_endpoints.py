@@ -5,6 +5,7 @@ from steamship.invocable import get, post
 from steamship.invocable.package_mixin import PackageMixin
 
 from schema.server_settings import ServerSettings
+from schema.server_settings_schema import SCHEMA
 from utils.agent_service import AgentService
 from utils.context_utils import get_server_settings, save_server_settings
 
@@ -18,6 +19,10 @@ class ServerSettingsMixin(PackageMixin):
     def __init__(self, client: Steamship, agent_service: AgentService):
         self.client = client
         self.agent_service = agent_service
+
+    @get("/server_settings_schema")
+    def get_server_settings_schema(self) -> dict:
+        return SCHEMA
 
     @post("/server_settings")
     def post_server_settings(self, **kwargs) -> dict:
