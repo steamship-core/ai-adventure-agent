@@ -11,7 +11,7 @@ from utils.context_utils import get_server_settings
 class AdventureImageSuggestionGenerator(EditorFieldSuggestionGenerator):
     @staticmethod
     def get_field() -> str:
-        return "adventure_image"
+        return "image"
 
     def suggest(
         self, variables: dict, generator: PluginInstance, context: AgentContext
