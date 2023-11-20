@@ -18,7 +18,7 @@ Suggested Title:"""
 
     @staticmethod
     def get_field() -> str:
-        return "name"
+        return "adventure_name"
 
     def suggest(
         self, variables: dict, generator: PluginInstance, context: AgentContext

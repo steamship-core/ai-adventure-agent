@@ -75,9 +75,10 @@ class EditorSuggestionGenerator:
         if not field_key_path:
             prompt_key = field_name
         elif len(field_key_path) == 1:
-            prompt_key = field_key_path[0]
+            prompt_key = field_name
         elif len(field_key_path) == 3:
-            prompt_key = f"{field_key_path[0]}.{field_key_path[2]}"
+            # Note: it's important this last bit is field_name because of some strange bits in the client
+            prompt_key = f"{field_key_path[0]}.{field_name}"
         else:
             prompt_key = field_name
 
