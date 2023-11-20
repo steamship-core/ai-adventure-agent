@@ -8,8 +8,7 @@ from generators.music_generator import MusicGenerator
 from generators.music_generators.meta_music_generator import MetaMusicGenerator
 from generators.social_media.haiku_tweet_generator import HaikuTweetGenerator
 from generators.social_media_generator import SocialMediaGenerator
-from schema.server_settings import get_theme
-from utils.context_utils import get_server_settings
+from utils.context_utils import get_server_settings, get_theme
 
 _CAMP_IMAGE_GENERATOR_KEY = "camp-image-generator"
 _ITEM_IMAGE_GENERATOR_KEY = "item-image-generator"
