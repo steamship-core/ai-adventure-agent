@@ -222,7 +222,6 @@ EPIC_REALISM = StableDiffusionTheme(
     clip_skip=0,
 )
 
-
 DALL_E_3_VIVID_STANDARD = DalleTheme(
     name="dall_e_3_vivid_standard",
     model="dall-e-3",
