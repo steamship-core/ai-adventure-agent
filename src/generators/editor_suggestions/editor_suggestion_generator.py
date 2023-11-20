@@ -7,11 +7,20 @@ from generators.editor_field_suggestion_generator import EditorFieldSuggestionGe
 from generators.editor_suggestions.adventure_background_suggestion import (
     AdventureBackgroundSuggestionGenerator,
 )
+from generators.editor_suggestions.adventure_description_suggestion import (
+    AdventureDescriptionSuggestionGenerator,
+)
 from generators.editor_suggestions.adventure_goal_suggestion import (
     AdventureGoalSuggestionGenerator,
 )
 from generators.editor_suggestions.adventure_image_suggestion import (
     AdventureImageSuggestionGenerator,
+)
+from generators.editor_suggestions.adventure_name_suggestion import (
+    AdventureNameSuggestionGenerator,
+)
+from generators.editor_suggestions.adventure_short_description_suggestion import (
+    AdventureShortDescriptionSuggestionGenerator,
 )
 from generators.editor_suggestions.character_background_suggestion import (
     CharacterBackgroundSuggestionGenerator,
@@ -48,7 +57,10 @@ class EditorSuggestionGenerator:
         CharacterImageSuggestionGenerator.get_field(): CharacterImageSuggestionGenerator(),
         AdventureGoalSuggestionGenerator.get_field(): AdventureGoalSuggestionGenerator(),
         AdventureBackgroundSuggestionGenerator.get_field(): AdventureBackgroundSuggestionGenerator(),
-        AdventureImageSuggestionGenerator.get_field(): AdventureImageSuggestionGenerator,
+        AdventureImageSuggestionGenerator.get_field(): AdventureImageSuggestionGenerator(),
+        AdventureNameSuggestionGenerator.get_field(): AdventureNameSuggestionGenerator(),
+        AdventureShortDescriptionSuggestionGenerator.get_field(): AdventureShortDescriptionSuggestionGenerator(),
+        AdventureDescriptionSuggestionGenerator.get_field(): AdventureDescriptionSuggestionGenerator(),
     }
 
     def generate_editor_suggestion(
@@ -60,8 +72,9 @@ class EditorSuggestionGenerator:
     ) -> Block:
         server_settings = get_server_settings(context)
         generator = get_story_text_generator(context)
-
-        if len(field_key_path) == 1:
+        if not field_key_path:
+            prompt_key = field_name
+        elif len(field_key_path) == 1:
             prompt_key = field_key_path[0]
         elif len(field_key_path) == 3:
             prompt_key = f"{field_key_path[0]}.{field_key_path[2]}"
@@ -71,7 +84,10 @@ class EditorSuggestionGenerator:
         prompt = self.PROMPTS.get(prompt_key)
 
         if not prompt:
-            kp = ".".join(map(lambda x: f"{x}", field_key_path))
+            if field_key_path:
+                kp = ".".join(map(lambda x: f"{x}", field_key_path))
+            else:
+                kp = prompt_key
             raise SteamshipError(
                 message=f"Unable to generate a suggestion for: {kp}. Lookup key: {prompt_key}"
             )

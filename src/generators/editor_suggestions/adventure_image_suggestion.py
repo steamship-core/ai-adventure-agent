@@ -28,5 +28,6 @@ class AdventureImageSuggestionGenerator(EditorFieldSuggestionGenerator):
             image_size="landscape_4_3",
             tags=[],
         )
+        task.wait()
 
         return task.output.blocks[0]

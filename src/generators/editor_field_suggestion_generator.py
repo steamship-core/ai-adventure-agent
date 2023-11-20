@@ -12,7 +12,7 @@ class EditorFieldSuggestionGenerator(BaseModel, ABC):
     ) -> Block:
         pass
 
-    def task_to_str_block(self, task: Task) -> str:
+    def task_to_str_block(self, task: Task) -> Block:
         task.wait()
         if task and task.output and task.output.blocks:
             return task.output.blocks[0]

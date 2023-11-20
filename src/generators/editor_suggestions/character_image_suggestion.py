@@ -28,5 +28,6 @@ class CharacterImageSuggestionGenerator(EditorFieldSuggestionGenerator):
             image_size="portrait_4_3",
             tags=[],
         )
+        task.wait()
 
         return task.output.blocks[0]

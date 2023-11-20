@@ -113,9 +113,14 @@ class ServerSettings(BaseModel):
     default_narration_model: str = Field("elevenlabs", description="")
 
     # Name
-    name: str = Field(
+    name: Optional[str] = Field(
         default="My Adventure",
         description="What is the name of the story?",
+    )
+
+    short_description: Optional[str] = Field(
+        default="An amazing story of exploration.",
+        description="What is a short, 4-8 word description of the story?",
     )
 
     # Narrative settings

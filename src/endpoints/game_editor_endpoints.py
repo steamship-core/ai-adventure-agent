@@ -97,7 +97,7 @@ class GameEditorMixin(PackageMixin):
 
         generator = EditorSuggestionGenerator()
         if suggestion := generator.generate_editor_suggestion(
-            field_name, unsaved_server_settings or {}, field_key_path, context
+            field_name, unsaved_server_settings or {}, field_key_path or [], context
         ):
             return suggestion
 
