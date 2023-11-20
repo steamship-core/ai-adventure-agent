@@ -2,10 +2,8 @@ from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
 from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
-from generators.image_generators.stable_diffusion_with_loras import (
-    StableDiffusionWithLorasImageGenerator,
-)
-from utils.context_utils import get_server_settings
+from generators.image_generators import get_image_generator
+from utils.context_utils import get_server_settings, get_theme
 
 
 class AdventureImageSuggestionGenerator(EditorFieldSuggestionGenerator):
@@ -16,18 +14,9 @@ class AdventureImageSuggestionGenerator(EditorFieldSuggestionGenerator):
     def suggest(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
-        image_generator = StableDiffusionWithLorasImageGenerator()
         server_settings = get_server_settings(context)
-
-        task = image_generator.generate(
-            context,
-            theme_name=server_settings.camp_image_theme,
-            prompt="""Cinematic, 8k, best quality, movie advertising image, adventure, {narrative_voice}, award winning, Title: {name}""",
-            negative_prompt=server_settings.camp_image_negative_prompt,
-            template_vars=variables,
-            image_size="landscape_4_3",
-            tags=[],
-        )
+        theme = get_theme(server_settings.camp_image_theme)
+        generator = get_image_generator(theme)
+        task = generator.request_adventure_image_generation(context)
         task.wait()
-
         return task.output.blocks[0]

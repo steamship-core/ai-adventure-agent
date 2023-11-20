@@ -25,3 +25,7 @@ class ImageGenerator(BaseModel, ABC):
     @abstractmethod
     def request_camp_image_generation(self, context: AgentContext) -> Task:
         pass
+
+    @abstractmethod
+    def request_adventure_image_generation(self, context: AgentContext) -> Task:
+        pass

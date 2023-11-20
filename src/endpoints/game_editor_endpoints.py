@@ -9,12 +9,10 @@ from steamship.invocable.package_mixin import PackageMixin
 from generators.editor_suggestions.editor_suggestion_generator import (
     EditorSuggestionGenerator,
 )
-from generators.image_generators.stable_diffusion_with_loras import (
-    StableDiffusionWithLorasImageGenerator,
-)
+from generators.image_generators import get_image_generator
 from schema.objects import Item
 from schema.server_settings import ServerSettings
-from utils.context_utils import get_server_settings, save_server_settings
+from utils.context_utils import get_server_settings, get_theme, save_server_settings
 
 
 class GameEditorMixin(PackageMixin):
@@ -47,18 +45,26 @@ class GameEditorMixin(PackageMixin):
                 logging.exception(e)
                 raise e
 
-        image_generator = StableDiffusionWithLorasImageGenerator()
+        server_settings = get_server_settings(context)
 
         if field_name == "item_image":
-            task = image_generator.request_item_image_generation(
+            theme = get_theme(server_settings.item_image_theme, context)
+            generator = get_image_generator(theme)
+            task = generator.request_item_image_generation(
                 Item.editor_demo_object(), context
             )
         elif field_name == "camp_image":
-            task = image_generator.request_camp_image_generation(context)
+            theme = get_theme(server_settings.camp_image_theme, context)
+            generator = get_image_generator(theme)
+            task = generator.request_camp_image_generation(context)
         elif field_name == "profile_image":
-            task = image_generator.request_profile_image_generation(context)
+            theme = get_theme(server_settings.profile_image_theme, context)
+            generator = get_image_generator(theme)
+            task = generator.request_profile_image_generation(context)
         elif field_name == "scene_image":
-            task = image_generator.request_scene_image_generation(
+            theme = get_theme(server_settings.quest_background_theme, context)
+            generator = get_image_generator(theme)
+            task = generator.request_scene_image_generation(
                 "A magical enchanted forest.", context
             )
         else:

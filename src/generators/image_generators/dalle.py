@@ -177,3 +177,22 @@ class DalleImageGenerator(ImageGenerator):
         )
         task.wait()
         return task
+
+    def request_adventure_image_generation(self, context: AgentContext) -> Task:
+        server_settings = get_server_settings(context)
+
+        tags = []
+
+        task = self.generate(
+            context=context,
+            theme_name=server_settings.camp_image_theme,
+            prompt="Cinematic, 8k, movie advertising image, {narrative_voice}, Movie Title: {name}",
+            template_vars={
+                "narrative_voice": server_settings.narrative_voice,
+                "name": server_settings.name,
+            },
+            image_size="1024x1792",
+            tags=tags,
+        )
+        task.wait()
+        return task
