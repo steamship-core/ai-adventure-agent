@@ -4,10 +4,13 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 from steamship import SteamshipError
+from steamship.agents.schema import AgentContext
 
 from schema.dalle_theme import DalleTheme
+from schema.image_theme import DEFAULT_THEME, PREMADE_THEMES, ImageTheme
 from schema.quest import QuestDescription
 from schema.stable_diffusion_theme import StableDiffusionTheme
+from utils.context_utils import get_server_settings
 
 
 def validate_prompt_args(
@@ -377,3 +380,14 @@ Result - Doubling difficulty makes success 1/2 as likely; halving difficulty mak
             for validation_error in result
             if validation_error is not None
         ]
+
+
+def get_theme(name: str, context: AgentContext) -> ImageTheme:
+    server_settings = get_server_settings(context)
+    for theme in server_settings.image_themes or []:
+        if name == theme.name:
+            return theme
+    for theme in PREMADE_THEMES:
+        if name == theme.name:
+            return theme
+    return DEFAULT_THEME

@@ -75,7 +75,7 @@ class DalleTheme(ImageTheme):
     # TODO(dougreid): add validation for style and quality
 
 
-class StableDiffusionTheme(BaseModel):
+class StableDiffusionTheme(ImageTheme):
     """A Theme for a StableDiffusion model.
 
     This class is meant to completely capture a coherent set of generation config.

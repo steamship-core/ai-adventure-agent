@@ -1,12 +1,13 @@
 from typing import Final, List
 
-from steamship import Tag, Task
+from steamship import SteamshipError, Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
 
 from generators.image_generator import ImageGenerator
-from schema.dalle_theme import DEFAULT_THEME, PREMADE_THEMES, DalleTheme
+from schema.dalle_theme import DalleTheme
 from schema.objects import Item
+from schema.server_settings import get_theme
 from utils.context_utils import get_game_state, get_server_settings
 from utils.tags import (
     CampTag,
@@ -19,19 +20,17 @@ from utils.tags import (
 )
 
 
-def get_theme(name: str, context: AgentContext) -> DalleTheme:
-    server_settings = get_server_settings(context)
-    for theme in server_settings.image_themes or []:
-        if name == theme.name:
-            return theme
-    for theme in PREMADE_THEMES:
-        if name == theme.name:
-            return theme
-    return DEFAULT_THEME
-
-
 class DalleImageGenerator(ImageGenerator):
     PLUGIN_HANDLE: Final[str] = "dall-e"
+
+    def get_theme(self, theme_name: str, context) -> DalleTheme:
+        theme = get_theme(theme_name, context)
+        if not theme.is_dalle:
+            raise SteamshipError(
+                f"Theme {theme_name} is not DALL-E but this is the DALL-E Generator"
+            )
+        d = theme.dict()
+        return DalleTheme.parse_obj(d)
 
     def generate(
         self,
@@ -42,7 +41,7 @@ class DalleImageGenerator(ImageGenerator):
         image_size: str,
         tags: List[Tag],
     ) -> Task:
-        theme = get_theme(theme_name, context)
+        theme = self.get_theme(theme_name, context)
         prompt = theme.make_prompt(prompt, template_vars)
 
         options = {

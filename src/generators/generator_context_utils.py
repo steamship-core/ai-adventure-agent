@@ -3,16 +3,12 @@ from typing import Optional
 from steamship.agents.schema import AgentContext
 
 from generators.image_generator import ImageGenerator
-from generators.image_generators.dalle import DalleImageGenerator
-from generators.image_generators.stable_diffusion_with_loras import (
-    StableDiffusionWithLorasImageGenerator,
-)
+from generators.image_generators import get_image_generator
 from generators.music_generator import MusicGenerator
 from generators.music_generators.meta_music_generator import MetaMusicGenerator
 from generators.social_media.haiku_tweet_generator import HaikuTweetGenerator
 from generators.social_media_generator import SocialMediaGenerator
-from schema.dalle_theme import PREMADE_THEMES as DALLE_THEMES
-from schema.stable_diffusion_theme import PREMADE_THEMES as SD_THEMES
+from schema.server_settings import get_theme
 from utils.context_utils import get_server_settings
 
 _CAMP_IMAGE_GENERATOR_KEY = "camp-image-generator"
@@ -27,14 +23,8 @@ def get_camp_image_generator(context: AgentContext) -> Optional[ImageGenerator]:
     if not generator:
         # Lazily create
         server_settings = get_server_settings(context)
-        camp_theme = server_settings.camp_image_theme
-        if camp_theme in [t.name for t in DALLE_THEMES]:
-            generator = DalleImageGenerator()
-        elif camp_theme in [t.name for t in SD_THEMES]:
-            generator = StableDiffusionWithLorasImageGenerator()
-        else:
-            # default to stable diffusion if not found?
-            generator = StableDiffusionWithLorasImageGenerator()
+        theme = get_theme(server_settings.camp_image_theme, context)
+        generator = get_image_generator(theme)
         context.metadata[_CAMP_IMAGE_GENERATOR_KEY] = generator
 
     return generator
@@ -45,14 +35,8 @@ def get_item_image_generator(context: AgentContext) -> Optional[ImageGenerator]:
     if not generator:
         # Lazily create
         server_settings = get_server_settings(context)
-        item_theme = server_settings.item_image_theme
-        if item_theme in [t.name for t in DALLE_THEMES]:
-            generator = DalleImageGenerator()
-        elif item_theme in [t.name for t in SD_THEMES]:
-            generator = StableDiffusionWithLorasImageGenerator()
-        else:
-            # default to stable diffusion if not found?
-            generator = StableDiffusionWithLorasImageGenerator()
+        theme = get_theme(server_settings.item_image_theme, context)
+        generator = get_image_generator(theme)
         context.metadata[_ITEM_IMAGE_GENERATOR_KEY] = generator
 
     return generator
@@ -63,14 +47,8 @@ def get_profile_image_generator(context: AgentContext) -> Optional[ImageGenerato
     if not generator:
         # Lazily create
         server_settings = get_server_settings(context)
-        profile_theme = server_settings.profile_image_theme
-        if profile_theme in [t.name for t in DALLE_THEMES]:
-            generator = DalleImageGenerator()
-        elif profile_theme in [t.name for t in SD_THEMES]:
-            generator = StableDiffusionWithLorasImageGenerator()
-        else:
-            # default to stable diffusion if not found?
-            generator = StableDiffusionWithLorasImageGenerator()
+        theme = get_theme(server_settings.profile_image_theme, context)
+        generator = get_image_generator(theme)
         context.metadata[_PROFILE_IMAGE_GENERATOR_KEY] = generator
 
     return generator

@@ -1,12 +1,14 @@
 import json
 from typing import Final, List
 
-from steamship import Tag, Task
+from steamship import SteamshipError, Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
 
 from generators.image_generator import ImageGenerator
+from schema.image_theme import StableDiffusionTheme
 from schema.objects import Item
+from schema.server_settings import get_theme
 from utils.context_utils import get_game_state, get_server_settings
 from utils.tags import (
     CampTag,
@@ -21,6 +23,15 @@ from utils.tags import (
 
 class StableDiffusionWithLorasImageGenerator(ImageGenerator):
     PLUGIN_HANDLE: Final[str] = "fal-sd-lora-image-generator"
+
+    def get_theme(self, theme_name: str, context) -> StableDiffusionTheme:
+        theme = get_theme(theme_name, context)
+        if theme.is_dalle:
+            raise SteamshipError(
+                f"Theme {theme_name} is DALL-E but this is the SD Generator"
+            )
+        d = theme.dict()
+        return StableDiffusionTheme.parse_obj(d)
 
     def generate(
         self,
@@ -37,7 +48,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             StableDiffusionWithLorasImageGenerator.PLUGIN_HANDLE
         )
 
-        theme = get_theme(theme_name, context)
+        theme = self.get_theme(theme_name, context)
         prompt = theme.make_prompt(prompt, template_vars)
         negative_prompt = theme.make_negative_prompt(negative_prompt, template_vars)
 
