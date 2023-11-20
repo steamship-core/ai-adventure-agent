@@ -96,12 +96,10 @@ class GameEditorMixin(PackageMixin):
                 raise e
 
         generator = EditorSuggestionGenerator()
-        task = generator.generate_editor_suggestion(
+        if suggestion := generator.generate_editor_suggestion(
             field_name, unsaved_server_settings or {}, field_key_path, context
-        )
-
-        if task and task.output and task.output.blocks:
-            return task.output.blocks[0]
+        ):
+            return suggestion
 
         raise SteamshipError(
             message=f"Unable to generate for {field_name} - no block on output."
