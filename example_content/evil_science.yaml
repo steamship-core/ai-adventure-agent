@@ -14,6 +14,10 @@ adventure_background: >-
   The CEO of Science Ventures is Meredith Martin, whose lack of empathy is famous.  Her ruthlessness is both her strength and weakness, as she does not care about the employees wellbeing.
 
   The main character's boss is Michael Stern, a clueless middle manager who does not understand the science.
+camp_image_theme: dall_e_3_vivid_standard
+item_image_theme: dall_e_3_vivid_standard
+profile_image_theme: dall_e_3_vivid_standard
+profile_image_prompt: cartoon profile picture, focus on head, of a character named '{name}' with a description of '{description}'
 camp_music_generation_prompt: smooth jazz, elevator music, appropriate for office
 scene_music_generation_prompt: techno background music for doing science
 adventure_player_singular_noun: Scientist

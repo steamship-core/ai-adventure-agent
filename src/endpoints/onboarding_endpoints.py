@@ -7,7 +7,7 @@ from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
 
 from agents.onboarding_agent import OnboardingAgent, _is_allowed_by_moderation
-from generators.generator_context_utils import get_image_generator
+from generators.generator_context_utils import get_profile_image_generator
 from schema.game_state import ActiveMode
 
 # An instnace is a game instance.
@@ -74,7 +74,7 @@ class OnboardingMixin(PackageMixin):
 
         if game_state.player.description and game_state.player.name:
             if (not game_state.image_generation_requested()) or update:
-                if image_gen := get_image_generator(context):
+                if image_gen := get_profile_image_generator(context):
                     task = image_gen.request_profile_image_generation(context=context)
                     character_image_block = task.wait().blocks[0]
                     game_state.player.profile_image_url = (
