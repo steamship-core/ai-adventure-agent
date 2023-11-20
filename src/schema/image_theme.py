@@ -72,6 +72,11 @@ class DalleTheme(ImageTheme):
         "This param is only supported for `dall-e-3`.",
     )
 
+    image_size: str = Field(
+        "1024x1024",
+        description="The size of the generated image(s). For Dalle2: ['256x256', '512x512', '1024x1024']. For DALL-E 3: ['1024×1024', '1024×1792', '1792×1024']",
+    )
+
     # TODO(dougreid): add validation for style and quality
 
 
@@ -222,7 +227,6 @@ EPIC_REALISM = StableDiffusionTheme(
     clip_skip=0,
 )
 
-
 DALL_E_3_VIVID_STANDARD = DalleTheme(
     name="dall_e_3_vivid_standard",
     model="dall-e-3",
@@ -251,6 +255,29 @@ DALL_E_3_NATURAL_HD = DalleTheme(
     quality="hd",
 )
 
+
+DALL_E_2_STANDARD = DalleTheme(
+    name="dall_e_2_vivid_standard",
+    model="dall-e-2",
+    quality="standard",
+)
+
+DALL_E_2_STELLAR_DREAMS = DalleTheme(
+    name="dall_e_2_stellar_dream",
+    model="dall-e-2",
+    prompt_prefix="Surreal painting, ",
+    prompt_suffix="; using soft, dreamy colors and elements of fantasy",
+    quality="standard",
+)
+
+DALL_E_2_NEON_CYBERPUNK = DalleTheme(
+    name="dall_e_2_neon_cyberpunk",
+    model="dall-e-2",
+    prompt_prefix="Cyberpunk, digital art, best quality, neon-lit, ",
+    prompt_suffix="; high contrast, blending traditional and futuristic",
+    quality="standard",
+)
+
 # Premade themes that we know work well
 PREMADE_THEMES = [
     PIXEL_ART_THEME_1,
@@ -263,6 +290,9 @@ PREMADE_THEMES = [
     DALL_E_3_NATURAL_STANDARD,
     DALL_E_3_VIVID_HD,
     DALL_E_3_VIVID_STANDARD,
+    DALL_E_2_STANDARD,
+    DALL_E_2_STELLAR_DREAMS,
+    DALL_E_2_NEON_CYBERPUNK,
 ]
 
 DEFAULT_THEME = PIXEL_ART_THEME_2

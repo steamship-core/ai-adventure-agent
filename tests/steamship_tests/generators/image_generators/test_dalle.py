@@ -7,6 +7,7 @@ from utils.context_utils import (
     get_game_state,
     get_server_settings,
     get_theme,
+    save_game_state,
     save_server_settings,
 )
 
@@ -18,18 +19,19 @@ def test_profile_pic_generation(client: Steamship):
     )
     gs = get_game_state(context)
 
-    gs.player.name = "PICKLE MAN"
-    gs.player.description = "A pickle as tall as a building that wears suspenders."
+    gs.player.name = "Superhero Dog"
+    gs.player.description = "A golden retriever in a superman cape."
+    save_game_state(gs, context)
 
     ss = get_server_settings(context)
-    ss.profile_image_theme = "dall_e_3_vivid_standard"
-
-    ss.profile_image_prompt = "Richard Stallman at y combinator headquarters"
+    ss.profile_image_theme = "dall_e_2_neon_cyberpunk"
+    ss.profile_image_prompt = (
+        "{name}, {description}. Close-up on head. Gradient background."
+    )
     save_server_settings(ss, context)
 
     theme = get_theme(ss.profile_image_theme, context)
     generator = get_image_generator(theme)
-
     task = generator.request_profile_image_generation(context)
 
     task.wait()

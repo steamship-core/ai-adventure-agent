@@ -47,6 +47,11 @@ class DalleImageGenerator(ImageGenerator):
             "style": theme.style,
         }
 
+        # Fixes for DALL-E 2 which only supports squares.
+        # TODO: Find a way to talk about image sizes that works across models. Maybe just have three options: default, portrait, landscape?
+        if theme.model == "dall-e-2":
+            image_size = "1024x1024"
+
         # TODO(doug): cache plugin instance by client workspace
         dalle = context.client.use_plugin(
             DalleImageGenerator.PLUGIN_HANDLE,
@@ -173,6 +178,25 @@ class DalleImageGenerator(ImageGenerator):
                 "tone": server_settings.narrative_tone,
             },
             image_size="1792x1024",
+            tags=tags,
+        )
+        task.wait()
+        return task
+
+    def request_adventure_image_generation(self, context: AgentContext) -> Task:
+        server_settings = get_server_settings(context)
+
+        tags = []
+
+        task = self.generate(
+            context=context,
+            theme_name=server_settings.camp_image_theme,
+            prompt="Cinematic, 8k, movie advertising image, {narrative_voice}, Movie Title: {name}",
+            template_vars={
+                "narrative_voice": server_settings.narrative_voice,
+                "name": server_settings.name,
+            },
+            image_size="1024x1792",
             tags=tags,
         )
         task.wait()
