@@ -22,7 +22,7 @@ def test_profile_pic_generation(client: Steamship):
     gs.player.description = "A pickle as tall as a building that wears suspenders."
 
     ss = get_server_settings(context)
-    ss.profile_image_theme = "pixel_art_3"
+    ss.profile_image_theme = "dall_e_3_vivid_standard"
 
     ss.profile_image_prompt = "Richard Stallman at y combinator headquarters"
     save_server_settings(ss, context)

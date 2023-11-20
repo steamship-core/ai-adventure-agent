@@ -5,10 +5,9 @@ from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
 
 from generators.image_generator import ImageGenerator
-from schema.dalle_theme import DalleTheme
+from schema.image_theme import DalleTheme
 from schema.objects import Item
-from schema.server_settings import get_theme
-from utils.context_utils import get_game_state, get_server_settings
+from utils.context_utils import get_game_state, get_server_settings, get_theme
 from utils.tags import (
     CampTag,
     CharacterTag,
