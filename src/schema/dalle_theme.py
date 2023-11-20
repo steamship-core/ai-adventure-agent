@@ -43,11 +43,14 @@ class DalleTheme(BaseModel):
 
     # TODO(dougreid): add validation for style and quality
 
-    # TODO(dougreid): are the following necessary?
+    # Note: This field is still valuable so that the theme builder can include certain pre-filled phrases like
+    # "watercolor style" that area ALWAYS added
     prompt_prefix: Optional[str] = Field(
         description="Any extra words to include in your prompt. Include a comma and spacing if you require it."
     )
 
+    # Note: This field is still valuable so that the theme builder can include certain pre-filled phrases like
+    # "watercolor style" that area ALWAYS added
     prompt_suffix: Optional[str] = Field(
         description="Any extra words to always include in your prompt. Include a command and spacing if you require it."
     )

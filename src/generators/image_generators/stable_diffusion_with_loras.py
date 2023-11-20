@@ -7,11 +7,6 @@ from steamship.data import TagValueKey
 
 from generators.image_generator import ImageGenerator
 from schema.objects import Item
-from schema.stable_diffusion_theme import (
-    DEFAULT_THEME,
-    PREMADE_THEMES,
-    StableDiffusionTheme,
-)
 from utils.context_utils import get_game_state, get_server_settings
 from utils.tags import (
     CampTag,
@@ -22,17 +17,6 @@ from utils.tags import (
     StoryContextTag,
     TagKindExtensions,
 )
-
-
-def get_theme(name: str, context: AgentContext) -> StableDiffusionTheme:
-    server_settings = get_server_settings(context)
-    for theme in server_settings.image_themes or []:
-        if name == theme.name:
-            return theme
-    for theme in PREMADE_THEMES:
-        if name == theme.name:
-            return theme
-    return DEFAULT_THEME
 
 
 class StableDiffusionWithLorasImageGenerator(ImageGenerator):
