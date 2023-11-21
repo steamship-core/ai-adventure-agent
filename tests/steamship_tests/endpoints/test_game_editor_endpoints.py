@@ -47,6 +47,30 @@ def test_generate_preview(
 @pytest.mark.parametrize(
     "invocable_handler_with_client", [AdventureGameService], indirect=True
 )
+def test_generate_profile_image_preview(
+    invocable_handler_with_client: Tuple[
+        Callable[[str, str, Optional[dict]], dict], Steamship
+    ]
+):
+    payload = {
+        "field_name": "profile_image",
+        "field_key_path": ["profile-divider"],
+        "unsaved_server_settings": {
+            "profile_image_theme": "dall_e_2_neon_cyberpunk",
+        },
+    }
+    invocable_handler, client = invocable_handler_with_client
+
+    task_dict = invocable_handler("POST", "generate_preview", payload)
+    block = Block.parse_obj(task_dict.get("data"))
+    url = f"{client.config.api_base}block/{block.id}/raw"
+    response = requests.get(url)
+    assert response.ok
+
+
+@pytest.mark.parametrize(
+    "invocable_handler_with_client", [AdventureGameService], indirect=True
+)
 def test_generate_suggestion(
     invocable_handler_with_client: Tuple[
         Callable[[str, str, Optional[dict]], dict], Steamship
