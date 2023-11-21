@@ -27,6 +27,7 @@ from steamship.utils.repl import AgentREPL
 
 from agents.camp_agent import CampAgent
 from agents.diagnostic_agent import DiagnosticAgent
+from agents.generating_agent import GeneratingAgent
 from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
@@ -255,6 +256,9 @@ class AdventureGameService(AgentService):
             sub_agent = self.quest_agent
         elif active_mode == ActiveMode.CAMP:
             sub_agent = self.camp_agent
+        elif active_mode == ActiveMode.GENERATING:
+            # This is just a stub agent so that we don't throw an exception.
+            sub_agent = GeneratingAgent()
         else:
             raise SteamshipError(message=f"Unknown mode: {active_mode}")
 

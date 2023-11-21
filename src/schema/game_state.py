@@ -10,6 +10,7 @@ from schema.quest import Quest, QuestDescription
 
 
 class ActiveMode(str, Enum):
+    GENERATING = "generating"  # Indicates that the game is in the process of generating itself and can't be used.
     ONBOARDING = "onboarding"
     CAMP = "camp"
     QUEST = "quest"

@@ -1,10 +1,11 @@
 import logging
 from typing import Dict, List
 
-from steamship import Block, Steamship, SteamshipError
+from steamship import Block, MimeTypes, Steamship, SteamshipError, Task
 from steamship.agents.service.agent_service import AgentService
 from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
+from steamship.utils.url import Verb
 
 from generators.editor_suggestions.editor_suggestion_generator import (
     EditorSuggestionGenerator,
@@ -83,6 +84,7 @@ class GameEditorMixin(PackageMixin):
         field_name: str = None,
         unsaved_server_settings: Dict = None,
         field_key_path: List = None,
+        save_result: bool = False,
         **kwargs,
     ) -> Block:
         context = self.agent_service.build_default_context()
@@ -105,8 +107,65 @@ class GameEditorMixin(PackageMixin):
         if suggestion := generator.generate_editor_suggestion(
             field_name, unsaved_server_settings or {}, field_key_path or [], context
         ):
+            if save_result:
+                # Save the result into the server_settings object.
+                server_settings = None
+
+                if len(field_key_path or []) == 1:
+                    server_settings = get_server_settings(context)
+                    if suggestion.mime_type == MimeTypes.TXT:
+                        generated_text = suggestion.raw().decode("utf-8")
+                        setattr(server_settings, field_name, generated_text)
+                    else:
+                        setattr(server_settings, field_name, suggestion.to_public_url())
+
+                if server_settings is not None:
+                    save_server_settings(server_settings, context)
             return suggestion
 
         raise SteamshipError(
             message=f"Unable to generate for {field_name} - no block on output."
         )
+
+    @post("/generate_configuration")
+    def generate_configuration(
+        self,
+        field_names: List = None,
+        unsaved_server_settings: Dict = None,
+        **kwargs,
+    ) -> Task:
+        if field_names is None:
+            field_names = [
+                "name",
+                "short_description",
+            ]
+
+        # Apply them just for the first time.
+        if unsaved_server_settings is not None:
+            logging.info(
+                "Updating the server settings to generate the suggestion. This should only be done on the development agent."
+            )
+            try:
+                server_settings = ServerSettings.parse_obj(unsaved_server_settings)
+                context = self.agent_service.build_default_context()
+                existing_state = get_server_settings(context)
+                existing_state.update_from_web(server_settings)
+                save_server_settings(existing_state, context)
+            except BaseException as e:
+                logging.exception(e)
+                raise e
+
+        # Now we generate in sequence.
+        last_task = None
+        for field_name in field_names:
+            wait_on_tasks = []
+            if last_task is not None:
+                wait_on_tasks = [last_task]
+            last_task = self.agent_service.invoke_later(
+                method="/generate_suggestion",
+                verb=Verb.POST,
+                wait_on_tasks=wait_on_tasks,
+                arguments={"field_name": field_name, "save_result": True},
+            )
+
+        return last_task
