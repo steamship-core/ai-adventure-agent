@@ -257,7 +257,7 @@ DALL_E_3_NATURAL_HD = DalleTheme(
 
 
 DALL_E_2_STANDARD = DalleTheme(
-    name="dall_e_2_vivid_standard",
+    name="dall_e_2_standard",
     model="dall-e-2",
     quality="standard",
 )
