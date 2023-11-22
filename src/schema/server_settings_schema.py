@@ -63,6 +63,7 @@ STORY_OPTIONS = [
         "description": "Your adventure consists on a number of quests that the character must go on. You can either hand-create these quests or allow the LLM to generate them for each new player on the fly.",
         "type": "divider",
     },
+    ServerSettings.setting_schema("fixed_quest_arc"),
     ServerSettings.setting_schema("quests_per_arc"),
     {
         "name": "problem_divider",
