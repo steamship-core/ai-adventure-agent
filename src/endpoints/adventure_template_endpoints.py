@@ -6,10 +6,12 @@ from steamship.agents.schema import AgentContext
 from steamship.agents.service.agent_service import AgentService
 from steamship.invocable import get, post
 from steamship.invocable.package_mixin import PackageMixin
-from steamship.utils.url import Verb
 
-from generators.config_field_generators.editor_suggestion_generator import (
+from generators.adventure_template_field_generators.editor_suggestion_generator import (
     EditorSuggestionGenerator,
+)
+from generators.adventure_template_generators.generate_all_generator import (
+    GenerateAllGenerator,
 )
 from generators.image_generators import get_image_generator
 from generators.utils import block_to_config_value, set_keypath_value
@@ -145,82 +147,14 @@ class AdventureTemplateMixin(PackageMixin):
     @post("/generate_configuration")
     def generate_configuration(
         self,
-        field_key_paths: List = None,
         unsaved_server_settings: Dict = None,
         **kwargs,
     ) -> Task:
         context = self.agent_service.build_default_context()
-
-        if field_key_paths is None:
-            field_key_paths = [
-                ["name"],
-                ["short_description"],
-                ["description"],
-                ["adventure_goal"],
-                ["adventure_background"],
-                ["narrative_tone"],
-                ["narrative_voice"],
-                ["image"],
-                ["tags", 0],
-                ["tags", 1],
-                ["tags", 2],
-            ]
-
-        # Apply them just for the first time.
-        if unsaved_server_settings is not None:
-            logging.info(
-                "Updating the server settings to generate the suggestion. This should only be done on the development agent."
-            )
-            try:
-                server_settings = ServerSettings.parse_obj(unsaved_server_settings)
-                context = self.agent_service.build_default_context()
-                existing_state = get_server_settings(context)
-                existing_state.update_from_web(server_settings)
-                save_server_settings(existing_state, context)
-            except BaseException as e:
-                logging.exception(e)
-                raise e
-
-        # Now we generate in sequence.
-        last_task = None
-        for field_key_path in field_key_paths:
-            wait_on_tasks = []
-            if last_task is not None:
-                wait_on_tasks = [last_task]
-
-            # Either something like `name` or `characters.name`
-            if len(field_key_path) == 3:
-                field_name = f"{field_key_path[0]}.{field_key_path[2]}"
-            else:
-                field_name = field_key_path[0]
-
-            last_task = self.agent_service.invoke_later(
-                method="/generate_suggestion",
-                verb=Verb.POST,
-                wait_on_tasks=wait_on_tasks,
-                arguments={
-                    "field_name": field_name,
-                    "field_key_path": field_key_path,
-                    "save_to_adventure_template": True,
-                },
-            )
-
-        wait_on_tasks = []
-        if last_task is not None:
-            wait_on_tasks = [last_task]
-
-        # Finally, we clear the generation_task_id value
-        last_task = self.agent_service.invoke_later(
-            method="/server_settings",
-            verb=Verb.POST,
-            wait_on_tasks=wait_on_tasks,
-            arguments={"generation_task_id": ""},
+        generator = GenerateAllGenerator()
+        last_task = generator.generate(
+            self.agent_service, context, unsaved_server_settings=unsaved_server_settings
         )
-
-        server_settings = get_server_settings(context)
-        server_settings.generation_task_id = last_task.task_id
-        save_server_settings(server_settings, context)
-
         return last_task
 
     @post("/adventure_template")

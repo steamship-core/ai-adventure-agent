@@ -3,46 +3,46 @@ from typing import Dict, List
 from steamship import Block, SteamshipError
 from steamship.agents.schema import AgentContext
 
-from generators.config_field_generators.adventure_background_suggestion import (
+from generators.adventure_template_field_generators.adventure_background_suggestion import (
     AdventureBackgroundSuggestionGenerator,
 )
-from generators.config_field_generators.adventure_description_suggestion import (
+from generators.adventure_template_field_generators.adventure_description_suggestion import (
     AdventureDescriptionSuggestionGenerator,
 )
-from generators.config_field_generators.adventure_goal_suggestion import (
+from generators.adventure_template_field_generators.adventure_goal_suggestion import (
     AdventureGoalSuggestionGenerator,
 )
-from generators.config_field_generators.adventure_image_suggestion import (
+from generators.adventure_template_field_generators.adventure_image_suggestion import (
     AdventureImageSuggestionGenerator,
 )
-from generators.config_field_generators.adventure_name_suggestion import (
+from generators.adventure_template_field_generators.adventure_name_suggestion import (
     AdventureNameSuggestionGenerator,
 )
-from generators.config_field_generators.adventure_short_description_suggestion import (
+from generators.adventure_template_field_generators.adventure_short_description_suggestion import (
     AdventureShortDescriptionSuggestionGenerator,
 )
-from generators.config_field_generators.adventure_tag_suggestion import (
+from generators.adventure_template_field_generators.adventure_tag_suggestion import (
     AdventureTagSuggestionGenerator,
 )
-from generators.config_field_generators.character_background_suggestion import (
+from generators.adventure_template_field_generators.character_background_suggestion import (
     CharacterBackgroundSuggestionGenerator,
 )
-from generators.config_field_generators.character_description_suggestion import (
+from generators.adventure_template_field_generators.character_description_suggestion import (
     CharacterDescriptionSuggestionGenerator,
 )
-from generators.config_field_generators.character_image_suggestion import (
+from generators.adventure_template_field_generators.character_image_suggestion import (
     CharacterImageSuggestionGenerator,
 )
-from generators.config_field_generators.character_name_suggestion import (
+from generators.adventure_template_field_generators.character_name_suggestion import (
     CharacterNameSuggestionGenerator,
 )
-from generators.config_field_generators.character_tagline_suggestion import (
+from generators.adventure_template_field_generators.character_tagline_suggestion import (
     CharacterTaglineSuggestionGenerator,
 )
-from generators.config_field_generators.narrative_tone_suggestion import (
+from generators.adventure_template_field_generators.narrative_tone_suggestion import (
     NarrativeToneSuggestionGenerator,
 )
-from generators.config_field_generators.narrative_voice_suggestion import (
+from generators.adventure_template_field_generators.narrative_voice_suggestion import (
     NarrativeVoiceSuggestionGenerator,
 )
 from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
