@@ -208,6 +208,11 @@ Formula is (quest_no / problems_per_quest_scale) + min_problems_per_quest + rand
         description="Negative prompt for generating camp images.",
     )
 
+    generation_task_id: str = Field(
+        "",
+        description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
+    )
+
     item_image_prompt: str = Field(
         "16-bit retro-game style item in a hero's inventory. The items's name is: {name}. The item's description is: {description}.",
         description="Prompt for generating item images.",

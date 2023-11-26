@@ -3,46 +3,49 @@ from typing import Dict, List
 from steamship import Block, SteamshipError
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
-from generators.editor_suggestions.adventure_background_suggestion import (
+from generators.config_field_generators.adventure_background_suggestion import (
     AdventureBackgroundSuggestionGenerator,
 )
-from generators.editor_suggestions.adventure_description_suggestion import (
+from generators.config_field_generators.adventure_description_suggestion import (
     AdventureDescriptionSuggestionGenerator,
 )
-from generators.editor_suggestions.adventure_goal_suggestion import (
+from generators.config_field_generators.adventure_goal_suggestion import (
     AdventureGoalSuggestionGenerator,
 )
-from generators.editor_suggestions.adventure_image_suggestion import (
+from generators.config_field_generators.adventure_image_suggestion import (
     AdventureImageSuggestionGenerator,
 )
-from generators.editor_suggestions.adventure_name_suggestion import (
+from generators.config_field_generators.adventure_name_suggestion import (
     AdventureNameSuggestionGenerator,
 )
-from generators.editor_suggestions.adventure_short_description_suggestion import (
+from generators.config_field_generators.adventure_short_description_suggestion import (
     AdventureShortDescriptionSuggestionGenerator,
 )
-from generators.editor_suggestions.character_background_suggestion import (
+from generators.config_field_generators.adventure_tag_suggestion import (
+    AdventureTagSuggestionGenerator,
+)
+from generators.config_field_generators.character_background_suggestion import (
     CharacterBackgroundSuggestionGenerator,
 )
-from generators.editor_suggestions.character_description_suggestion import (
+from generators.config_field_generators.character_description_suggestion import (
     CharacterDescriptionSuggestionGenerator,
 )
-from generators.editor_suggestions.character_image_suggestion import (
+from generators.config_field_generators.character_image_suggestion import (
     CharacterImageSuggestionGenerator,
 )
-from generators.editor_suggestions.character_name_suggestion import (
+from generators.config_field_generators.character_name_suggestion import (
     CharacterNameSuggestionGenerator,
 )
-from generators.editor_suggestions.character_tagline_suggestion import (
+from generators.config_field_generators.character_tagline_suggestion import (
     CharacterTaglineSuggestionGenerator,
 )
-from generators.editor_suggestions.narrative_tone_suggestion import (
+from generators.config_field_generators.narrative_tone_suggestion import (
     NarrativeToneSuggestionGenerator,
 )
-from generators.editor_suggestions.narrative_voice_suggestion import (
+from generators.config_field_generators.narrative_voice_suggestion import (
     NarrativeVoiceSuggestionGenerator,
 )
+from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
 from utils.context_utils import get_server_settings, get_story_text_generator
 
 
@@ -61,6 +64,7 @@ class EditorSuggestionGenerator:
         AdventureNameSuggestionGenerator.get_field(): AdventureNameSuggestionGenerator(),
         AdventureShortDescriptionSuggestionGenerator.get_field(): AdventureShortDescriptionSuggestionGenerator(),
         AdventureDescriptionSuggestionGenerator.get_field(): AdventureDescriptionSuggestionGenerator(),
+        AdventureTagSuggestionGenerator.get_field(): AdventureTagSuggestionGenerator(),
     }
 
     def generate_editor_suggestion(
@@ -77,7 +81,6 @@ class EditorSuggestionGenerator:
         elif len(field_key_path) == 1:
             prompt_key = field_name
         elif len(field_key_path) == 3:
-            # Note: it's important this last bit is field_name because of some strange bits in the client
             prompt_key = f"{field_key_path[0]}.{field_name}"
         else:
             prompt_key = field_name
@@ -111,4 +114,9 @@ class EditorSuggestionGenerator:
                 for key in the_list[index]:
                     variables[f"this_{key}"] = the_list[index][key]
 
-        return prompt.suggest(variables, generator, context)
+        block = prompt.suggest(variables, generator, context)
+        if not block:
+            raise SteamshipError(
+                message=f"Unable to generate for {field_name} - no block on output."
+            )
+        return block

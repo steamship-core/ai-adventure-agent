@@ -1,7 +1,7 @@
 {
 	"type": "package",
-	"handle": "ai-adventure-ted",
-	"version": "2.0.0",
+	"handle": "ai-adventure",
+	"version": "2.0.1-rc.10",
 	"description": "",
 	"author": "",
 	"entrypoint": "Unused",

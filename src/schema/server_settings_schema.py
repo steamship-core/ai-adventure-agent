@@ -60,6 +60,46 @@ GENERAL_OPTIONS = [
     },
 ]
 
+MAGIC_MODE_OPTIONS = [
+    {
+        "name": "adventure_name",
+        "label": "Adventure Name",
+        "description": "What name will others see this adventure by?",
+        "type": "text",
+        "default": "",
+        "required": True,
+        "suggestOutputType": "name",
+    },
+    {
+        "name": "adventure_short_description",
+        "label": "Short Description",
+        "description": "A catchy one-liner to help your adventure stand out in the discover page",
+        "type": "text",
+        "default": "",
+        "required": True,
+        "suggestOutputType": "short_description",
+    },
+    {
+        # Validated
+        "name": "narrative_voice",
+        "label": "Genre",
+        "description": "What is the genre of your story? E.g.: children’s book, young adult novel, fanfic, high literature.",
+        "type": "text",
+        "default": "young adult novel",
+        "suggestOutputType": "narrative_voice",
+    },
+    {
+        # Validated
+        "name": "narrative_tone",
+        "label": "Writing Style",
+        "description": "What is the writing style of your story? E.g.: Serious, Silly, Gritty, Film Noir, Heady, etc.",
+        "type": "text",
+        "default": "silly",
+        "suggestOutputType": "narrative_tone",
+    },
+]
+
+
 STORY_OPTIONS = [
     {
         "name": "story_general_divider",
@@ -741,6 +781,12 @@ SCHEMA = [
         "description": "Settings for your game.",
         "href": "general-settings",
         "settings": GENERAL_OPTIONS,
+    },
+    {
+        "title": "Magic Mode",
+        "description": "Generate an entire game from scratch.",
+        "href": "magic-mode",
+        "settings": [],
     },
     {
         "spacer": True,
