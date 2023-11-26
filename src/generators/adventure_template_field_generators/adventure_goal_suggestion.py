@@ -1,16 +1,18 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class AdventureGoalSuggestionGenerator(EditorFieldSuggestionGenerator):
+class AdventureGoalSuggestionGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """I need help! Finish the main character goal for this short story.
 
 Be short! But creative and colorful. It needs to REALLY capture attention!
 
-Examples of riveting goals:
+The goal should start with a verb. Examples of riveting goals:
 - destroy the Ring of Elders
 - get into Harvard
 - escape from jail

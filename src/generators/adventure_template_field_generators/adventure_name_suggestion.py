@@ -3,16 +3,16 @@ import random
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class AdventureNameSuggestionGenerator(EditorFieldSuggestionGenerator):
-    PROMPT = """I need help! I need to create an amazing movie title for an interesting movie.
+class AdventureNameSuggestionGenerator(AdventureTemplateFieldGenerator):
+    PROMPT = """I need help! Create an amazing movie title for a {genre} movie people would want to see.
 
-I want it to be about five words -- no longer.
-
-The genre is {genre} and it's got a {genre} vibe!
+Make it short: only a few words. Make it punchy!
 
 Suggested Title:"""
 
@@ -23,48 +23,31 @@ Suggested Title:"""
     def suggest(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
-        genre = random.choice(
-            [
-                "comedy",
-                "adventure",
-                "fantasy",
-                "sci-fi",
-                "young adult",
-                "coming of age",
-                "who dunnit",
-                "murder mystery",
-                "thriller",
-                "kids adventure",
-                "tragedy",
-                "romantic comedy",
-                "romance",
-                "video games",
-                "dungeon's and dragons",
-            ]
-        )
 
-        vibe = random.choice(
-            [
-                "silly",
-                "serious",
-                "punchy",
-                "pixar-like",
-                "novel-like",
-                "heady",
-                "fast paced",
-                "irreverant",
-                "parody",
-                "gonzo",
-                "touching",
-                "fun",
-                "exciting",
-                "creative",
-                "speculative",
-                "whimsical",
-            ]
-        )
+        genre = variables.get("narrative_voice")
+        if not genre:
+            genre = random.choice(
+                [
+                    "comedy",
+                    "adventure",
+                    "fantasy",
+                    "sci-fi",
+                    "young adult",
+                    "coming of age",
+                    "who dunnit",
+                    "murder mystery",
+                    "thriller",
+                    "kids adventure",
+                    "tragedy",
+                    "romantic comedy",
+                    "romance",
+                    "video games",
+                    "dungeon's and dragons",
+                ]
+            )
+
         task = generator.generate(
-            text=safe_format(self.PROMPT, {"genre": genre, "vibe": vibe}),
+            text=safe_format(self.PROMPT, {"genre": genre}),
             streaming=True,
             append_output_to_file=True,
             make_output_public=True,

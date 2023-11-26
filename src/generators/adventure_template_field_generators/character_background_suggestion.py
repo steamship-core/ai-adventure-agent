@@ -1,11 +1,13 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class CharacterBackgroundSuggestionGenerator(EditorFieldSuggestionGenerator):
+class CharacterBackgroundSuggestionGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """Write notes for a novel character's background in markdown. The the character's goals are already developed.. the background should provide a riveting story of progress toward those goals!
 
 Be concise but colorful. Use a few bullet points per section.

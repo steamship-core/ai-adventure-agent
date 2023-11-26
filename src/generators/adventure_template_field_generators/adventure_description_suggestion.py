@@ -1,11 +1,13 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class AdventureDescriptionSuggestionGenerator(EditorFieldSuggestionGenerator):
+class AdventureDescriptionSuggestionGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """I need help! I need to create the back of a book jacket for an amazing story. It should captivate people so that they want to read it!
 
 It should only be one or two (short) paragraphs.
@@ -22,7 +24,6 @@ Suggested one-sentence description:"""
     def suggest(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
-
         task = generator.generate(
             text=safe_format(self.PROMPT, variables),
             streaming=True,

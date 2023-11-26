@@ -1,11 +1,13 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class NarrativeToneSuggestionGenerator(EditorFieldSuggestionGenerator):
+class NarrativeToneSuggestionGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """Write a narrative tone suggestion for a story with the genre {narrative_voice}. Be creative! Wide-ranging! But keep it concise.
 
 Examples of good outputs:

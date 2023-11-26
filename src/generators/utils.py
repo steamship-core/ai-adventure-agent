@@ -1,6 +1,6 @@
 from typing import List, Union
 
-from steamship import Block, MimeTypes, SteamshipError, Task
+from steamship import Block, MimeTypes, SteamshipError
 
 
 def safe_format(text: str, params: dict) -> str:
@@ -10,13 +10,6 @@ def safe_format(text: str, params: dict) -> str:
         if value is not None:
             ret = ret.replace("{" + key + "}", str(value))
     return ret
-
-
-def task_to_str_block(task: Task) -> Block:
-    task.wait()
-    if task and task.output and task.output.blocks:
-        return task.output.blocks[0]
-    raise SteamshipError(message="Unable to fetch suggestion")
 
 
 def block_to_config_value(block: Block) -> str:

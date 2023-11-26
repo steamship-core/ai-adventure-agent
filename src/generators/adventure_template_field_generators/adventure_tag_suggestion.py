@@ -1,11 +1,13 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class AdventureTagSuggestionGenerator(EditorFieldSuggestionGenerator):
+class AdventureTagSuggestionGenerator(AdventureTemplateFieldGenerator):
     SOME_TAGS = """Please create an additional categorization tag for this short story.
 
 Examples of good tags are: Comedy, Thriller, Mystery, Silly, Family, Adventure, Sci-Fi, Romance.

@@ -1,11 +1,13 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class CharacterDescriptionSuggestionGenerator(EditorFieldSuggestionGenerator):
+class CharacterDescriptionSuggestionGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """Write notes for a novel character in markdown. Be concise but colorful. Use a few bullet points per section.
 
 Include the sections: Goal, Appearance, Skills, Struggles, Quirks

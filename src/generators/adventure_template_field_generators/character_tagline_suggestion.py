@@ -1,11 +1,13 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class CharacterTaglineSuggestionGenerator(EditorFieldSuggestionGenerator):
+class CharacterTaglineSuggestionGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """Suggest short, 5-10 word tagline of Character #{this_index} in a story.
 
 Examples of good taglines illustrate the character's main motivation or struggle, ike this:

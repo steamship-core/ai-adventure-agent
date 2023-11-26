@@ -1,11 +1,13 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class AdventureShortDescriptionSuggestionGenerator(EditorFieldSuggestionGenerator):
+class AdventureShortDescriptionSuggestionGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """I need help! I need to create an amazing one-sentence tagline for a movie. It should captivate people so that they want to see it.
 
 The title is: {name}

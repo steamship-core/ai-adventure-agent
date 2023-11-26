@@ -1,11 +1,13 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class CharacterNameSuggestionGenerator(EditorFieldSuggestionGenerator):
+class CharacterNameSuggestionGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """Suggest the name of supporting character #{this_index} in a short story.
 
 Story Title: {name}

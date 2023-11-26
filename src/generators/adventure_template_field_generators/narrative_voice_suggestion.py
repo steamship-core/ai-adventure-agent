@@ -1,11 +1,13 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.utils import safe_format
 
 
-class NarrativeVoiceSuggestionGenerator(EditorFieldSuggestionGenerator):
+class NarrativeVoiceSuggestionGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """Write a short genre suggestion for a story. Be expansive, creative, but concise!
 
 Examples of good outputs:

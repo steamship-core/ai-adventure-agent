@@ -3,6 +3,9 @@ from typing import Dict, List
 from steamship import Block, SteamshipError
 from steamship.agents.schema import AgentContext
 
+from generators.adventure_template_field_generator import (
+    AdventureTemplateFieldGenerator,
+)
 from generators.adventure_template_field_generators.adventure_background_suggestion import (
     AdventureBackgroundSuggestionGenerator,
 )
@@ -45,12 +48,11 @@ from generators.adventure_template_field_generators.narrative_tone_suggestion im
 from generators.adventure_template_field_generators.narrative_voice_suggestion import (
     NarrativeVoiceSuggestionGenerator,
 )
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
 from utils.context_utils import get_server_settings, get_story_text_generator
 
 
 class EditorSuggestionGenerator:
-    PROMPTS: Dict[str, EditorFieldSuggestionGenerator] = {
+    PROMPTS: Dict[str, AdventureTemplateFieldGenerator] = {
         NarrativeVoiceSuggestionGenerator.get_field(): NarrativeVoiceSuggestionGenerator(),
         NarrativeToneSuggestionGenerator.get_field(): NarrativeToneSuggestionGenerator(),
         CharacterTaglineSuggestionGenerator.get_field(): CharacterTaglineSuggestionGenerator(),
