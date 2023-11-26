@@ -89,7 +89,7 @@ STORY_OPTIONS = [
         # Validated
         "name": "adventure_background",
         "label": "Adventure Background",
-        "description": """Description of the background setting in which the adventure will take place.  
+        "description": """Description of the background setting in which the adventure will take place.
 
 Can include descriptions of genre, characters, specific items and locations that exist in the world, references to real-world things, etc.""",
         "type": "longtext",
@@ -295,32 +295,37 @@ CHARACTER_OPTIONS = [
 DEFAULT_THEMES = [
     {
         "value": "pixel_art_1",
-        "label": "Pixel Art 1",
+        "label": "Pixel Art 1 (Stable Diffusion)",
         "imageSample": "/image_samples/pixel_art_1.png",
     },
     {
         "value": "pixel_art_2",
-        "label": "Pixel Art 2",
+        "label": "Pixel Art 2 (Stable Diffusion)",
         "imageSample": "/image_samples/pixel_art_2.png",
     },
     {
         "value": "pixel_art_3",
-        "label": "Pixel Art 3",
+        "label": "Pixel Art 3 (Stable Diffusion)",
         "imageSample": "/image_samples/pixel_art_3.png",
     },
     {
-        "value": "epic_realism",
-        "label": "Epic Realism",
-        "imageSample": "/image_samples/epic_realism.jpeg",
+        "value": "dall_e_2_standard",
+        "label": "DALL-E 2",
+        "imageSample": "/image_samples/dall_e_2_standard.png",
     },
     {
-        "value": "ff7r",
-        "label": "FF7R",
-        "imageSample": "/image_samples/ff7r.jpeg",
+        "value": "dall_e_2_stellar_dream",
+        "label": "Stellar Dream (DALL-E 2)",
+        "imageSample": "/image_samples/dall_e_2_stellar_dream.png",
+    },
+    {
+        "value": "dall_e_2_neon_cyberpunk",
+        "label": "Neon Cyberpunk (DALL-E 2)",
+        "imageSample": "/image_samples/dall_e_2_neon_cyberpunk.png",
     },
     {
         "value": "cinematic_animation",
-        "label": "Cinematic Animation",
+        "label": "Outdoor Fantasy Painting (Stable Diffusion)",
         "imageSample": "/image_samples/cinematic_animation.jpeg",
     },
 ]
@@ -723,14 +728,7 @@ GAME_ENGINE_OPTIONS = [
         "description": "Game engine version this Adventure should use. Only values of the form `ai-adventure@VERSION` will be saved. Replace VERSION with the desired version.",
         "type": "upgrade-offer",
         "default": "",
-    },
-    # {
-    #   name: "game_program",
-    #   label: "Custom Script",
-    #   description: "A custom script for your story.",
-    #   type: "program",
-    #   default: "",
-    # },
+    }
 ]
 
 SCHEMA = [
