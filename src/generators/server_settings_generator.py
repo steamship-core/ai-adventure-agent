@@ -7,7 +7,6 @@ from steamship import Task
 from steamship.agents.schema import AgentContext
 from steamship.utils.url import Verb
 
-from schema.server_settings import ServerSettings
 from utils.agent_service import AgentService
 from utils.context_utils import get_server_settings, save_server_settings
 
@@ -34,14 +33,15 @@ class ServerSettingsGenerator(BaseModel, ABC):
 
         # Schedule the clearing of the generation_task_id value
         wait_on_tasks = [last_task] if last_task else []
-        return_task = (
-            generation_complete_task
-        ) = self.schedule_record_generation_complete(wait_on_tasks, agent_service)
+        logging.info(f"Will await on final generation task: {wait_on_tasks}")
+        generation_complete_task = self.schedule_record_generation_complete(
+            wait_on_tasks, agent_service
+        )
 
         # Mark that we're in the state of generating
         self.record_generation_started(generation_complete_task, context)
 
-        return return_task
+        return generation_complete_task
 
     def save_unsaved_server_settings(
         self,
@@ -55,11 +55,13 @@ class ServerSettingsGenerator(BaseModel, ABC):
                 "Updating the server settings to generate the suggestion. This should only be done on the development agent."
             )
             try:
-                server_settings = ServerSettings.parse_obj(unsaved_server_settings)
+                # NOTE: We can't use update_from_web because that will BLAST OVER the things not in unsaved_server_settings
+                # with the Pydantic defaults!
                 context = agent_service.build_default_context()
-                existing_state = get_server_settings(context)
-                existing_state.update_from_web(server_settings)
-                save_server_settings(existing_state, context)
+                server_settings = get_server_settings(context)
+                for k, v in unsaved_server_settings.items():
+                    setattr(server_settings, k, v)
+                save_server_settings(server_settings, context)
             except BaseException as e:
                 logging.exception(e)
                 raise e
