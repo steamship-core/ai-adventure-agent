@@ -32,8 +32,10 @@ Categorization tag:"""
     def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
-        if variables.get("tags"):
+        existing = ""
+        if tags := variables.get("tags"):
             prompt = self.SOME_TAGS
+            existing = ", ".join(tags)
         else:
             prompt = self.PROMPT
 
@@ -45,10 +47,12 @@ Categorization tag:"""
                     "short_description": variables.get("short_description"),
                     "narrative_voice": variables.get("narrative_voice"),
                     "tags": variables.get("tags"),
+                    "existing": existing,
                 },
             ),
             streaming=True,
             append_output_to_file=True,
             make_output_public=True,
         )
-        return self.task_to_str_block(task)
+        block = self.task_to_str_block(task)
+        return block

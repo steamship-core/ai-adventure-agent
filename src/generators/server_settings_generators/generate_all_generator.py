@@ -23,10 +23,10 @@ GENERATE_KEY_PATHS_AND_SHOULD_BLOCK = [
     [["characters", 0, "description"], True],
     # [["characters", 0, "image"], True],
     [["characters", 1, "name"], True],
-    [["characters", 2, "tagline"], True],
-    [["characters", 3, "background"], True],
-    [["characters", 4, "description"], True],
-    # [["characters", 5, "image"], True],
+    [["characters", 1, "tagline"], True],
+    [["characters", 1, "background"], True],
+    [["characters", 1, "description"], True],
+    # [["characters", 1, "image"], True],
 ]
 
 

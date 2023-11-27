@@ -103,16 +103,16 @@ class EditorSuggestionGenerator:
             # we'll just hard-code in the case for: [LIST_NAME, index, FIELD]
             the_list = variables.get(field_key_path[0])
             index = field_key_path[1]
-            if the_list and index < len(the_list):
-                variables["this_index"] = f"{index + 1}"
+            variables["this_index"] = f"{index + 1}"
 
         if field_key_path and len(field_key_path) == 3:
             # we'll just hard-code in the case for: [LIST_NAME, index, FIELD]
             the_list = variables.get(field_key_path[0])
             index = field_key_path[1]
+            variables["this_index"] = f"{index + 1}"
+
             if the_list and index < len(the_list):
                 # We 1-index it since this is to be used in prompts.
-                variables["this_index"] = f"{index + 1}"
                 for key in the_list[index]:
                     variables[f"this_{key}"] = the_list[index][key]
 

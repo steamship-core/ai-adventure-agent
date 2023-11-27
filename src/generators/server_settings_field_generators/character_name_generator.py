@@ -18,7 +18,7 @@ Supporting Character #{this_index} Name:"""
 
 {adventure_background}
 
-Character #{this_index} Name:"""
+Character #{this_index} Name, no further text:"""
 
     @staticmethod
     def get_field() -> str:
@@ -57,7 +57,7 @@ Character #{this_index} Name:"""
                     "narrative_tone": variables.get("narrative_tone"),
                     "adventure_goal": variables.get("adventure_goal"),
                     "existing_chars": variables.get("existing_char_names_str"),
-                    "this_index": variables.get("this_index", "0"),
+                    "this_index": variables.get("this_index", "1"),
                     "adventure_background": variables.get("adventure_background"),
                 },
             ),

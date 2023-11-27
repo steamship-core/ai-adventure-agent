@@ -10,7 +10,7 @@ class AdventureBackgroundGenerator(ServerSettingsFieldGenerator):
 
 Be colorful, descriptive, but concise! Use Markdown, level-two headers, and bullet points within them.
 
-Include the sections: Title, Writing Style, Plot Pitch, Main Goal, Colorful World Setting, Three Characters, Four Locations, and Important Plot Points.
+Include the sections: Title, Writing Style, Plot Pitch, Main Goal, Colorful World Setting, Two Named Main Characters, Three Locations, and Important Plot Points.
 
 ## Title
 
