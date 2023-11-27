@@ -8,14 +8,16 @@ from generators.utils import safe_format
 
 
 class AdventureDescriptionGenerator(AdventureTemplateFieldGenerator):
-    PROMPT = """I need help! I need to create the back of a book jacket for an amazing story. It should captivate people so that they want to read it!
+    PROMPT = """I need help! Please create a two paragraph pitch for an upcoming award-winning story.
 
-It should only be one or two (short) paragraphs.
+It should be one or two (short) paragraphs, written very well, and not sound like advertising.
 
 Title: {name}
-Tagline: {short_description}
+Genre: {narrative_voice}
+Writing Style: {narrative_tone}
+One-liner: {short_description}
 
-Suggested one-sentence description:"""
+Two paragraph pitch:"""
 
     @staticmethod
     def get_field() -> str:

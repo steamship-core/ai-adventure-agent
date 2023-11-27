@@ -10,10 +10,10 @@ from generators.utils import safe_format
 
 
 class AdventureNameGenerator(AdventureTemplateFieldGenerator):
-    PROMPT = """I need help! Create an amazing movie title for a {genre} movie people would want to see.
+    PROMPT = """I need help! Create an amazing movie title that people would want to see. Make it short: only a few words. Make it punchy!
 
-Make it short: only a few words. Make it punchy!
-
+Genre: {narrative_voice}
+Writing Style: {narrative_tone}
 Suggested Title:"""
 
     @staticmethod
@@ -24,9 +24,13 @@ Suggested Title:"""
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
 
-        genre = variables.get("narrative_voice")
-        if not genre:
-            genre = random.choice(
+        narrative_voice = variables.get("narrative_voice")
+        narrative_tone = variables.get(
+            "narrative_tone", "written in a fast-paced and enjoyable style"
+        )
+
+        if not narrative_voice:
+            narrative_voice = random.choice(
                 [
                     "comedy",
                     "adventure",
@@ -47,7 +51,10 @@ Suggested Title:"""
             )
 
         task = generator.generate(
-            text=safe_format(self.PROMPT, {"genre": genre}),
+            text=safe_format(
+                self.PROMPT,
+                {"narrative_voice": narrative_voice, "narrative_tone": narrative_tone},
+            ),
             streaming=True,
             append_output_to_file=True,
             make_output_public=True,

@@ -5,13 +5,13 @@ from generators.adventure_template_generator import AdventureTemplateGenerator
 from utils.agent_service import AgentService
 
 GENERATE_KEY_PATHS = [
+    ["narrative_voice"],  # Genre
+    ["narrative_tone"],  # Writing Style
     ["name"],
     ["short_description"],
     ["description"],
     ["adventure_goal"],
     ["adventure_background"],
-    ["narrative_tone"],
-    ["narrative_voice"],
     ["image"],
     ["tags", 0],
     ["tags", 1],

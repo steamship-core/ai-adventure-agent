@@ -2,8 +2,8 @@ import pytest
 from steamship import MimeTypes, Steamship
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generators.adventure_description_suggestion import (
-    AdventureDescriptionSuggestionGenerator,
+from generators.adventure_template_field_generators.adventure_description_generator import (
+    AdventureDescriptionGenerator,
 )
 from utils.context_utils import get_story_text_generator
 
@@ -15,10 +15,12 @@ def test_adventure_description_suggestion(client: Steamship):
     )
     variables = {
         "name": "The Most Cheese",
+        "narrative_voice": "comedy-adventure",
+        "narrative_tone": "written in a light-hearted, Pixar style manner",
         "short_description": "A chef in Italy goes on an adventure to find the cave with the most cheese.",
     }
     generator = get_story_text_generator(context)
-    suggestor = AdventureDescriptionSuggestionGenerator()
-    block = suggestor.suggest(variables, generator, context)
+    suggestor = AdventureDescriptionGenerator()
+    block = suggestor.generate(variables, generator, context)
     assert block.mime_type == MimeTypes.TXT
     assert block.text

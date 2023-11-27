@@ -6,70 +6,70 @@ from steamship.agents.schema import AgentContext
 from generators.adventure_template_field_generator import (
     AdventureTemplateFieldGenerator,
 )
-from generators.adventure_template_field_generators.adventure_background_suggestion import (
-    AdventureBackgroundSuggestionGenerator,
+from generators.adventure_template_field_generators.adventure_background_generator import (
+    AdventureBackgroundGenerator,
 )
-from generators.adventure_template_field_generators.adventure_description_suggestion import (
-    AdventureDescriptionSuggestionGenerator,
+from generators.adventure_template_field_generators.adventure_description_generator import (
+    AdventureDescriptionGenerator,
 )
-from generators.adventure_template_field_generators.adventure_goal_suggestion import (
-    AdventureGoalSuggestionGenerator,
+from generators.adventure_template_field_generators.adventure_goal_generator import (
+    AdventureGoalGenerator,
 )
-from generators.adventure_template_field_generators.adventure_image_suggestion import (
+from generators.adventure_template_field_generators.adventure_image_generator import (
     AdventureImageGenerator,
 )
-from generators.adventure_template_field_generators.adventure_name_suggestion import (
-    AdventureNameSuggestionGenerator,
+from generators.adventure_template_field_generators.adventure_name_generator import (
+    AdventureNameGenerator,
 )
-from generators.adventure_template_field_generators.adventure_short_description_suggestion import (
-    AdventureShortDescriptionSuggestionGenerator,
+from generators.adventure_template_field_generators.adventure_short_description_generator import (
+    AdventureShortDescriptionGenerator,
 )
-from generators.adventure_template_field_generators.adventure_tag_suggestion import (
-    AdventureTagSuggestionGenerator,
+from generators.adventure_template_field_generators.adventure_tag_generator import (
+    AdventureTagGenerator,
 )
-from generators.adventure_template_field_generators.character_background_suggestion import (
-    CharacterBackgroundSuggestionGenerator,
+from generators.adventure_template_field_generators.character_background_generator import (
+    CharacterBackgroundGenerator,
 )
-from generators.adventure_template_field_generators.character_description_suggestion import (
-    CharacterDescriptionSuggestionGenerator,
+from generators.adventure_template_field_generators.character_description_generator import (
+    CharacterDescriptionGenerator,
 )
-from generators.adventure_template_field_generators.character_image_suggestion import (
-    CharacterImageSuggestionGenerator,
+from generators.adventure_template_field_generators.character_image_generator import (
+    CharacterImageGenerator,
 )
-from generators.adventure_template_field_generators.character_name_suggestion import (
-    CharacterNameSuggestionGenerator,
+from generators.adventure_template_field_generators.character_name_generator import (
+    CharacterNameGenerator,
 )
-from generators.adventure_template_field_generators.character_tagline_suggestion import (
-    CharacterTaglineSuggestionGenerator,
+from generators.adventure_template_field_generators.character_tagline_generator import (
+    CharacterTaglineGenerator,
 )
-from generators.adventure_template_field_generators.narrative_tone_suggestion import (
-    NarrativeToneSuggestionGenerator,
+from generators.adventure_template_field_generators.genre_generator import (
+    GenreGenerator,
 )
-from generators.adventure_template_field_generators.narrative_voice_suggestion import (
-    NarrativeVoiceSuggestionGenerator,
+from generators.adventure_template_field_generators.writing_style_generator import (
+    WritingStyleGenerator,
 )
 from utils.context_utils import get_server_settings, get_story_text_generator
 
 
 class EditorSuggestionGenerator:
     PROMPTS: Dict[str, AdventureTemplateFieldGenerator] = {
-        NarrativeVoiceSuggestionGenerator.get_field(): NarrativeVoiceSuggestionGenerator(),
-        NarrativeToneSuggestionGenerator.get_field(): NarrativeToneSuggestionGenerator(),
-        CharacterTaglineSuggestionGenerator.get_field(): CharacterTaglineSuggestionGenerator(),
-        CharacterNameSuggestionGenerator.get_field(): CharacterNameSuggestionGenerator(),
-        CharacterDescriptionSuggestionGenerator.get_field(): CharacterDescriptionSuggestionGenerator(),
-        CharacterBackgroundSuggestionGenerator.get_field(): CharacterBackgroundSuggestionGenerator(),
-        CharacterImageSuggestionGenerator.get_field(): CharacterImageSuggestionGenerator(),
-        AdventureGoalSuggestionGenerator.get_field(): AdventureGoalSuggestionGenerator(),
-        AdventureBackgroundSuggestionGenerator.get_field(): AdventureBackgroundSuggestionGenerator(),
+        GenreGenerator.get_field(): GenreGenerator(),
+        WritingStyleGenerator.get_field(): WritingStyleGenerator(),
+        CharacterTaglineGenerator.get_field(): CharacterTaglineGenerator(),
+        CharacterNameGenerator.get_field(): CharacterNameGenerator(),
+        CharacterDescriptionGenerator.get_field(): CharacterDescriptionGenerator(),
+        CharacterBackgroundGenerator.get_field(): CharacterBackgroundGenerator(),
+        CharacterImageGenerator.get_field(): CharacterImageGenerator(),
+        AdventureGoalGenerator.get_field(): AdventureGoalGenerator(),
+        AdventureBackgroundGenerator.get_field(): AdventureBackgroundGenerator(),
         AdventureImageGenerator.get_field(): AdventureImageGenerator(),
-        AdventureNameSuggestionGenerator.get_field(): AdventureNameSuggestionGenerator(),
-        AdventureShortDescriptionSuggestionGenerator.get_field(): AdventureShortDescriptionSuggestionGenerator(),
-        AdventureDescriptionSuggestionGenerator.get_field(): AdventureDescriptionSuggestionGenerator(),
-        AdventureTagSuggestionGenerator.get_field(): AdventureTagSuggestionGenerator(),
+        AdventureNameGenerator.get_field(): AdventureNameGenerator(),
+        AdventureShortDescriptionGenerator.get_field(): AdventureShortDescriptionGenerator(),
+        AdventureDescriptionGenerator.get_field(): AdventureDescriptionGenerator(),
+        AdventureTagGenerator.get_field(): AdventureTagGenerator(),
     }
 
-    def generate_editor_suggestion(
+    def generate(
         self,
         field_name: str,
         unsaved_server_settings: dict,

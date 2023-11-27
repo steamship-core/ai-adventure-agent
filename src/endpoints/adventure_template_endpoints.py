@@ -125,9 +125,7 @@ class AdventureTemplateMixin(PackageMixin):
 
         # Make the suggestion
         field_key_path = field_key_path or []
-        block = generator.generate_editor_suggestion(
-            field_name, variables, field_key_path, context
-        )
+        block = generator.generate(field_name, variables, field_key_path, context)
 
         # Maybe save it
         if save_to_adventure_template:

@@ -2,7 +2,7 @@ import pytest
 from steamship import MimeTypes, Steamship
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generators.adventure_image_suggestion import (
+from generators.adventure_template_field_generators.adventure_image_generator import (
     AdventureImageGenerator,
 )
 from utils.context_utils import get_story_text_generator
@@ -22,5 +22,5 @@ def test_adventure_description_suggestion(client: Steamship):
     }
     generator = get_story_text_generator(context)
     suggestor = AdventureImageGenerator()
-    block = suggestor.suggest(variables, generator, context)
+    block = suggestor.generate(variables, generator, context)
     assert block.mime_type == MimeTypes.PNG
