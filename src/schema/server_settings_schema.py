@@ -14,31 +14,9 @@ GENERAL_OPTIONS = [
     },
     s.name,
     s.short_description,
-    {
-        "name": "adventure_description",
-        "label": "Description",
-        "description": "A longer description of this adventure. Go into detail!",
-        "type": "textarea",
-        "default": "",
-        "required": True,
-        "suggestOutputType": "description",
-    },
-    {
-        "name": "adventure_tags",
-        "label": "Tags",
-        "description": "A list of short string tags.",
-        "type": "tag-list",
-        "listof": "text",
-    },
-    {
-        "name": "adventure_image",
-        "label": "Image",
-        "description": "Select an image to represent this adventure.",
-        "type": "image",
-        "default": "",
-        "required": True,
-        "suggestOutputType": "image",
-    },
+    s.description,
+    s.tags,
+    s.image,
     {
         "name": "adventure_player_singular_noun",
         "label": "Noun for a 'Player'",
@@ -196,12 +174,10 @@ IMAGE_OPTIONS = [
     },
     s.quest_background_theme,
     s.quest_background_image_prompt,
-    s.quest_background_image_negative_prompt
+    s.quest_background_image_negative_prompt,
 ]
 
-VOICE_OPTIONS = [
-    s.narration_voice
-]
+VOICE_OPTIONS = [s.narration_voice]
 
 MUSIC_OPTIONS = [
     s.scene_music_generation_prompt,
@@ -209,9 +185,7 @@ MUSIC_OPTIONS = [
     s.music_duration,
 ]
 
-IMAGE_THEME_OPTIONS = [
-    s.image_themes
-]
+IMAGE_THEME_OPTIONS = [s.image_themes]
 
 GAME_ENGINE_OPTIONS = [
     {

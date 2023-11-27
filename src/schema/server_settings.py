@@ -1,10 +1,11 @@
 import re
 from enum import Enum
-from typing import List, Optional, Union, Dict, Any
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 from steamship import SteamshipError
 
+from schema.characters import Character
 from schema.image_theme import DalleTheme, StableDiffusionTheme
 from schema.quest import QuestDescription
 
@@ -162,6 +163,75 @@ class ServerSettings(BaseModel):
     default_function_capable_llm_temperature: float = Field(0.0, description="")
     default_function_capable_llm_max_tokens: int = Field(512, description="")
 
+    source_url: Optional[str] = Field(
+        default=None,
+        description="The URL from which this Adventure was generated. E.g. A URL to a short story on the web.",
+    )
+
+    source_story_text: Optional[str] = Field(
+        default=None,
+        description="The short story text which this Adventure originates. This data is necessary during 'Magic Create' mode in the editor, but can be removed afterward.",
+    )
+
+    image: Optional[str] = Field(
+        default=None,
+        meta_settings={
+            "name": "adventure_image",
+            "label": "Image",
+            "description": "Select an image to represent this adventure.",
+            "type": "image",
+            "default": "",
+            "required": True,
+            "suggestOutputType": "image",
+        },
+    )
+    """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
+
+    short_description: Optional[str] = Field(
+        default="An amazing story of exploration.",
+        meta_setting={
+            "name": "adventure_short_description",
+            "label": "Short Description",
+            "description": "A catchy one-liner to help your adventure stand out in the discover page",
+            "type": "text",
+            "default": "",
+            "required": True,
+            "suggestOutputType": "short_description",
+        },
+    )
+
+    description: Optional[str] = Field(
+        default="An amazing story of exploration.",
+        meta_setting={
+            "name": "adventure_description",
+            "label": "Description",
+            "description": "A longer description of this adventure. Go into detail!",
+            "type": "textarea",
+            "default": "",
+            "required": True,
+            "suggestOutputType": "description",
+        },
+    )
+    """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
+
+    tags: Optional[List[Optional[str]]] = Field(
+        default=None,
+        meta_settings={
+            "name": "adventure_tags",
+            "label": "Tags",
+            "description": "A list of short string tags.",
+            "type": "tag-list",
+            "listof": "text",
+        },
+    )
+    """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
+
+    characters: Optional[List[Optional[Character]]] = Field(
+        default=None,
+        description="The pre-made Characters one can play with this Adventure, for use on the profile marketing page and also during 'Magic Create' mode in the editor.",
+    )
+    """For use on the profile marketing page, during 'Magic Create' mode in the editor, and during onboarding."""
+
     # Language Generation Settings - Story telling
     default_story_model: str = Field(
         "gpt-3.5-turbo",
@@ -182,7 +252,7 @@ class ServerSettings(BaseModel):
                     "label": "GPT 4",
                 },
             ],
-        }
+        },
     )
     default_story_temperature: float = Field(
         0.7,
@@ -194,7 +264,7 @@ class ServerSettings(BaseModel):
             "description": "Temperature (creativity-factor) for the narrative generation. 0=Robot, 1=Bonkers, 0.4=Default",
             "type": "float",
             "default": 0.7,
-        }
+        },
     )
     default_story_max_tokens: int = Field(
         512,
@@ -206,7 +276,7 @@ class ServerSettings(BaseModel):
             "description": "Maximum number of tokens permitted during generation. 256=Default",
             "type": "int",
             "default": 512,
-        }
+        },
     )
 
     # Narration Generation Settings
@@ -225,7 +295,7 @@ class ServerSettings(BaseModel):
             "default": "",
             "required": True,
             "suggestOutputType": "name",
-        }
+        },
     )
 
     short_description: Optional[str] = Field(
@@ -238,7 +308,7 @@ class ServerSettings(BaseModel):
             "default": "",
             "required": True,
             "suggestOutputType": "short_description",
-        }
+        },
     )
 
     # Narrative settings
@@ -252,7 +322,7 @@ class ServerSettings(BaseModel):
             "type": "text",
             "default": "silly",
             "suggestOutputType": "narrative_tone",
-        }
+        },
     )
 
     adventure_background: Optional[str] = Field(
@@ -324,7 +394,7 @@ Can include descriptions of genre, characters, specific items and locations that
                     "type": "longtext",
                 },
             ],
-        }
+        },
     )
 
     # Quest settings
@@ -337,7 +407,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "description": "If you don't have a pre-defined list of quests, this is how many will be generated",
             "type": "int",
             "default": 10,
-        }
+        },
     )
 
     min_problems_per_quest: int = Field(
@@ -350,7 +420,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "type": "int",
             "default": 2,
             "min": 1,
-        }
+        },
     )
 
     problems_per_quest_scale: float = Field(
@@ -363,7 +433,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "type": "float",
             "default": 0.25,
             "min": 0,
-        }
+        },
     )
 
     max_additional_problems_per_quest: int = Field(
@@ -376,7 +446,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "type": "int",
             "default": 2,
             "min": 1,
-        }
+        },
     )
 
     # TODO (PR) this is different than problem_solution_difficulty, is this getting used?
@@ -403,7 +473,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 "tone": "Description of the tone of the adventure.",
                 "genre": "Description of the genre of the adventure.",
             },
-        }
+        },
     )
 
     # Narration settings
@@ -479,7 +549,7 @@ Can include descriptions of genre, characters, specific items and locations that
                     "description": "Young american woman. A soft and pleasant voice for a great character.",
                 },
             ],
-        }
+        },
     )
 
     # Image model settings
@@ -498,7 +568,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 "tone": "Description of the tone of the adventure.",
                 "genre": "Description of the genre of the adventure.",
             },
-        }
+        },
     )
 
     item_image_prompt: str = Field(
@@ -512,9 +582,9 @@ Can include descriptions of genre, characters, specific items and locations that
             "default": "16-bit retro-game sprite for an {name}, {description}",
             "variablesPermitted": {
                 "name": "The name of the item.",
-                "description": "Description of the item."
-            }
-        }
+                "description": "Description of the item.",
+            },
+        },
     )
 
     item_image_negative_prompt: str = Field(
@@ -530,7 +600,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 "name": "The name of the item.",
                 "description": "Description of the item.",
             },
-        }
+        },
     )
 
     profile_image_prompt: str = Field(
@@ -546,7 +616,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 "name": "The name of the character.",
                 "description": "Description of the character.",
             },
-        }
+        },
     )
 
     profile_image_negative_prompt: str = Field(
@@ -562,7 +632,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 "name": "The name of the character.",
                 "description": "Description of the character.",
             },
-        }
+        },
     )
 
     quest_background_image_prompt: str = Field(
@@ -577,7 +647,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "variablesPermitted": {
                 "description": "Description of the quest the player is on.",
             },
-        }
+        },
     )
 
     quest_background_image_negative_prompt: str = Field(
@@ -592,7 +662,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "variablesPermitted": {
                 "description": "Description of the quest the player is on.",
             },
-        }
+        },
     )
 
     scene_music_generation_prompt: str = Field(
@@ -604,7 +674,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "description": "The prompt used to generate music for a quest.  Game tone and scene description will be filled in as {tone} and {description}.",
             "type": "longtext",
             "default": "16-bit game score for a quest game scene. {tone}. Scene description: {description}",
-        }
+        },
     )
 
     camp_music_generation_prompt: str = Field(
@@ -616,7 +686,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "description": "The prompt used to generate music for camp.  Game tone will filled in as {tone}.",
             "type": "longtext",
             "default": "background music for a quest game camp scene. {tone}.",
-        }
+        },
     )
 
     image_themes: List[Union[StableDiffusionTheme, DalleTheme]] = Field(
@@ -743,7 +813,7 @@ Can include descriptions of genre, characters, specific items and locations that
                     ],
                 },
             ],
-        }
+        },
     )
 
     camp_image_theme: str = Field(
@@ -757,7 +827,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "options": DEFAULT_THEMES,
             "default": "pixel_art_1",
             "includeDynamicOptions": "image-themes",
-        }
+        },
     )
 
     item_image_theme: str = Field(
@@ -771,7 +841,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "options": DEFAULT_THEMES,
             "default": "pixel_art_1",
             "includeDynamicOptions": "image-themes",
-        }
+        },
     )
 
     profile_image_theme: str = Field(
@@ -785,7 +855,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "options": DEFAULT_THEMES,
             "default": "pixel_art_1",
             "includeDynamicOptions": "image-themes",
-        }
+        },
     )
 
     quest_background_theme: str = Field(
@@ -799,7 +869,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "options": DEFAULT_THEMES,
             "default": "pixel_art_1",
             "includeDynamicOptions": "image-themes",
-        }
+        },
     )
 
     music_duration: int = Field(
@@ -814,7 +884,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "description": "Duration of music to generate. Default=10. Max=30. IMPORTANT: Values less than 15 are safest because generation takes so long.",
             "type": "int",
             "default": 10,
-        }
+        },
     )
 
     @property
@@ -937,4 +1007,3 @@ Can include descriptions of genre, characters, specific items and locations that
             meta_setting["serverSetting"] = True
             setattr(s, field_name, meta_setting)
         return s
-
