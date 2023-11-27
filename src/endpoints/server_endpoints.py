@@ -47,6 +47,20 @@ class ServerSettingsMixin(PackageMixin):
             logging.exception(e)
             raise e
 
+    @post("/patch_server_settings")
+    def patch_server_settings(self, **kwargs) -> dict:
+        """Set the server settings -- only applying updates contained in kwargs."""
+        try:
+            context = self.agent_service.build_default_context()
+            server_settings = get_server_settings(context)
+            for k, v in kwargs.items():
+                setattr(server_settings, k, v)
+            save_server_settings(server_settings, context)
+            return server_settings.dict()
+        except BaseException as e:
+            logging.exception(e)
+            raise e
+
     @get("/server_settings")
     def get_server_settings(self) -> dict:
         """Get the server settings."""

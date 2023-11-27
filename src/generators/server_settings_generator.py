@@ -94,7 +94,7 @@ class ServerSettingsGenerator(BaseModel, ABC):
         self, wait_on_tasks: Optional[List[Task]], agent_service: AgentService
     ) -> Task:
         return agent_service.invoke_later(
-            method="/server_settings",
+            method="/patch_server_settings",
             verb=Verb.POST,
             wait_on_tasks=wait_on_tasks,
             arguments={"generation_task_id": ""},

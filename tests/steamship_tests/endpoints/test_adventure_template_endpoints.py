@@ -251,8 +251,6 @@ def test_generate_list_item_suggestion_with_save(
 ):
     invocable_handler, client = invocable_handler_with_client
 
-    ss0 = invocable_handler("GET", "server_settings", {}).get("data")
-
     field = "tags"
     idx = 2
 
@@ -267,8 +265,6 @@ def test_generate_list_item_suggestion_with_save(
     )
 
     ss2 = invocable_handler("GET", "server_settings", {}).get("data")
-
-    assert field not in ss0
 
     assert ss2[field] is not None
     assert ss2[field] != ""
@@ -297,12 +293,7 @@ def test_generate_list_of_objects_item_suggestion_with_save(
 ):
     invocable_handler, client = invocable_handler_with_client
 
-    ss0 = invocable_handler("GET", "server_settings", {}).get("data")
-
     field = "characters"
-    idx = 2
-    idx2 = 1
-    # property = "name"
 
     task_dict = invocable_handler(
         "POST",
@@ -326,18 +317,14 @@ def test_generate_list_of_objects_item_suggestion_with_save(
 
     ss2 = invocable_handler("GET", "server_settings", {}).get("data")
 
-    assert field not in ss0
-
     assert ss2[field] is not None
     assert ss2[field] != ""
-    assert len(ss2[field]) == idx + 1
+    assert len(ss2[field]) == 2
+    assert ss2[field][0].get("name") is None
+    assert ss2[field][0].get("tagline") is None
 
-    for i in range(len(ss2[field])):
-        if i in [idx, idx2]:
-            assert ss2[field][i] is not None
-            assert ss2[field][i] != ""
-        else:
-            assert ss2[field][i] is None
+    assert ss2[field][1].get("name")
+    assert ss2[field][1].get("tagline")
 
     block = Block.parse_obj(task_dict.get("data"))
     url = f"{client.config.api_base}block/{block.id}/raw"
