@@ -18,7 +18,6 @@ def test_adventure_background_suggestion(client: Steamship):
         "short_description": "A chef in Italy goes on an adventure to find the cave with the most cheese.",
         "narrative_voice": "Comedy",
         "narrative_tone": "Written like a wordy movie.",
-        "adventure_background": "A busy and bustling neighborhood in Rome. Giovanni, the main character, leaves his job because he is entranced with finding more cheese than anyone has ever found.",
         "adventure_goal": "uncover the secret of the legendary Cheese Vault",
     }
     generator = get_story_text_generator(context)

@@ -216,7 +216,7 @@ class ServerSettings(BaseModel):
 
     tags: Optional[List[Optional[str]]] = Field(
         default=None,
-        meta_settings={
+        meta_setting={
             "name": "adventure_tags",
             "label": "Tags",
             "description": "A list of short string tags.",
