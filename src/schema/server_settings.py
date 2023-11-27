@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import List, Optional, Union, Dict
+from typing import List, Optional, Union, Dict, Any
 
 from pydantic import BaseModel, Field
 from steamship import SteamshipError
@@ -145,7 +145,7 @@ class ServerSettings(BaseModel):
     """
 
     @classmethod
-    def setting_schema(cls, name: str) -> Dict[str, any]:
+    def setting_schema(cls, name: str) -> Dict[str, Any]:
         field = cls.__fields__.get(name)
         if not field:
             raise AttributeError(f"No field named {name}")
@@ -920,3 +920,21 @@ Can include descriptions of genre, characters, specific items and locations that
             for validation_error in result
             if validation_error is not None
         ]
+
+    @classmethod
+    def schema_instance(cls) -> "ServerSettings":
+        """
+        Create a new ServerSettings instance but then replace the values with their definitions, in wild defiance of
+        type checking.  But... Field/FieldInfo does that anyway, right?
+        :return: ServerSettings, but with fields replaced with their schema instead of value.
+        """
+        s = cls()
+        for field_name, field in cls.__fields__.items():
+            meta_setting = field.field_info.extra.get("meta_setting")
+            if not meta_setting:
+                delattr(s, field_name)
+                continue
+            meta_setting["serverSetting"] = True
+            setattr(s, field_name, meta_setting)
+        return s
+
