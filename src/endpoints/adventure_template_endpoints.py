@@ -64,11 +64,11 @@ class AdventureTemplateMixin(PackageMixin):
 
         variables = {}
 
-        # Now update it with the adventure template
-        variables.update(adventure_template.dict())
-
         # Now template it against the saved server settings
         variables.update(server_settings.dict())
+
+        # Always update with adventure template second
+        variables.update(adventure_template.dict())
 
         # Now update it with the unsaved server settings
         if unsaved_server_settings:
@@ -134,6 +134,7 @@ class AdventureTemplateMixin(PackageMixin):
             raise e
 
         generator = EditorSuggestionGenerator()
+        logging.info(f"Generating {field_key_path} with variables {variables}")
 
         # Make the suggestion
         field_key_path = field_key_path or []

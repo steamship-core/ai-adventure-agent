@@ -304,15 +304,15 @@ def test_generate_list_of_objects_item_suggestion_with_save(
     field = "characters"
     idx = 2
     idx2 = 1
-    property = "name"
+    # property = "name"
 
     task_dict = invocable_handler(
         "POST",
         "generate_suggestion",
         {
-            "field_name": field,
+            "field_name": "characters.name",
             "save_to_adventure_template": True,
-            "field_key_path": [field, idx, property],
+            "field_key_path": ["characters", 1, "name"],
         },
     )
 
@@ -320,9 +320,9 @@ def test_generate_list_of_objects_item_suggestion_with_save(
         "POST",
         "generate_suggestion",
         {
-            "field_name": field,
+            "field_name": "characters.tagline",
             "save_to_adventure_template": True,
-            "field_key_path": [field, idx2, property],
+            "field_key_path": ["characters", 1, "tagline"],
         },
     )
 

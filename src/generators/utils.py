@@ -1,3 +1,4 @@
+import logging
 from typing import List, Union
 
 from steamship import Block, MimeTypes, SteamshipError
@@ -5,6 +6,7 @@ from steamship import Block, MimeTypes, SteamshipError
 
 def safe_format(text: str, params: dict) -> str:
     """Safely formats a user-provided string by replacing {key} with `value` for all (key,value) pairs in `params`."""
+    logging.info(f"Safe Format Text {text} with {params}")
     ret = text
     for (key, value) in params.items():
         if value is not None:
