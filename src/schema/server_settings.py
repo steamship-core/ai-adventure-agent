@@ -175,7 +175,7 @@ class ServerSettings(BaseModel):
 
     image: Optional[str] = Field(
         default=None,
-        meta_settings={
+        meta_setting={
             "name": "adventure_image",
             "label": "Image",
             "description": "Select an image to represent this adventure.",
