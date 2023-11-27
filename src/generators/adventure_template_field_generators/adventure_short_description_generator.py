@@ -7,7 +7,7 @@ from generators.adventure_template_field_generator import (
 from generators.utils import safe_format
 
 
-class AdventureShortDescriptionSuggestionGenerator(AdventureTemplateFieldGenerator):
+class AdventureShortDescriptionGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """I need help! I need to create an amazing one-sentence tagline for a movie. It should captivate people so that they want to see it.
 
 The title is: {name}
@@ -18,7 +18,7 @@ Suggested one-sentence description:"""
     def get_field() -> str:
         return "short_description"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
 

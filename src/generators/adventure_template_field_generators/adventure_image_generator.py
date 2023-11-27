@@ -8,12 +8,12 @@ from generators.image_generators import get_image_generator
 from utils.context_utils import get_server_settings, get_theme
 
 
-class AdventureImageSuggestionGenerator(AdventureTemplateFieldGenerator):
+class AdventureImageGenerator(AdventureTemplateFieldGenerator):
     @staticmethod
     def get_field() -> str:
         return "image"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         server_settings = get_server_settings(context)

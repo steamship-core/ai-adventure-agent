@@ -7,7 +7,7 @@ from generators.adventure_template_field_generator import (
 from generators.utils import safe_format
 
 
-class CharacterBackgroundSuggestionGenerator(AdventureTemplateFieldGenerator):
+class CharacterBackgroundGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """Write notes for a novel character's background in markdown. The the character's goals are already developed.. the background should provide a riveting story of progress toward those goals!
 
 Be concise but colorful. Use a few bullet points per section.
@@ -42,7 +42,7 @@ Be concise but colorful. Use a few bullet points per section.
     def get_field() -> str:
         return "characters.background"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         task = generator.generate(

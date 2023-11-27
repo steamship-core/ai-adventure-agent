@@ -7,7 +7,7 @@ from generators.adventure_template_field_generator import (
 from generators.utils import safe_format
 
 
-class AdventureTagSuggestionGenerator(AdventureTemplateFieldGenerator):
+class AdventureTagGenerator(AdventureTemplateFieldGenerator):
     SOME_TAGS = """Please create an additional categorization tag for this short story.
 
 Examples of good tags are: Comedy, Thriller, Mystery, Silly, Family, Adventure, Sci-Fi, Romance.
@@ -31,7 +31,7 @@ Categorization tag:"""
     def get_field() -> str:
         return "tags"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         if variables.get("tags"):

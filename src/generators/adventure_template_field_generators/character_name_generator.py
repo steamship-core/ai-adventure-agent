@@ -7,7 +7,7 @@ from generators.adventure_template_field_generator import (
 from generators.utils import safe_format
 
 
-class CharacterNameSuggestionGenerator(AdventureTemplateFieldGenerator):
+class CharacterNameGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """Suggest the name of supporting character #{this_index} in a short story.
 
 Story Title: {name}
@@ -19,7 +19,7 @@ Supporting Character #{this_index} Name:"""
     def get_field() -> str:
         return "characters.name"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         existing_char_names_str = ""

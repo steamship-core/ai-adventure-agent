@@ -7,40 +7,26 @@ from generators.adventure_template_field_generator import (
 from generators.utils import safe_format
 
 
-class CharacterDescriptionSuggestionGenerator(AdventureTemplateFieldGenerator):
-    PROMPT = """Write notes for a novel character in markdown. Be concise but colorful. Use a few bullet points per section.
+class NarrativeToneGenerator(AdventureTemplateFieldGenerator):
+    PROMPT = """Write a narrative tone suggestion for a story with the genre {narrative_voice}. Be creative! Wide-ranging! But keep it concise.
 
-Include the sections: Goal, Appearance, Skills, Struggles, Quirks
+Examples of good outputs:
 
-# Story
+- silly, like a Cartoon Network show
+- parody, in the style of an HBO show
+- dramatic, with a tinge of danger
+- gritty, high contrast and real
+- film noir, with a romantic tinge of hard-boiled mystery
 
-## Title: {name}
+Suggestion:
 
-## Genre
-
-{narrative_voice}
-
-# Character
-
-## Name
-
-{this_name}
-
-## Tagline
-
-{this_tagline}
-
-## Goal
-
-{adventure_goal}
-
-## Appearance"""
+-"""
 
     @staticmethod
     def get_field() -> str:
-        return "characters.description"
+        return "narrative_tone"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         task = generator.generate(

@@ -12,10 +12,15 @@ class AdventureTemplateFieldGenerator(BaseModel, ABC):
     """Generates a single field in an Adventure Template."""
 
     @abstractmethod
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         pass
+
+    def generate(
+        self, variables: dict, generator: PluginInstance, context: AgentContext
+    ) -> Block:
+        return self.inner_generate(variables, generator, context)
 
     def task_to_str_block(self, task: Task) -> Block:
         task.wait()

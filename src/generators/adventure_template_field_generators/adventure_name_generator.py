@@ -9,7 +9,7 @@ from generators.adventure_template_field_generator import (
 from generators.utils import safe_format
 
 
-class AdventureNameSuggestionGenerator(AdventureTemplateFieldGenerator):
+class AdventureNameGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """I need help! Create an amazing movie title for a {genre} movie people would want to see.
 
 Make it short: only a few words. Make it punchy!
@@ -20,7 +20,7 @@ Suggested Title:"""
     def get_field() -> str:
         return "name"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
 

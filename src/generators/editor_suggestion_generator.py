@@ -16,7 +16,7 @@ from generators.adventure_template_field_generators.adventure_goal_suggestion im
     AdventureGoalSuggestionGenerator,
 )
 from generators.adventure_template_field_generators.adventure_image_suggestion import (
-    AdventureImageSuggestionGenerator,
+    AdventureImageGenerator,
 )
 from generators.adventure_template_field_generators.adventure_name_suggestion import (
     AdventureNameSuggestionGenerator,
@@ -62,7 +62,7 @@ class EditorSuggestionGenerator:
         CharacterImageSuggestionGenerator.get_field(): CharacterImageSuggestionGenerator(),
         AdventureGoalSuggestionGenerator.get_field(): AdventureGoalSuggestionGenerator(),
         AdventureBackgroundSuggestionGenerator.get_field(): AdventureBackgroundSuggestionGenerator(),
-        AdventureImageSuggestionGenerator.get_field(): AdventureImageSuggestionGenerator(),
+        AdventureImageGenerator.get_field(): AdventureImageGenerator(),
         AdventureNameSuggestionGenerator.get_field(): AdventureNameSuggestionGenerator(),
         AdventureShortDescriptionSuggestionGenerator.get_field(): AdventureShortDescriptionSuggestionGenerator(),
         AdventureDescriptionSuggestionGenerator.get_field(): AdventureDescriptionSuggestionGenerator(),
@@ -116,7 +116,7 @@ class EditorSuggestionGenerator:
                 for key in the_list[index]:
                     variables[f"this_{key}"] = the_list[index][key]
 
-        block = prompt.suggest(variables, generator, context)
+        block = prompt.generate(variables, generator, context)
         if not block:
             raise SteamshipError(
                 message=f"Unable to generate for {field_name} - no block on output."

@@ -7,12 +7,10 @@ from steamship.agents.service.agent_service import AgentService
 from steamship.invocable import get, post
 from steamship.invocable.package_mixin import PackageMixin
 
-from generators.adventure_template_field_generators.editor_suggestion_generator import (
-    EditorSuggestionGenerator,
-)
 from generators.adventure_template_generators.generate_all_generator import (
     GenerateAllGenerator,
 )
+from generators.editor_suggestion_generator import EditorSuggestionGenerator
 from generators.image_generators import get_image_generator
 from generators.utils import block_to_config_value, set_keypath_value
 from schema.adventure_template import AdventureTemplate

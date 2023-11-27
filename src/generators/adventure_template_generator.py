@@ -21,7 +21,6 @@ class AdventureTemplateGenerator(BaseModel, ABC):
     ) -> Task:
         pass
 
-    @abstractmethod
     def generate(
         self,
         agent_service: AgentService,

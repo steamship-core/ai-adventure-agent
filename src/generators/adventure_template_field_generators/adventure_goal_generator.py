@@ -7,7 +7,7 @@ from generators.adventure_template_field_generator import (
 from generators.utils import safe_format
 
 
-class AdventureGoalSuggestionGenerator(AdventureTemplateFieldGenerator):
+class AdventureGoalGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """I need help! Finish the main character goal for this short story.
 
 Be short! But creative and colorful. It needs to REALLY capture attention!
@@ -39,7 +39,7 @@ Here are the story details. Finish with the goal!
     def get_field() -> str:
         return "adventure_goal"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         task = generator.generate(

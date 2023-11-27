@@ -7,7 +7,7 @@ from generators.adventure_template_field_generator import (
 from generators.utils import safe_format
 
 
-class CharacterTaglineSuggestionGenerator(AdventureTemplateFieldGenerator):
+class CharacterTaglineGenerator(AdventureTemplateFieldGenerator):
     PROMPT = """Suggest short, 5-10 word tagline of Character #{this_index} in a story.
 
 Examples of good taglines illustrate the character's main motivation or struggle, ike this:
@@ -26,7 +26,7 @@ Character ${this_index} tagline: (${this_name}) """
     def get_field() -> str:
         return "characters.tagline"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         task = generator.generate(

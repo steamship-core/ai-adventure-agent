@@ -7,12 +7,12 @@ from generators.adventure_template_field_generator import (
 from generators.generator_context_utils import get_profile_image_generator
 
 
-class CharacterImageSuggestionGenerator(AdventureTemplateFieldGenerator):
+class CharacterImageGenerator(AdventureTemplateFieldGenerator):
     @staticmethod
     def get_field() -> str:
         return "characters.image"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         generator = get_profile_image_generator(context)

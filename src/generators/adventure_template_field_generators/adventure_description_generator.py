@@ -7,26 +7,21 @@ from generators.adventure_template_field_generator import (
 from generators.utils import safe_format
 
 
-class NarrativeVoiceSuggestionGenerator(AdventureTemplateFieldGenerator):
-    PROMPT = """Write a short genre suggestion for a story. Be expansive, creative, but concise!
+class AdventureDescriptionGenerator(AdventureTemplateFieldGenerator):
+    PROMPT = """I need help! I need to create the back of a book jacket for an amazing story. It should captivate people so that they want to read it!
 
-Examples of good outputs:
+It should only be one or two (short) paragraphs.
 
-- fantasy adventure
-- children’s book
-- young adult novel
-- fanfic
-- high literature
+Title: {name}
+Tagline: {short_description}
 
-Suggestion:
-
--"""
+Suggested one-sentence description:"""
 
     @staticmethod
     def get_field() -> str:
-        return "narrative_voice"
+        return "description"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         task = generator.generate(
