@@ -59,16 +59,22 @@ class AdventureTemplateMixin(PackageMixin):
         self, context: AgentContext, unsaved_server_settings: Dict = None
     ):
         """Builds the dictionary that we'll use to generate suggestions."""
+        adventure_template = get_adventure_template(context)
         server_settings = get_server_settings(context)
-        d = server_settings.dict()
-        d.update(unsaved_server_settings or {})
 
-        # Now also get the potential adventure_template dict, which is a SUPERSET including things like
-        # characters, description, and tags. We don't save this on server_settings because we don't want to load
-        # those things for every operation during gameplay.
-        at = get_adventure_template(context)
-        d.update(at or {})
-        return d
+        variables = {}
+
+        # Now update it with the adventure template
+        variables.update(adventure_template.dict())
+
+        # Now template it against the saved server settings
+        variables.update(server_settings.dict())
+
+        # Now update it with the unsaved server settings
+        if unsaved_server_settings:
+            variables.update(unsaved_server_settings)
+
+        return variables
 
     @post("/generate_preview")
     def generate_preview(
@@ -120,12 +126,22 @@ class AdventureTemplateMixin(PackageMixin):
     ) -> Block:
         context = self.agent_service.build_default_context()
         self._update_server_settings(context, unsaved_server_settings)
-        variables = self._get_suggestion_variables(context)
+
+        try:
+            variables = self._get_suggestion_variables(context)
+        except BaseException as e:
+            logging.exception(e)
+            raise e
+
         generator = EditorSuggestionGenerator()
 
         # Make the suggestion
         field_key_path = field_key_path or []
-        block = generator.generate(field_name, variables, field_key_path, context)
+        try:
+            block = generator.generate(field_name, variables, field_key_path, context)
+        except BaseException as e:
+            logging.exception(e)
+            raise e
 
         # Maybe save it
         if save_to_adventure_template:

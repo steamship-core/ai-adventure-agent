@@ -26,5 +26,9 @@ class FakeAgentService(AdventureGameService):
                 if type(task) == Task and task.task_id:
                     task.wait()
 
-        response_dict = self.handler(verb, method, arguments)
+        try:
+            response_dict = self.handler(verb, method, arguments)
+        except BaseException as e:
+            print(e)
+            raise (e)
         return Task(output=response_dict)

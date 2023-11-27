@@ -48,7 +48,7 @@ from generators.adventure_template_field_generators.genre_generator import (
 from generators.adventure_template_field_generators.writing_style_generator import (
     WritingStyleGenerator,
 )
-from utils.context_utils import get_server_settings, get_story_text_generator
+from utils.context_utils import get_story_text_generator
 
 
 class EditorSuggestionGenerator:
@@ -70,14 +70,13 @@ class EditorSuggestionGenerator:
         AdventureTagGenerator.get_field(): AdventureTagGenerator(),
     }
 
-    def generate(
+    def generate(  # noqa: C901
         self,
         field_name: str,
-        unsaved_server_settings: dict,
+        variables: dict,
         field_key_path: List,
         context: AgentContext,
     ) -> Block:
-        server_settings = get_server_settings(context)
         generator = get_story_text_generator(context)
         if not field_key_path:
             prompt_key = field_name
@@ -99,15 +98,18 @@ class EditorSuggestionGenerator:
                 message=f"Unable to generate a suggestion for: {kp}. Lookup key: {prompt_key}"
             )
 
-        # Now template it against the saved server settings
-        variables = server_settings.dict()
-        variables.update(unsaved_server_settings)
-
         # The template interpolation assumes a FLAT object. But the object we're working with
         # here might involve something nested (like the 3rd character). So we'll look at the keypath
         # and lift those up to be represented as this_FIELD in the parent.
         #
         # That means the prompt can utilize this_{var} inside it.
+        if field_key_path and len(field_key_path) == 2:
+            # we'll just hard-code in the case for: [LIST_NAME, index, FIELD]
+            the_list = variables.get(field_key_path[0])
+            index = field_key_path[1]
+            if the_list and index < len(the_list):
+                variables["this_index"] = f"{index + 1}"
+
         if field_key_path and len(field_key_path) == 3:
             # we'll just hard-code in the case for: [LIST_NAME, index, FIELD]
             the_list = variables.get(field_key_path[0])

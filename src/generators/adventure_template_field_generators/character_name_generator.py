@@ -59,7 +59,7 @@ Character #{this_index} Name:"""
                     "narrative_tone": variables.get("narrative_tone"),
                     "adventure_goal": variables.get("adventure_goal"),
                     "existing_chars": variables.get("existing_char_names_str"),
-                    "this_index": variables.get("this_index"),
+                    "this_index": variables.get("this_index", "0"),
                     "adventure_background": variables.get("adventure_background"),
                 },
             ),
