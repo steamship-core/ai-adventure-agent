@@ -18,7 +18,7 @@ def test_generate_adventure_image_suggestion(
 ):
     invocable_handler, client = invocable_handler_with_client
     task_dict = invocable_handler(
-        "POST", "generate_suggestion", {"field_name": "adventure_image"}
+        "POST", "generate_suggestion", {"field_name": "image"}
     )
     block = Block.parse_obj(task_dict.get("data"))
 
