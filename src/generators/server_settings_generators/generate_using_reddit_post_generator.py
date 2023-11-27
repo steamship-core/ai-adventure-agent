@@ -3,15 +3,15 @@ from bs4 import BeautifulSoup
 from steamship import SteamshipError, Task
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_generator import AdventureTemplateGenerator
-from generators.adventure_template_generators.generate_using_title_and_story_generator import (
+from generators.server_settings_generator import ServerSettingsGenerator
+from generators.server_settings_generators.generate_using_title_and_story_generator import (
     GenerateUsingTitleAndStoryGenerator,
 )
 from utils.agent_service import AgentService
-from utils.context_utils import get_adventure_template, save_adventure_template
+from utils.context_utils import get_server_settings, save_server_settings
 
 
-class GenerateUsingRedditPostGenerator(AdventureTemplateGenerator):
+class GenerateUsingRedditPostGenerator(ServerSettingsGenerator):
     """Generates an Adventure Template based on a Reddit post's Title and Content.
 
     Works by scraping the contents of the provided Reddit URL and then applying the GenerateUsingTitleAndStoryGenerator."""
@@ -20,8 +20,8 @@ class GenerateUsingRedditPostGenerator(AdventureTemplateGenerator):
         self, agent_service: AgentService, context: AgentContext
     ) -> Task:
         # Get the URL to scrape
-        adventure_template = get_adventure_template(context)
-        url = adventure_template.source_url
+        server_settings = get_server_settings(context)
+        url = server_settings.source_url
 
         if not url:
             raise SteamshipError(
@@ -64,9 +64,9 @@ class GenerateUsingRedditPostGenerator(AdventureTemplateGenerator):
 
         body_text = body_text.strip()
 
-        adventure_template.name = title_text
-        adventure_template.source_story_text = body_text
-        save_adventure_template(adventure_template, context)
+        server_settings.name = title_text
+        server_settings.source_story_text = body_text
+        save_server_settings(server_settings, context)
 
         generator = GenerateUsingTitleAndStoryGenerator()
         return generator.generate(agent_service=agent_service, context=context)

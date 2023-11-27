@@ -6,10 +6,10 @@ from steamship.agents.schema import AgentContext
 from steamship_tests.utils.fake_agent_service import FakeAgentService
 
 from api import AdventureGameService
-from generators.adventure_template_generators.generate_all_generator import (
+from generators.server_settings_generators.generate_all_generator import (
     GenerateAllGenerator,
 )
-from utils.context_utils import get_adventure_template
+from utils.context_utils import get_server_settings
 
 
 @pytest.mark.parametrize(
@@ -32,5 +32,5 @@ def test_generate_all_endpoint(
     # This will contain the server_settings
     print(task.output)
 
-    adventure_template = get_adventure_template(context)
-    print(adventure_template)
+    server_settings = get_server_settings(context)
+    print(server_settings)

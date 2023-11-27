@@ -1,12 +1,12 @@
 from steamship import SteamshipError, Task
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_generator import AdventureTemplateGenerator
+from generators.server_settings_generator import ServerSettingsGenerator
 from utils.agent_service import AgentService
-from utils.context_utils import get_adventure_template
+from utils.context_utils import get_server_settings
 
 
-class GenerateUsingTitleAndStoryGenerator(AdventureTemplateGenerator):
+class GenerateUsingTitleAndStoryGenerator(ServerSettingsGenerator):
     """Generates a Adventure Template based on a short story's title and content.
 
     - If the story is too long, it takes a prefix of it to avoid going through the token budget.
@@ -19,10 +19,10 @@ class GenerateUsingTitleAndStoryGenerator(AdventureTemplateGenerator):
         self, agent_service: AgentService, context: AgentContext
     ) -> Task:
         # Assemble a linked list of things to generate
-        adventure_template = get_adventure_template(context)
+        server_settings = get_server_settings(context)
 
-        title = adventure_template.name
-        story = adventure_template.source_story_text
+        title = server_settings.name
+        story = server_settings.source_story_text
 
         if not title:
             raise SteamshipError(

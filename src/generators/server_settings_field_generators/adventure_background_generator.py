@@ -1,13 +1,11 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generator import (
-    AdventureTemplateFieldGenerator,
-)
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class AdventureBackgroundGenerator(AdventureTemplateFieldGenerator):
+class AdventureBackgroundGenerator(ServerSettingsFieldGenerator):
     PROMPT = """We need help! Hell fill out this story pitch for a director who needs to develop it into an award winning story.
 
 Be colorful, descriptive, but concise! Use Markdown, level-two headers, and bullet points within them.

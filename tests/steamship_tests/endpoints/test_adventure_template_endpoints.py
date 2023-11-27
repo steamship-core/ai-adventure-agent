@@ -158,8 +158,6 @@ def test_generate_suggestion_with_save(
 ):
     invocable_handler, client = invocable_handler_with_client
 
-    ss0 = invocable_handler("GET", "adventure_template", {}).get("data")
-
     ss1: ServerSettings = ServerSettings.parse_obj(
         invocable_handler("GET", "server_settings", {}).get("data")
     )
@@ -171,17 +169,17 @@ def test_generate_suggestion_with_save(
         "generate_suggestion",
         {
             "field_name": field,
-            "save_to_adventure_template": True,
+            "save_to_server_settings": True,
             "field_key_path": [field],
         },
     )
 
-    ss2 = invocable_handler("GET", "adventure_template", {}).get("data")
+    ss2 = invocable_handler("GET", "server_settings", {}).get("data")
 
     assert getattr(ss1, field) is None
     assert getattr(ss1, field) != ""
 
-    assert field not in ss0
+    assert field not in ss1
 
     assert ss2[field] is not None
     assert ss2[field] != ""
@@ -213,7 +211,7 @@ def test_generate_second_tag_save(
         "generate_suggestion",
         {
             "field_name": field,
-            "save_to_adventure_template": True,
+            "save_to_server_settings": True,
             "field_key_path": [field, idx],
         },
     )
@@ -223,12 +221,12 @@ def test_generate_second_tag_save(
         "generate_suggestion",
         {
             "field_name": field,
-            "save_to_adventure_template": True,
+            "save_to_server_settings": True,
             "field_key_path": [field, idx2],
         },
     )
 
-    ss2 = invocable_handler("GET", "adventure_template", {}).get("data")
+    ss2 = invocable_handler("GET", "server_settings", {}).get("data")
 
     for i in range(len(ss2[field])):
         if i in [idx, idx2]:
@@ -253,7 +251,7 @@ def test_generate_list_item_suggestion_with_save(
 ):
     invocable_handler, client = invocable_handler_with_client
 
-    ss0 = invocable_handler("GET", "adventure_template", {}).get("data")
+    ss0 = invocable_handler("GET", "server_settings", {}).get("data")
 
     field = "tags"
     idx = 2
@@ -263,12 +261,12 @@ def test_generate_list_item_suggestion_with_save(
         "generate_suggestion",
         {
             "field_name": field,
-            "save_to_adventure_template": True,
+            "save_to_server_settings": True,
             "field_key_path": [field, idx],
         },
     )
 
-    ss2 = invocable_handler("GET", "adventure_template", {}).get("data")
+    ss2 = invocable_handler("GET", "server_settings", {}).get("data")
 
     assert field not in ss0
 
@@ -299,7 +297,7 @@ def test_generate_list_of_objects_item_suggestion_with_save(
 ):
     invocable_handler, client = invocable_handler_with_client
 
-    ss0 = invocable_handler("GET", "adventure_template", {}).get("data")
+    ss0 = invocable_handler("GET", "server_settings", {}).get("data")
 
     field = "characters"
     idx = 2
@@ -311,7 +309,7 @@ def test_generate_list_of_objects_item_suggestion_with_save(
         "generate_suggestion",
         {
             "field_name": "characters.name",
-            "save_to_adventure_template": True,
+            "save_to_server_settings": True,
             "field_key_path": ["characters", 1, "name"],
         },
     )
@@ -321,12 +319,12 @@ def test_generate_list_of_objects_item_suggestion_with_save(
         "generate_suggestion",
         {
             "field_name": "characters.tagline",
-            "save_to_adventure_template": True,
+            "save_to_server_settings": True,
             "field_key_path": ["characters", 1, "tagline"],
         },
     )
 
-    ss2 = invocable_handler("GET", "adventure_template", {}).get("data")
+    ss2 = invocable_handler("GET", "server_settings", {}).get("data")
 
     assert field not in ss0
 

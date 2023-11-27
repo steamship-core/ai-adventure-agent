@@ -27,7 +27,6 @@ from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
 from steamship.utils.kv_store import KeyValueStore
 
-from schema.adventure_template import AdventureTemplate
 from schema.game_state import GameState
 from schema.image_theme import DEFAULT_THEME, PREMADE_THEMES, ImageTheme
 from schema.server_settings import ServerSettings
@@ -41,8 +40,6 @@ _BACKGROUND_MUSIC_GENERATOR_KEY = "background-music-generator"
 _NARRATION_GENERATOR_KEY = "narration-generator"
 _SERVER_SETTINGS_KEY = "server-settings"
 _GAME_STATE_KEY = "user-settings"
-# For the full adventure template: a superset of server settings
-_ADVENTURE_TEMPLATE_KEY = "adventure-template"
 
 
 def with_function_capable_llm(instance: ChatLLM, context: AgentContext) -> AgentContext:
@@ -228,47 +225,6 @@ def save_server_settings(server_settings, context: AgentContext):
 
     # Also save it to the context
     context.metadata[_SERVER_SETTINGS_KEY] = server_settings
-
-
-def get_adventure_template(
-    context: AgentContext,
-) -> AdventureTemplate:
-    logging.debug(
-        f"Getting adventure template from workspace {context.client.config.workspace_handle}.",
-    )
-
-    if _ADVENTURE_TEMPLATE_KEY in context.metadata:
-        return context.metadata.get(_ADVENTURE_TEMPLATE_KEY)
-
-    # Get it from the KV Store
-    kv = KeyValueStore(context.client, _ADVENTURE_TEMPLATE_KEY)
-    value = kv.get(_ADVENTURE_TEMPLATE_KEY)
-
-    if value:
-        logging.debug(f"Parsing Adventure Template from stored value: {value}")
-        obj = AdventureTemplate.parse_obj(value)
-    else:
-        logging.debug("Creating new Adventure Template -- one didn't exist!")
-        obj = AdventureTemplate()
-
-    context.metadata[_ADVENTURE_TEMPLATE_KEY] = obj
-    return obj
-
-
-def save_adventure_template(
-    adventure_template: AdventureTemplate, context: AgentContext
-):
-    logging.debug(
-        f"Saving Adventure Template from workspace {context.client.config.workspace_handle}.",
-    )
-
-    # Save it to the KV Store
-    kv = KeyValueStore(context.client, _ADVENTURE_TEMPLATE_KEY)
-    value = adventure_template.dict()
-    kv.set(_ADVENTURE_TEMPLATE_KEY, value)
-
-    # Also save it to the context
-    context.metadata[_ADVENTURE_TEMPLATE_KEY] = adventure_template
 
 
 def save_game_state(game_state, context: AgentContext):

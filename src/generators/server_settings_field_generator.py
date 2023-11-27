@@ -8,7 +8,7 @@ from steamship import Block, PluginInstance, SteamshipError, Task
 from steamship.agents.schema import AgentContext
 
 
-class AdventureTemplateFieldGenerator(BaseModel, ABC):
+class ServerSettingsFieldGenerator(BaseModel, ABC):
     """Generates a single field in an Adventure Template."""
 
     @abstractmethod

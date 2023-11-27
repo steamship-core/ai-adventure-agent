@@ -3,56 +3,52 @@ from typing import Dict, List
 from steamship import Block, SteamshipError
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generator import (
-    AdventureTemplateFieldGenerator,
-)
-from generators.adventure_template_field_generators.adventure_background_generator import (
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
+from generators.server_settings_field_generators.adventure_background_generator import (
     AdventureBackgroundGenerator,
 )
-from generators.adventure_template_field_generators.adventure_description_generator import (
+from generators.server_settings_field_generators.adventure_description_generator import (
     AdventureDescriptionGenerator,
 )
-from generators.adventure_template_field_generators.adventure_goal_generator import (
+from generators.server_settings_field_generators.adventure_goal_generator import (
     AdventureGoalGenerator,
 )
-from generators.adventure_template_field_generators.adventure_image_generator import (
+from generators.server_settings_field_generators.adventure_image_generator import (
     AdventureImageGenerator,
 )
-from generators.adventure_template_field_generators.adventure_name_generator import (
+from generators.server_settings_field_generators.adventure_name_generator import (
     AdventureNameGenerator,
 )
-from generators.adventure_template_field_generators.adventure_short_description_generator import (
+from generators.server_settings_field_generators.adventure_short_description_generator import (
     AdventureShortDescriptionGenerator,
 )
-from generators.adventure_template_field_generators.adventure_tag_generator import (
+from generators.server_settings_field_generators.adventure_tag_generator import (
     AdventureTagGenerator,
 )
-from generators.adventure_template_field_generators.character_background_generator import (
+from generators.server_settings_field_generators.character_background_generator import (
     CharacterBackgroundGenerator,
 )
-from generators.adventure_template_field_generators.character_description_generator import (
+from generators.server_settings_field_generators.character_description_generator import (
     CharacterDescriptionGenerator,
 )
-from generators.adventure_template_field_generators.character_image_generator import (
+from generators.server_settings_field_generators.character_image_generator import (
     CharacterImageGenerator,
 )
-from generators.adventure_template_field_generators.character_name_generator import (
+from generators.server_settings_field_generators.character_name_generator import (
     CharacterNameGenerator,
 )
-from generators.adventure_template_field_generators.character_tagline_generator import (
+from generators.server_settings_field_generators.character_tagline_generator import (
     CharacterTaglineGenerator,
 )
-from generators.adventure_template_field_generators.genre_generator import (
-    GenreGenerator,
-)
-from generators.adventure_template_field_generators.writing_style_generator import (
+from generators.server_settings_field_generators.genre_generator import GenreGenerator
+from generators.server_settings_field_generators.writing_style_generator import (
     WritingStyleGenerator,
 )
 from utils.context_utils import get_story_text_generator
 
 
 class EditorSuggestionGenerator:
-    PROMPTS: Dict[str, AdventureTemplateFieldGenerator] = {
+    PROMPTS: Dict[str, ServerSettingsFieldGenerator] = {
         GenreGenerator.get_field(): GenreGenerator(),
         WritingStyleGenerator.get_field(): WritingStyleGenerator(),
         CharacterTaglineGenerator.get_field(): CharacterTaglineGenerator(),

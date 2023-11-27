@@ -1,13 +1,11 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generator import (
-    AdventureTemplateFieldGenerator,
-)
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class GenreGenerator(AdventureTemplateFieldGenerator):
+class GenreGenerator(ServerSettingsFieldGenerator):
     PROMPT = """Suggest a genre for a short story. Be creative, expansive, but concise!
 
 Examples of genres:

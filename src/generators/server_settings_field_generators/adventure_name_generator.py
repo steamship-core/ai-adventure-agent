@@ -3,13 +3,11 @@ import random
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generator import (
-    AdventureTemplateFieldGenerator,
-)
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class AdventureNameGenerator(AdventureTemplateFieldGenerator):
+class AdventureNameGenerator(ServerSettingsFieldGenerator):
     PROMPT = """I need help! Create an amazing movie title that people would want to see. Make it short: only a few words. Make it punchy!
 
 Genre: {narrative_voice}

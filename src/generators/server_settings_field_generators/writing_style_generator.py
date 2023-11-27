@@ -1,13 +1,11 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generator import (
-    AdventureTemplateFieldGenerator,
-)
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class WritingStyleGenerator(AdventureTemplateFieldGenerator):
+class WritingStyleGenerator(ServerSettingsFieldGenerator):
     PROMPT = """What is a genre and writing style for upcoming award-winning piece of writing? Be creative! Wide-ranging! But keep it concise.
 
 Examples of good outputs:

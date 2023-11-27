@@ -1,7 +1,7 @@
 from steamship import Task
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_generator import AdventureTemplateGenerator
+from generators.server_settings_generator import ServerSettingsGenerator
 from utils.agent_service import AgentService
 
 # Note: should_block is True for all of these because we don't want to awaken the parallel state management ghosts.
@@ -30,7 +30,7 @@ GENERATE_KEY_PATHS_AND_SHOULD_BLOCK = [
 ]
 
 
-class GenerateAllGenerator(AdventureTemplateGenerator):
+class GenerateAllGenerator(ServerSettingsGenerator):
     """Generates an ENTIRE Adventure Template given no inputs at all: whatever comes out is totally up to the LLM."""
 
     def inner_generate(

@@ -1,14 +1,12 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generator import (
-    AdventureTemplateFieldGenerator,
-)
 from generators.image_generators import get_image_generator
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from utils.context_utils import get_server_settings, get_theme
 
 
-class AdventureImageGenerator(AdventureTemplateFieldGenerator):
+class AdventureImageGenerator(ServerSettingsFieldGenerator):
     @staticmethod
     def get_field() -> str:
         return "image"

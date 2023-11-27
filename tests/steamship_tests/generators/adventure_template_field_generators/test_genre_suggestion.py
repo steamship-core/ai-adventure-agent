@@ -2,9 +2,7 @@ import pytest
 from steamship import MimeTypes, Steamship
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generators.genre_generator import (
-    GenreGenerator,
-)
+from generators.server_settings_field_generators.genre_generator import GenreGenerator
 from utils.context_utils import get_story_text_generator
 
 

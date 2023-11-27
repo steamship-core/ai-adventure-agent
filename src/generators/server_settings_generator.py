@@ -12,7 +12,7 @@ from utils.agent_service import AgentService
 from utils.context_utils import get_server_settings, save_server_settings
 
 
-class AdventureTemplateGenerator(BaseModel, ABC):
+class ServerSettingsGenerator(BaseModel, ABC):
     """Generates an ENTIRE configuration -- multiple fields -- in a dict file."""
 
     @abstractmethod
@@ -78,7 +78,7 @@ class AdventureTemplateGenerator(BaseModel, ABC):
             arguments={
                 "field_name": field_name,
                 "field_key_path": field_key_path,
-                "save_to_adventure_template": True,
+                "save_to_server_settings": True,
             },
         )
 

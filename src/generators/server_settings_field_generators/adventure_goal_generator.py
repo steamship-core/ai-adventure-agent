@@ -1,13 +1,11 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generator import (
-    AdventureTemplateFieldGenerator,
-)
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class AdventureGoalGenerator(AdventureTemplateFieldGenerator):
+class AdventureGoalGenerator(ServerSettingsFieldGenerator):
     PROMPT = """I need help! Finish the main character goal for this short story.
 
 Be short! But creative and colorful. It needs to REALLY capture attention!

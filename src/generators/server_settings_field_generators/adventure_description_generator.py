@@ -1,13 +1,11 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generator import (
-    AdventureTemplateFieldGenerator,
-)
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class AdventureDescriptionGenerator(AdventureTemplateFieldGenerator):
+class AdventureDescriptionGenerator(ServerSettingsFieldGenerator):
     PROMPT = """I need help! Please create a two paragraph pitch for an upcoming award-winning story.
 
 It should be one or two (short) paragraphs, written very well, and not sound like advertising.

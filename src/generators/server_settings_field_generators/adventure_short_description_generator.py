@@ -1,13 +1,11 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generator import (
-    AdventureTemplateFieldGenerator,
-)
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class AdventureShortDescriptionGenerator(AdventureTemplateFieldGenerator):
+class AdventureShortDescriptionGenerator(ServerSettingsFieldGenerator):
     PROMPT = """I need help! I create an amazing one-sentence pitch for a new story.
 
 Write well, capturing the essence of the a main character's background, location, and goal.

@@ -1,13 +1,11 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.adventure_template_field_generator import (
-    AdventureTemplateFieldGenerator,
-)
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class CharacterBackgroundGenerator(AdventureTemplateFieldGenerator):
+class CharacterBackgroundGenerator(ServerSettingsFieldGenerator):
 
     PROMPT = """Propose actor's notes for an award-winning character in a story.
 
