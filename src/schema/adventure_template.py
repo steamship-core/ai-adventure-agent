@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from pydantic import Field
 
+from schema.characters import Character
 from schema.server_settings import ServerSettings
 
 
@@ -31,17 +32,27 @@ class AdventureTemplate(ServerSettings):
      That enables us to assist in suggestions & auto-generation
     """
 
+    source_url: Optional[str] = Field(
+        default=None,
+        description="The source URL from which this adventure template originates",
+    )
+
+    source_story_text: Optional[str] = Field(
+        default=None,
+        description="The source story text from which this adventure template originates",
+    )
+
     description: Optional[str] = Field(
         default="An amazing story of exploration.",
         description="What is a short, 4-8 word description of the story?",
     )
 
-    tags: List[str] = Field(
+    tags: Optional[List[Optional[str]]] = Field(
         default=None, description="List of tags that describe this Adventure Template"
     )
 
-    characters: Optional[str] = Field(
-        description="Description of the background setting in which the adventure will take place.  Can include descriptions of genre, characters, specific items and locations that exist in the world, references to real-world things, etc."
+    characters: Optional[List[Optional[Character]]] = Field(
+        default=None, description=""
     )
 
     def update_from_web(self, other: "AdventureTemplate"):  # noqa: C901

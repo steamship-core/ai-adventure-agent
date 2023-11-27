@@ -8,12 +8,19 @@ from generators.utils import safe_format
 
 
 class CharacterNameGenerator(AdventureTemplateFieldGenerator):
-    PROMPT = """Suggest the name of supporting character #{this_index} in a short story.
+    PROMPT_NO_BACKGROUND = """Suggest the name of supporting character #{this_index} in a short story.
 
 Story Title: {name}
-Story Genre: {narrative_voice}
-Protagonist: {adventure_goal}{existing_chars}
+Story Genre: {narrative_voice}, {narrative_tone}
+Story Synopsis: {short_description}
+Goal: {adventure_goal}{existing_chars}
 Supporting Character #{this_index} Name:"""
+
+    PROMPT_BACKGROUND = """What is the name of Character #{this_index} in this story pitch?
+
+{adventure_background}
+
+Character #{this_index} Name:"""
 
     @staticmethod
     def get_field() -> str:
@@ -32,21 +39,36 @@ Supporting Character #{this_index} Name:"""
                     existing_char_names.append(_name)
         if existing_char_names:
             for _i, _ec in enumerate(existing_char_names):
-                existing_char_names_str += f"\nSupporting Character #{_i} Name: {_ec}"
+                existing_char_names_str += f"\nCharacter #{_i} Name: {_ec}"
+
+        adventure_background = variables.get("adventure_background")
+
+        prompt = (
+            self.PROMPT_BACKGROUND
+            if (adventure_background and "haracters" in adventure_background)
+            else self.PROMPT_NO_BACKGROUND
+        )
 
         task = generator.generate(
             text=safe_format(
-                self.PROMPT,
+                prompt,
                 {
                     "name": variables.get("name"),
+                    "short_description": variables.get("short_description"),
                     "narrative_voice": variables.get("narrative_voice"),
+                    "narrative_tone": variables.get("narrative_tone"),
                     "adventure_goal": variables.get("adventure_goal"),
                     "existing_chars": variables.get("existing_char_names_str"),
                     "this_index": variables.get("this_index"),
+                    "adventure_background": variables.get("adventure_background"),
                 },
             ),
             streaming=True,
             append_output_to_file=True,
             make_output_public=True,
         )
-        return self.task_to_str_block(task)
+        block = self.task_to_str_block(task)
+        if ":" in block.text:
+            # Handle the response of: 'Character 1 name: Foo'
+            block.text = block.text.split(":")[1]
+        return block

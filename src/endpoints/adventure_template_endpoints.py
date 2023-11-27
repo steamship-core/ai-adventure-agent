@@ -132,10 +132,19 @@ class AdventureTemplateMixin(PackageMixin):
             value = block_to_config_value(block)
             adventure_template = get_adventure_template(context)
             adventure_template_dict = adventure_template.dict()
-            set_keypath_value(adventure_template_dict, field_key_path, value)
-            updated_adventure_template = AdventureTemplate.parse_obj(
-                adventure_template_dict
-            )
+            try:
+                set_keypath_value(adventure_template_dict, field_key_path, value)
+            except BaseException as e:
+                logging.error(e)
+                raise e
+
+            try:
+                updated_adventure_template = AdventureTemplate.parse_obj(
+                    adventure_template_dict
+                )
+            except BaseException as e:
+                logging.error(e)
+                raise e
             save_adventure_template(updated_adventure_template, context)
 
         return block

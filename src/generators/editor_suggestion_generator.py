@@ -57,6 +57,7 @@ class EditorSuggestionGenerator:
         WritingStyleGenerator.get_field(): WritingStyleGenerator(),
         CharacterTaglineGenerator.get_field(): CharacterTaglineGenerator(),
         CharacterNameGenerator.get_field(): CharacterNameGenerator(),
+        CharacterTaglineGenerator.get_field(): CharacterTaglineGenerator(),
         CharacterDescriptionGenerator.get_field(): CharacterDescriptionGenerator(),
         CharacterBackgroundGenerator.get_field(): CharacterBackgroundGenerator(),
         CharacterImageGenerator.get_field(): CharacterImageGenerator(),
@@ -83,7 +84,7 @@ class EditorSuggestionGenerator:
         elif len(field_key_path) == 1:
             prompt_key = field_name
         elif len(field_key_path) == 3:
-            prompt_key = f"{field_key_path[0]}.{field_name}"
+            prompt_key = f"{field_key_path[0]}.{field_key_path[2]}"
         else:
             prompt_key = field_name
 
@@ -112,7 +113,8 @@ class EditorSuggestionGenerator:
             the_list = variables.get(field_key_path[0])
             index = field_key_path[1]
             if the_list and index < len(the_list):
-                variables["this_index"] = f"{index}"
+                # We 1-index it since this is to be used in prompts.
+                variables["this_index"] = f"{index + 1}"
                 for key in the_list[index]:
                     variables[f"this_{key}"] = the_list[index][key]
 

@@ -8,35 +8,22 @@ from generators.utils import safe_format
 
 
 class CharacterBackgroundGenerator(AdventureTemplateFieldGenerator):
-    PROMPT = """Write notes for a novel character's background in markdown. The the character's goals are already developed.. the background should provide a riveting story of progress toward those goals!
 
-Be concise but colorful. Use a few bullet points per section.
+    PROMPT = """Propose actor's notes for an award-winning character in a story.
 
-# Story
+Story Title: {name}
+Story Genre: {narrative_voice}, {narrative_tone}
+Story Synopsis: {short_description}
+Character: {this_name}
+Character Tagline: {this_tagline}
+Character Goal: {adventure_goal}
 
-## Title: {name}
+Now, propose actor notes for {this_name}'s background.
+Be colorful, but concise, and make sure to make everything very specific! Show, don't tell!
+The proposed background should include origins, personal drive and failings, and a rich and exciting arc of progress toward the goal!
+It should only be two or three short paragraphs.
 
-## Genre
-
-{narrative_voice}
-
-# Character
-
-## Name
-
-{this_name}
-
-## Tagline
-
-{this_tagline}
-
-## Goal
-
-{adventure_goal}
-
-{this_description}
-
-## Background"""
+Actor Notes for {this_name}'s Background:"""
 
     @staticmethod
     def get_field() -> str:

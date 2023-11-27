@@ -48,7 +48,7 @@ def get_keypath_value(obj: dict, keypath: List[Union[str, int]]) -> any:
     return ptr
 
 
-def set_keypath_value(obj: dict, keypath: List[Union[str, int]], value):
+def set_keypath_value(obj: dict, keypath: List[Union[str, int]], value):  # noqa: C901
     """Gets the value at the dotted keypath.
 
     - foo -> obj["foo"]
@@ -59,19 +59,33 @@ def set_keypath_value(obj: dict, keypath: List[Union[str, int]], value):
 
     ptr = obj
     final_key = keypath[-1]
-    for key in keypath[:-1]:
 
+    for i, key in enumerate(keypath[:-1]):
+        next_key = keypath[i + 1]
         if isinstance(key, int):
-            # If it's a list, and we're setting into an index that doesn't yet exist, append {} until it's big enough.
             if not isinstance(ptr, list):
                 raise SteamshipError(
                     message=f"Keypath traversal expected a list, but found {ptr}."
                 )
-            while len(ptr) < key + 1 and key > 0:
+            while len(ptr) < key + 1 and key >= 0:
                 ptr.append({})
-        if not isinstance(ptr, dict):
+
+        if not isinstance(ptr, dict) and not isinstance(ptr, list):
             raise SteamshipError(
                 message=f"Keypath traversal expected a dict, but found {ptr}."
             )
+
+        if ptr[key] is None:
+            # FLAG
+            if isinstance(next_key, int):
+                ptr[key] = []
+            else:
+                ptr[key] = {}
+
         ptr = ptr[key]
+
+    if isinstance(final_key, int):
+        while len(ptr) < final_key + 1 and final_key >= 0:
+            ptr.append(None)
+
     ptr[final_key] = value

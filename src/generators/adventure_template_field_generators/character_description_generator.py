@@ -8,33 +8,17 @@ from generators.utils import safe_format
 
 
 class CharacterDescriptionGenerator(AdventureTemplateFieldGenerator):
-    PROMPT = """Write notes for a novel character in markdown. Be concise but colorful. Use a few bullet points per section.
+    PROMPT = """I need help making the artwork for a character in a story. Here is the context:
 
-Include the sections: Goal, Appearance, Skills, Struggles, Quirks
+Story Title: {name}
+Story Genre: {narrative_voice}, {narrative_tone}
+Character Name: {this_name}
+Character Tagline: {this_tagline}
+Character Background: {this_background}
 
-# Story
+Now help me write a concise, colorful, and very specific physical description for this character. Don't use the character's name; just provide the description.
 
-## Title: {name}
-
-## Genre
-
-{narrative_voice}
-
-# Character
-
-## Name
-
-{this_name}
-
-## Tagline
-
-{this_tagline}
-
-## Goal
-
-{adventure_goal}
-
-## Appearance"""
+Character Physical Description (one line):"""
 
     @staticmethod
     def get_field() -> str:
@@ -44,9 +28,24 @@ Include the sections: Goal, Appearance, Skills, Struggles, Quirks
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         task = generator.generate(
-            text=safe_format(self.PROMPT, variables),
+            text=safe_format(
+                self.PROMPT,
+                {
+                    "name": variables.get("name"),
+                    "short_description": variables.get("short_description"),
+                    "narrative_voice": variables.get("narrative_voice"),
+                    "narrative_tone": variables.get("narrative_tone"),
+                    "this_name": variables.get("this_index"),
+                    "this_tagline": variables.get("this_tagline"),
+                    "this_background": variables.get("this_background"),
+                },
+            ),
             streaming=True,
             append_output_to_file=True,
             make_output_public=True,
         )
-        return self.task_to_str_block(task)
+        block = self.task_to_str_block(task)
+        if ":" in block.text:
+            # Handle the response of: 'Character 1 name: Foo'
+            block.text = block.text.split(":")[1]
+        return block

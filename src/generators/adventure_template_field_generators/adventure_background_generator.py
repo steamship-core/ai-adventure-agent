@@ -8,19 +8,31 @@ from generators.utils import safe_format
 
 
 class AdventureBackgroundGenerator(AdventureTemplateFieldGenerator):
-    PROMPT = """I need help! Write a few notes for a director about an scene in a short story.
+    PROMPT = """We need help! Hell fill out this story pitch for a director who needs to develop it into an award winning story.
 
-Be colorful, descriptive, but concise! Use Markdown and bullet points. Include the sections: tone, narrative voice, adventure background story, non-protagonist characters, locations, and important items to the story.
+Be colorful, descriptive, but concise! Use Markdown, level-two headers, and bullet points within them.
 
-## Genre
+Include the sections: Title, Writing Style, Plot Pitch, Main Goal, Colorful World Setting, Three Characters, Four Locations, and Important Plot Points.
 
-{narrative_voice}
+## Title
+
+{name}
+{short_description}
 
 ## Writing Style
 
-{narrative_tone}
+* {narrative_voice}
+* {narrative_tone}
 
--"""
+## Plot Pitch
+
+{description}
+
+## Main Goal
+
+{adventure_goal}
+
+##"""
 
     @staticmethod
     def get_field() -> str:
@@ -35,4 +47,6 @@ Be colorful, descriptive, but concise! Use Markdown and bullet points. Include t
             append_output_to_file=True,
             make_output_public=True,
         )
-        return self.task_to_str_block(task)
+        block = self.task_to_str_block(task)
+        block.text = f"## {block.text}"
+        return block

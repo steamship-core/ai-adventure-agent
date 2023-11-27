@@ -6,16 +6,16 @@ from steamship.agents.schema import AgentContext
 from steamship_tests.utils.fake_agent_service import FakeAgentService
 
 from api import AdventureGameService
-from generators.adventure_template_generators.generate_all_generator import (
-    GenerateAllGenerator,
+from generators.adventure_template_generators.generate_using_reddit_post_generator import (
+    GenerateUsingRedditPostGenerator,
 )
-from utils.context_utils import get_adventure_template
+from utils.context_utils import get_adventure_template, save_adventure_template
 
 
 @pytest.mark.parametrize(
     "invocable_handler_with_client", [AdventureGameService], indirect=True
 )
-def test_generate_all_endpoint(
+def test_generate_using_reddit_posts(
     invocable_handler_with_client: Tuple[
         Callable[[str, str, Optional[dict]], dict], Steamship
     ]
@@ -27,7 +27,14 @@ def test_generate_all_endpoint(
 
     service = FakeAgentService(handler=invocable_handler, client=client)
 
-    generator = GenerateAllGenerator()
+    adventure_template = get_adventure_template(context)
+    adventure_template.source_url = (
+        "https://www.reddit.com/r/shortstories/comments/18521s3/mf_unplanned_outing/"
+    )
+    save_adventure_template(adventure_template, context)
+
+    generator = GenerateUsingRedditPostGenerator()
+
     task = generator.generate(service, context, {})
     # This will contain the server_settings
     print(task.output)
