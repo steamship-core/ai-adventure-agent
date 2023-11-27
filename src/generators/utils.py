@@ -16,10 +16,7 @@ def safe_format(text: str, params: dict) -> str:
 
 def block_to_config_value(block: Block) -> str:
     if block.mime_type == MimeTypes.TXT:
-        generated_value = block.raw().decode("utf-8")
-        generated_value = (
-            generated_value.strip().lstrip('"').lstrip("'").rstrip('"').rstrip("'")
-        )
+        generated_value = block.raw().decode("utf-8").strip("\"'\n\t ")
     else:
         generated_value = block.to_public_url()
     return generated_value

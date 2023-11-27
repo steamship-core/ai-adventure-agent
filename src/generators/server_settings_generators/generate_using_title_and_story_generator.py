@@ -1,4 +1,4 @@
-from steamship import SteamshipError, Task
+from steamship import Task
 from steamship.agents.schema import AgentContext
 
 from generators.server_settings_generator import ServerSettingsGenerator
@@ -25,12 +25,8 @@ class GenerateUsingTitleAndStoryGenerator(ServerSettingsGenerator):
         story = server_settings.source_story_text
 
         if not title:
-            raise SteamshipError(
-                message="No title from which to generate an adventure."
-            )
+            raise ValueError("No title from which to generate an adventure.")
         if not story:
-            raise SteamshipError(
-                message="No story from which to generate an adventure."
-            )
+            raise ValueError("No story from which to generate an adventure.")
 
         raise NotImplementedError()

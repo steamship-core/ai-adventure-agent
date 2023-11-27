@@ -12,7 +12,7 @@ Examples of good outputs:
 
 - silly, written in the style of a Cartoon Network show with lots of absurd jokes
 - parody, written in the style of an HBO show that mimics reality but with a sardonic twist
-- folksy-horrow, written in the voice of a Steven King thriller with colorful descriptions
+- folksy-horror, written in the voice of a Steven King thriller with colorful descriptions
 - gritty, written with William Gibson-style lyricism and filled with the juxtaposition of technology and decay
 - film noir, written in a slightly old fashioned, romantic voice with a dose of hard-boiled mystery
 

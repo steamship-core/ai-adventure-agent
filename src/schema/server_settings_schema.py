@@ -249,7 +249,7 @@ SCHEMA = [
         "settings": GENERAL_OPTIONS,
     },
     {
-        "title": "Magic Mode",
+        "title": "Auto Generate",
         "description": "Generate an entire game from scratch.",
         "href": "magic-mode",
         "settings": [],
