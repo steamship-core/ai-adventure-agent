@@ -1,3 +1,5 @@
+from typing import Optional
+
 from steamship import Task
 from steamship.agents.schema import AgentContext
 
@@ -40,14 +42,18 @@ class GenerateUsingTitleAndDescriptionGenerator(ServerSettingsGenerator):
     - If the story is too long, it takes a prefix of it to avoid going through the token budget.
 
     ASSUMPTIONS: Requires the title and story
-
     """
+
+    @staticmethod
+    def get_style() -> str:
+        return "reddit"
 
     def inner_generate(
         self,
         agent_service: AgentService,
         context: AgentContext,
         wait_on_task: Task = None,
+        generation_config: Optional[dict] = None,
     ) -> Task:
         # Assemble a linked list of things to generate
         server_settings = get_server_settings(context)

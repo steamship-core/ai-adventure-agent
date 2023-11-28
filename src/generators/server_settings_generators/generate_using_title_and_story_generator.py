@@ -1,3 +1,5 @@
+from typing import Optional
+
 from steamship import Task
 from steamship.agents.schema import AgentContext
 
@@ -31,6 +33,7 @@ class GenerateUsingTitleAndStoryGenerator(ServerSettingsGenerator):
         agent_service: AgentService,
         context: AgentContext,
         wait_on_task: Task = None,
+        generation_config: Optional[dict] = None,
     ) -> Task:
         # Assemble a linked list of things to generate
         server_settings = get_server_settings(context)
@@ -50,5 +53,8 @@ class GenerateUsingTitleAndStoryGenerator(ServerSettingsGenerator):
 
         next_generator = GenerateUsingTitleAndDescriptionGenerator()
         return next_generator.inner_generate(
-            agent_service, context, wait_on_task=create_description_task
+            agent_service,
+            context,
+            wait_on_task=create_description_task,
+            generation_config=generation_config,
         )

@@ -1,3 +1,5 @@
+from typing import Optional
+
 import requests
 from bs4 import BeautifulSoup
 from steamship import SteamshipError, Task
@@ -21,6 +23,7 @@ class GenerateUsingRedditPostGenerator(ServerSettingsGenerator):
         agent_service: AgentService,
         context: AgentContext,
         wait_on_task: Task = None,
+        generation_config: Optional[dict] = None,
     ) -> Task:
         # Get the URL to scrape
         server_settings = get_server_settings(context)
@@ -73,5 +76,8 @@ class GenerateUsingRedditPostGenerator(ServerSettingsGenerator):
 
         generator = GenerateUsingTitleAndStoryGenerator()
         return generator.inner_generate(
-            agent_service=agent_service, context=context, wait_on_task=wait_on_task
+            agent_service=agent_service,
+            context=context,
+            wait_on_task=wait_on_task,
+            generation_config=generation_config,
         )

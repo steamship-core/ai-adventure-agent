@@ -1,3 +1,5 @@
+from typing import Optional
+
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
@@ -46,7 +48,11 @@ Please take the following story pitch and condense it into a single sentence. Be
         return "characters.tagline"
 
     def inner_generate(
-        self, variables: dict, generator: PluginInstance, context: AgentContext
+        self,
+        variables: dict,
+        generator: PluginInstance,
+        context: AgentContext,
+        generation_config: Optional[dict] = None,
     ) -> Block:
         adventure_background = variables.get("adventure_background")
 

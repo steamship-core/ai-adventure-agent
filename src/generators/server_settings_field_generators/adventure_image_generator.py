@@ -1,3 +1,5 @@
+from typing import Optional
+
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
@@ -12,7 +14,11 @@ class AdventureImageGenerator(ServerSettingsFieldGenerator):
         return "image"
 
     def inner_generate(
-        self, variables: dict, generator: PluginInstance, context: AgentContext
+        self,
+        variables: dict,
+        generator: PluginInstance,
+        context: AgentContext,
+        generation_config: Optional[dict] = None,
     ) -> Block:
         server_settings = get_server_settings(context)
         theme = get_theme(server_settings.camp_image_theme, context)

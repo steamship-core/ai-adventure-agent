@@ -2,6 +2,7 @@
 
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from pydantic.main import BaseModel
 from steamship import Block, PluginInstance, SteamshipError, Task
@@ -13,14 +14,22 @@ class ServerSettingsFieldGenerator(BaseModel, ABC):
 
     @abstractmethod
     def inner_generate(
-        self, variables: dict, generator: PluginInstance, context: AgentContext
+        self,
+        variables: dict,
+        generator: PluginInstance,
+        context: AgentContext,
+        generation_config: Optional[dict] = None,
     ) -> Block:
         pass
 
     def generate(
-        self, variables: dict, generator: PluginInstance, context: AgentContext
+        self,
+        variables: dict,
+        generator: PluginInstance,
+        context: AgentContext,
+        generation_config: Optional[dict] = None,
     ) -> Block:
-        return self.inner_generate(variables, generator, context)
+        return self.inner_generate(variables, generator, context, generation_config)
 
     def task_to_str_block(self, task: Task) -> Block:
         task.wait()

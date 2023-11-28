@@ -71,12 +71,16 @@ class ServerSettingsMixin(PackageMixin):
     def generate_configuration(
         self,
         unsaved_server_settings: Dict = None,
+        generation_config: Dict = None,
         **kwargs,
     ) -> Task:
         context = self.agent_service.build_default_context()
         generator = GenerateAllGenerator()
         last_task = generator.generate(
-            self.agent_service, context, unsaved_server_settings=unsaved_server_settings
+            self.agent_service,
+            context,
+            unsaved_server_settings=unsaved_server_settings,
+            generation_config=generation_config,
         )
         return last_task
 
@@ -163,6 +167,7 @@ class ServerSettingsMixin(PackageMixin):
         unsaved_server_settings: Dict = None,
         field_key_path: List = None,
         save_to_server_settings: bool = False,
+        generation_config: Dict = None,
         **kwargs,
     ) -> Block:
         context = self.agent_service.build_default_context()
@@ -180,7 +185,13 @@ class ServerSettingsMixin(PackageMixin):
         # Make the suggestion
         field_key_path = field_key_path or []
         try:
-            block = generator.generate(field_name, variables, field_key_path, context)
+            block = generator.generate(
+                field_name,
+                variables,
+                field_key_path,
+                context,
+                generation_config=generation_config,
+            )
         except BaseException as e:
             logging.exception(e)
             raise e

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
@@ -25,7 +27,11 @@ Character #{this_index} Name, no further text:"""
         return "characters.name"
 
     def inner_generate(
-        self, variables: dict, generator: PluginInstance, context: AgentContext
+        self,
+        variables: dict,
+        generator: PluginInstance,
+        context: AgentContext,
+        generation_config: Optional[dict] = None,
     ) -> Block:
         existing_char_names_str = ""
         existing_char_names = []

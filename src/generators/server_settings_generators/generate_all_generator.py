@@ -1,3 +1,5 @@
+from typing import Optional
+
 from steamship import Task
 from steamship.agents.schema import AgentContext
 
@@ -38,6 +40,7 @@ class GenerateAllGenerator(ServerSettingsGenerator):
         agent_service: AgentService,
         context: AgentContext,
         wait_on_task: Task = None,
+        generation_config: Optional[dict] = None,
     ) -> Task:
         # Assemble a linked list of things to generate
         last_task = wait_on_task
@@ -54,7 +57,12 @@ class GenerateAllGenerator(ServerSettingsGenerator):
                 field_name = field_key_path[0]
 
             this_task = self.schedule_generation(
-                field_name, field_key_path, wait_on_tasks, agent_service
+                field_name,
+                field_key_path,
+                wait_on_tasks,
+                agent_service,
+                generation_config,
+                generation_config=generation_config,
             )
             if should_block:
                 last_task = this_task

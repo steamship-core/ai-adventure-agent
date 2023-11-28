@@ -1,3 +1,5 @@
+from typing import Optional
+
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
@@ -20,7 +22,11 @@ One-sentence Pitch:"""
         return "short_description"
 
     def inner_generate(
-        self, variables: dict, generator: PluginInstance, context: AgentContext
+        self,
+        variables: dict,
+        generator: PluginInstance,
+        context: AgentContext,
+        generation_config: Optional[dict] = None,
     ) -> Block:
 
         narrative_voice = variables.get("narrative_voice")
