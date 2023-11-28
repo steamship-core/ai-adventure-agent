@@ -68,3 +68,22 @@ def test_server_settings_endpoint_update(
     assert ss3.adventure_goal == ss1.adventure_goal
     assert ss3.adventure_goal != ss0.adventure_goal
     assert ss3.adventure_background == "BAR BAR"
+
+    import pathlib
+
+    import yaml
+
+    basepath = pathlib.Path(__file__).parent.resolve()
+    with open(basepath / "../../../example_content/image_theme.yaml") as file:
+        ss4: ServerSettings = ServerSettings.parse_obj(yaml.safe_load(file.read()))
+        for theme in ss4.image_themes:
+            assert hasattr(theme, "name")
+
+        invocable_handler("POST", "patch_server_settings", ss4.dict())
+
+        ss5: ServerSettings = ServerSettings.parse_obj(
+            invocable_handler("GET", "server_settings", {}).get("data")
+        )
+
+        assert len(ss5.image_themes) == 1
+        assert hasattr(ss5.image_themes[0], "name")
