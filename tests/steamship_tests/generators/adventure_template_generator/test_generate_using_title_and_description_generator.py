@@ -40,6 +40,9 @@ def test_generate_using_title_and_description_generator(
     # This will contain the server_settings
     print(task.output)
 
+    context = AgentContext.get_or_create(
+        client=client, context_keys={"id": "testing-foo"}, searchable=False
+    )
     server_settings = get_server_settings(context)
     assert server_settings.source_url == the_url
     assert server_settings.name == "Unplanned Outing"

@@ -79,7 +79,10 @@ class ServerSettingsMixin(PackageMixin):
     ) -> Task:
         context = self.agent_service.build_default_context()
 
-        if "source_story_text" in unsaved_server_settings:
+        logging.info(
+            f"/generate_configuration with unsaved_server_settings = {unsaved_server_settings}"
+        )
+        if unsaved_server_settings and "source_story_text" in unsaved_server_settings:
             logging.info("Generating from a story because `source_story_text`.")
             generator = GenerateUsingTitleAndDescriptionGenerator()
         else:

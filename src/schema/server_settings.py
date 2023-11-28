@@ -566,7 +566,7 @@ Can include descriptions of genre, characters, specific items and locations that
         },
     )
 
-    generation_task_id: str = Field(
+    generation_task_id: Optional[str] = Field(
         "",
         description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
     )
@@ -855,6 +855,16 @@ Can include descriptions of genre, characters, specific items and locations that
             "options": DEFAULT_THEMES,
             "default": "pixel_art_1",
             "includeDynamicOptions": "image-themes",
+        },
+    )
+
+    game_engine_version: Optional[str] = Field(
+        None,
+        meta_settings={
+            "name": "game_engine_version",
+            "label": "Game Engine Version",
+            "description": "The version of the game engine to use",
+            "type": "text",
         },
     )
 
