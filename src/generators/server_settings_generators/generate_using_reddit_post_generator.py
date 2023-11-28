@@ -1,3 +1,5 @@
+from typing import Optional
+
 import requests
 from bs4 import BeautifulSoup
 from steamship import SteamshipError, Task
@@ -17,7 +19,11 @@ class GenerateUsingRedditPostGenerator(ServerSettingsGenerator):
     Works by scraping the contents of the provided Reddit URL and then applying the GenerateUsingTitleAndStoryGenerator."""
 
     def inner_generate(
-        self, agent_service: AgentService, context: AgentContext
+        self,
+        agent_service: AgentService,
+        context: AgentContext,
+        wait_on_task: Task = None,
+        generation_config: Optional[dict] = None,
     ) -> Task:
         # Get the URL to scrape
         server_settings = get_server_settings(context)
@@ -69,4 +75,9 @@ class GenerateUsingRedditPostGenerator(ServerSettingsGenerator):
         save_server_settings(server_settings, context)
 
         generator = GenerateUsingTitleAndStoryGenerator()
-        return generator.generate(agent_service=agent_service, context=context)
+        return generator.inner_generate(
+            agent_service=agent_service,
+            context=context,
+            wait_on_task=wait_on_task,
+            generation_config=generation_config,
+        )

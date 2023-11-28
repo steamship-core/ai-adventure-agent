@@ -1,3 +1,5 @@
+from typing import Optional
+
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
@@ -23,7 +25,11 @@ Character Physical Description (one line):"""
         return "characters.description"
 
     def inner_generate(
-        self, variables: dict, generator: PluginInstance, context: AgentContext
+        self,
+        variables: dict,
+        generator: PluginInstance,
+        context: AgentContext,
+        generation_config: Optional[dict] = None,
     ) -> Block:
         task = generator.generate(
             text=safe_format(

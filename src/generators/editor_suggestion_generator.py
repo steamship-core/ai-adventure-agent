@@ -72,6 +72,7 @@ class EditorSuggestionGenerator:
         variables: dict,
         field_key_path: List,
         context: AgentContext,
+        generation_config: Dict = None,
     ) -> Block:
         generator = get_story_text_generator(context)
         if not field_key_path:
@@ -116,7 +117,9 @@ class EditorSuggestionGenerator:
                 for key in the_list[index]:
                     variables[f"this_{key}"] = the_list[index][key]
 
-        block = prompt.generate(variables, generator, context)
+        block = prompt.generate(
+            variables, generator, context, generation_config=generation_config
+        )
         if not block:
             raise SteamshipError(
                 message=f"Unable to generate for {field_name} - no block on output."

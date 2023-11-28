@@ -1,3 +1,5 @@
+from typing import Optional
+
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
@@ -27,12 +29,30 @@ Character ${this_index} tagline: (${this_name}) """
 Character #{this_index} Name: {this_name}
 Character #{this_index} Summary (one or two sentences):"""
 
+    PROMPT_IF_STORY_TEXT = """## Instructions
+
+You are a master at synthesizing story drafts into clean descriptions.
+
+Please take the following story pitch and condense it into a single sentence. Be colorful, descriptive, but clear and specific.
+
+## Story Pitch
+
+{description}
+
+## Single Sentence Summary
+
+"""
+
     @staticmethod
     def get_field() -> str:
         return "characters.tagline"
 
     def inner_generate(
-        self, variables: dict, generator: PluginInstance, context: AgentContext
+        self,
+        variables: dict,
+        generator: PluginInstance,
+        context: AgentContext,
+        generation_config: Optional[dict] = None,
     ) -> Block:
         adventure_background = variables.get("adventure_background")
 

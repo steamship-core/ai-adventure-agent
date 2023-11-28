@@ -10,8 +10,8 @@ from api import AdventureGameService
 from generators.server_settings_generators.generate_using_reddit_post_generator import (
     GenerateUsingRedditPostGenerator,
 )
-from generators.server_settings_generators.generate_using_title_and_story_generator import (
-    GenerateUsingTitleAndStoryGenerator,
+from generators.server_settings_generators.generate_using_title_and_description_generator import (
+    GenerateUsingTitleAndDescriptionGenerator,
 )
 from utils.agent_service import AgentService
 from utils.context_utils import get_server_settings, save_server_settings
@@ -30,7 +30,7 @@ def inner_generate(
 @pytest.mark.parametrize(
     "invocable_handler_with_client", [AdventureGameService], indirect=True
 )
-def test_generate_using_reddit_posts(
+def test_generate_using_title_and_story(
     invocable_handler_with_client: Tuple[
         Callable[[str, str, Optional[dict]], dict], Steamship
     ]
@@ -50,7 +50,7 @@ def test_generate_using_reddit_posts(
     save_server_settings(server_settings, context)
 
     with patch.object(
-        GenerateUsingTitleAndStoryGenerator, "inner_generate", inner_generate
+        GenerateUsingTitleAndDescriptionGenerator, "inner_generate", inner_generate
     ):
         generator = GenerateUsingRedditPostGenerator()
 

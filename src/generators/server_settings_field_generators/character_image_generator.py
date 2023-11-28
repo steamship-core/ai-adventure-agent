@@ -1,3 +1,5 @@
+from typing import Optional
+
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
@@ -11,7 +13,11 @@ class CharacterImageGenerator(ServerSettingsFieldGenerator):
         return "characters.image"
 
     def inner_generate(
-        self, variables: dict, generator: PluginInstance, context: AgentContext
+        self,
+        variables: dict,
+        generator: PluginInstance,
+        context: AgentContext,
+        generation_config: Optional[dict] = None,
     ) -> Block:
         generator = get_profile_image_generator(context)
         task = generator.request_profile_image_generation(context)

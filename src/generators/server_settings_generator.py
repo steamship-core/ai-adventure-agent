@@ -16,7 +16,11 @@ class ServerSettingsGenerator(BaseModel, ABC):
 
     @abstractmethod
     def inner_generate(
-        self, agent_service: AgentService, context: AgentContext
+        self,
+        agent_service: AgentService,
+        context: AgentContext,
+        wait_on_task: Task = None,
+        generation_config: Optional[dict] = None,
     ) -> Task:
         pass
 
@@ -25,11 +29,18 @@ class ServerSettingsGenerator(BaseModel, ABC):
         agent_service: AgentService,
         context: AgentContext,
         unsaved_server_settings: Optional[dict] = None,
+        generation_config: Optional[dict] = None,
+        wait_on_task: Task = None,
     ) -> Task:
         """Generate an entire Adventure Template."""
         self.save_unsaved_server_settings(agent_service, unsaved_server_settings)
 
-        last_task = self.inner_generate(agent_service, context)
+        last_task = self.inner_generate(
+            agent_service=agent_service,
+            context=context,
+            wait_on_task=wait_on_task,
+            generation_config=generation_config,
+        )
 
         # Schedule the clearing of the generation_task_id value
         wait_on_tasks = [last_task] if last_task else []
@@ -72,6 +83,7 @@ class ServerSettingsGenerator(BaseModel, ABC):
         field_key_path: List[Union[str, int]],
         wait_on_tasks: Optional[List[Task]],
         agent_service: AgentService,
+        generation_config: Optional[dict] = None,
     ) -> Task:
         return agent_service.invoke_later(
             method="/generate_suggestion",
@@ -81,6 +93,7 @@ class ServerSettingsGenerator(BaseModel, ABC):
                 "field_name": field_name,
                 "field_key_path": field_key_path,
                 "save_to_server_settings": True,
+                "generation_config": generation_config,
             },
         )
 
