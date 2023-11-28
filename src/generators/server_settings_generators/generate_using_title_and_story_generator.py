@@ -2,6 +2,9 @@ from steamship import Task
 from steamship.agents.schema import AgentContext
 
 from generators.server_settings_generator import ServerSettingsGenerator
+from generators.server_settings_generators.generate_using_title_and_description_generator import (
+    GenerateUsingTitleAndDescriptionGenerator,
+)
 from utils.agent_service import AgentService
 from utils.context_utils import get_server_settings
 
@@ -11,12 +14,23 @@ class GenerateUsingTitleAndStoryGenerator(ServerSettingsGenerator):
 
     - If the story is too long, it takes a prefix of it to avoid going through the token budget.
 
-    ASSUMPTIONS: Requires the title and story
+    Assumptions:
 
+    - Requires the title and story
+
+    Connections to other generators:
+
+    - Just turns the story into a 2-3 paragraph description and then defers to the generator
+      which uses that shorter description as the starting place. This way we have a clean way to
+      reuse these generation pipelines in a variety of ways (e.g. generate from a book jacket,
+      genereate a plot from Shakeaspeare and then pass it to the description generator)
     """
 
     def inner_generate(
-        self, agent_service: AgentService, context: AgentContext
+        self,
+        agent_service: AgentService,
+        context: AgentContext,
+        wait_on_task: Task = None,
     ) -> Task:
         # Assemble a linked list of things to generate
         server_settings = get_server_settings(context)
@@ -29,4 +43,12 @@ class GenerateUsingTitleAndStoryGenerator(ServerSettingsGenerator):
         if not story:
             raise ValueError("No story from which to generate an adventure.")
 
-        raise NotImplementedError()
+        # First we generate the description from the story text.
+        create_description_task = self.schedule_generation(
+            "description", ["description"], [], agent_service
+        )
+
+        next_generator = GenerateUsingTitleAndDescriptionGenerator()
+        return next_generator.inner_generate(
+            agent_service, context, wait_on_task=create_description_task
+        )

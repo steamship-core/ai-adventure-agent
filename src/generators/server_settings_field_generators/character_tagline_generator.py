@@ -27,6 +27,20 @@ Character ${this_index} tagline: (${this_name}) """
 Character #{this_index} Name: {this_name}
 Character #{this_index} Summary (one or two sentences):"""
 
+    PROMPT_IF_STORY_TEXT = """## Instructions
+
+You are a master at synthesizing story drafts into clean descriptions.
+
+Please take the following story pitch and condense it into a single sentence. Be colorful, descriptive, but clear and specific.
+
+## Story Pitch
+
+{description}
+
+## Single Sentence Summary
+
+"""
+
     @staticmethod
     def get_field() -> str:
         return "characters.tagline"
