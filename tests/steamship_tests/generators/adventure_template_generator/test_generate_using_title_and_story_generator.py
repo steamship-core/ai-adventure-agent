@@ -30,7 +30,7 @@ def inner_generate(
 @pytest.mark.parametrize(
     "invocable_handler_with_client", [AdventureGameService], indirect=True
 )
-def test_generate_using_reddit_posts(
+def test_generate_using_title_and_story(
     invocable_handler_with_client: Tuple[
         Callable[[str, str, Optional[dict]], dict], Steamship
     ]
