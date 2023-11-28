@@ -157,20 +157,21 @@ class QuestAgent(InterruptiblePythonAgent):
                         QuestIdTag(quest_id=quest.name),
                     ],
                 )
-                num_paragraphs = randint(1, 2)  # noqa: S311
+                num_paragraphs = randint(1, 1)  # noqa: S311
                 prompt = (
-                    f"Describe the first few things they do in a {num_paragraphs} short paragraphs. "
-                    f"DO NOT present them with a challenge or obstacle in this description. Just set the scene."
+                    f"Generate the introduction to the quest in {num_paragraphs} short paragraph(s). "
+                    f"DO NOT present {game_state.player.name} with a challenge or obstacle in this description. "
+                    f"Just set the scene. "
                     f"{game_state.player.name} MUST NOT achieve their goal in the generated paragraphs. "
                     f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
                     f"'{server_settings.narrative_voice}'."
                 )
             else:
                 # here as a fallback
-                num_paragraphs = randint(1, 2)  # noqa: S311
+                num_paragraphs = randint(1, 1)  # noqa: S311
                 prompt = (
                     f"{game_state.player.name} is embarking on a quest. Describe the first few things they do "
-                    f"in a {num_paragraphs} short paragraphs."
+                    f"in {num_paragraphs} short paragraph(s)."
                 )
             block = send_story_generation(
                 prompt=prompt,
