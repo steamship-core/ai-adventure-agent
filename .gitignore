@@ -9,3 +9,5 @@ __pycache__
 logs/
 **/.DS_Store
 .pytest_cache
+harness_output/**/*.txt
+harness_output/**/*.md

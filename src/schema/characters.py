@@ -8,6 +8,9 @@ from schema.objects import Item
 class Character(BaseModel):
     name: Optional[str] = Field(None, description="The name of the character.")
 
+    tagline: Optional[str] = Field(
+        None, description="A short tagline for your character."
+    )
     description: Optional[str] = Field(
         None, description="The description of the character."
     )
@@ -20,7 +23,7 @@ class Character(BaseModel):
     inventory_last_updated: Optional[str] = Field(
         None, description="The timestamp of the last update of the inventory"
     )
-    profile_image_url: Optional[str] = Field(
+    image: Optional[str] = Field(
         default=None, description="The URL for the character image"
     )
 
@@ -49,7 +52,7 @@ class Character(BaseModel):
     def is_onboarding_complete(self) -> bool:
         """Return True if the player onboarding has been completed.
 
-        This is used by api.pyu to decide whether to route to the ONBOARDING AGENT.
+        This is used by api.py to decide whether to route to the ONBOARDING AGENT.
         """
         return (
             self.name is not None

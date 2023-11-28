@@ -1,17 +1,22 @@
 import json
 import logging
 from datetime import datetime, timezone
+from enum import Enum
 from random import randint, random
-from typing import List
+from typing import Dict, List
 
 from steamship import Tag
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
-from generators.generator_context_utils import get_image_generator, get_music_generator
+from generators.generator_context_utils import (
+    get_camp_image_generator,
+    get_music_generator,
+)
 from schema.game_state import GameState
 from schema.quest import Quest, QuestDescription
+from schema.server_settings import Difficulty
 from tools.end_quest_tool import EndQuestTool
 from utils.context_utils import (
     FinishActionException,
@@ -30,6 +35,39 @@ from utils.generation_utils import (
 from utils.interruptible_python_agent import InterruptiblePythonAgent
 from utils.moderation_utils import mark_block_as_excluded
 from utils.tags import InstructionsTag, QuestIdTag, QuestTag, TagKindExtensions
+
+
+class Likelihood(str, Enum):
+    VERY_LIKELY = "VERY_LIKELY"
+    LIKELY = "LIKELY"
+    UNKNOWN = "UNKNOWN"
+    UNLIKELY = "UNLIKELY"
+    VERY_UNLIKELY = "VERY_UNLIKELY"
+
+
+LIKELIHOOD_MAP: Dict[Difficulty, Dict[Likelihood, float]] = {
+    Difficulty.EASY: {
+        Likelihood.VERY_LIKELY: 0.05,
+        Likelihood.LIKELY: 0.2,
+        Likelihood.UNKNOWN: 0.35,
+        Likelihood.UNLIKELY: 0.55,
+        Likelihood.VERY_UNLIKELY: 0.7,
+    },
+    Difficulty.NORMAL: {
+        Likelihood.VERY_LIKELY: 0.1,
+        Likelihood.LIKELY: 0.3,
+        Likelihood.UNKNOWN: 0.5,
+        Likelihood.UNLIKELY: 0.7,
+        Likelihood.VERY_UNLIKELY: 0.9,
+    },
+    Difficulty.HARD: {
+        Likelihood.VERY_LIKELY: 0.2,
+        Likelihood.LIKELY: 0.35,
+        Likelihood.UNKNOWN: 0.6,
+        Likelihood.UNLIKELY: 0.8,
+        Likelihood.VERY_UNLIKELY: 0.95,
+    },
+}
 
 
 class QuestAgent(InterruptiblePythonAgent):
@@ -101,9 +139,16 @@ class QuestAgent(InterruptiblePythonAgent):
             )
 
             if quest_description is not None:
+                optional_desc = ""
+                if (
+                    quest_description.description
+                    and quest_description.description.strip()
+                ):
+                    optional_desc = f"\n\nAuthor's notes for this quest are: {quest_description.description}"
+
                 context.chat_history.append_system_message(
                     text=f"{game_state.player.name} is embarking on a quest to {quest_description.goal} "
-                    f"at {quest_description.location}.",
+                    f"at {quest_description.location}.{optional_desc}",
                     tags=[
                         Tag(
                             kind=TagKindExtensions.INSTRUCTIONS,
@@ -116,7 +161,9 @@ class QuestAgent(InterruptiblePythonAgent):
                 prompt = (
                     f"Describe the first few things they do in a {num_paragraphs} short paragraphs. "
                     f"DO NOT present them with a challenge or obstacle in this description. Just set the scene."
-                    f"{game_state.player.name} MUST NOT achieve their goal in the generated paragraphs."
+                    f"{game_state.player.name} MUST NOT achieve their goal in the generated paragraphs. "
+                    f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
+                    f"'{server_settings.narrative_voice}'."
                 )
             else:
                 # here as a fallback
@@ -177,11 +224,13 @@ class QuestAgent(InterruptiblePythonAgent):
                 if isinstance(e, FinishActionException):
                     raise e
                 else:
+                    logging.exception(e)
+
                     prologue_msg = (
                         "Our Apologies: Something went wrong with writing the next part of the story. "
                         "Let's try again."
                     )
-                    # TODO(doug): do we want to indicate the input was flagged if that is the issue?
+
                     if "flagged" in str(e):
                         prologue_msg = "That response triggered the game’s content moderation filter. Please try again."
                         # flag original message as excluded (this will prevent "getting stuck")
@@ -191,6 +240,8 @@ class QuestAgent(InterruptiblePythonAgent):
                         # clear last sys message added by generate_solution (that copies the user submitted solution)
                         if sys_message := context.chat_history.last_system_message:
                             mark_block_as_excluded(sys_message)
+
+                    logging.error(f"Sent to user: {prologue_msg}")
 
                     # undo the game solution state, and start over
                     # todo: should we consider using a Command design pattern-like approach here for undo?
@@ -222,13 +273,17 @@ class QuestAgent(InterruptiblePythonAgent):
 
             if quest_description is not None:
                 prompt = (
-                    f"Complete the story of the {player.name}'s current quest. {player.name} should achieve "
-                    f"the goal of '{quest_description.goal}', but NOT their overall goal of {server_settings.adventure_goal}"
+                    f"Complete the story of the {player.name}'s current quest in 3 or fewer paragraphs. {player.name} should achieve "
+                    f"the goal of '{quest_description.goal}', but NOT their overall goal of {server_settings.adventure_goal}. "
+                    f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
+                    f"'{server_settings.narrative_voice}'."
                 )
             else:
                 prompt = (
-                    f"Complete the story of the {player.name}'s current quest. {player.name} should not yet "
-                    f"achieve their overall goal of '{server_settings.adventure_goal}'"
+                    f"Complete the story of the {player.name}'s current quest in 3 or fewer paragraphs. {player.name} should not yet "
+                    f"achieve their overall goal of '{server_settings.adventure_goal}'. "
+                    f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
+                    f"'{server_settings.narrative_voice}'."
                 )
             story_end_block = send_story_generation(
                 prompt,
@@ -255,24 +310,36 @@ class QuestAgent(InterruptiblePythonAgent):
         if len(quest.user_problem_solutions) == quest.num_problems_to_encounter - 1:
             # if last problem, try to make it make sense for wrapping things up
             num_paragraphs = randint(1, 2)  # noqa: S311
+            server_settings = get_server_settings(context=context)
             prompt = (
-                f"Continue the story of {game_state.player.name} quest. Write about them encountering a "
+                f"Continue telling the story, in a tone of '{server_settings.narrative_tone}' with a narrative voice of "
+                f"{server_settings.narrative_voice}, of {game_state.player.name}'s quest. Write about them encountering a "
                 f"challenge that prevents them from completing their current quest.\n"
-                f"DO NOT SOLVE the challenge for {game_state.player.name}. "
+                f"DO NOT use the word 'challenge' directly.\n"
+                f"DO NOT mention any sort of ordering of challenges (examples: 'first' or 'next').\n"
+                f"DO NOT solve the challenge for {game_state.player.name}.\n"
                 f"The story should allow {game_state.player.name} to decide how to attempt to complete their "
-                f"quest. The story MUST continue the current story arc of the quest. The story should be a "
-                f"total of {num_paragraphs} short paragraphs."
+                f"quest. The story MUST continue the current story arc of the quest.\n"
+                f"Write exactly {num_paragraphs} short paragraph(s) in the tone of {server_settings.narrative_tone} "
+                f"with {server_settings.narrative_voice}."
             )
         else:
             num_paragraphs = randint(1, 2)  # noqa: S311
+            server_settings = get_server_settings(context=context)
             prompt = (
-                f"Write {num_paragraphs} short paragraphs that present {game_state.player.name} with a single "
-                f"challenge on their current quest ({quest_description.location}, {quest_description.goal}). The "
-                f"challenge MUST NOT repeat (or be equivalent to) a prior challenge faced by "
+                f"Tell the story using a tone of '{server_settings.narrative_tone}' with a narrative voice of "
+                f"{server_settings.narrative_voice} of {game_state.player.name} encountering a challenge on their "
+                f"current quest ({quest_description.location}, {quest_description.goal}).\n"
+                f"The challenge MUST NOT repeat (or be equivalent to) a prior challenge faced by "
                 f"{game_state.player.name}.\n"
-                f"DO NOT introduce more than one problem. DO NOT SOLVE the challenge for {game_state.player.name}. "
+                f"DO NOT introduce more than one problem.\n"
+                f"DO NOT use the words 'challenge' or 'problem' directly.\n"
+                f"DO NOT mention any sort of ordering of challenges (examples: 'first' or 'next').\n"
+                f"DO NOT solve the challenge for {game_state.player.name}.\n"
                 f"The story MUST continue the current story arc of the quest. The story SHOULD allow "
-                f"{game_state.player.name} to decide how to attempt to solve the challenge."
+                f"{game_state.player.name} to decide how to attempt to solve the challenge.\n"
+                f"Write exactly {num_paragraphs} short paragraph(s) in the tone of {server_settings.narrative_tone} "
+                f"with {server_settings.narrative_voice}."
             )
         problem_block = send_story_generation(
             prompt=prompt,
@@ -281,7 +348,7 @@ class QuestAgent(InterruptiblePythonAgent):
         )
         updated_problem_block = await_streamed_block(problem_block, context)
 
-        if image_gen := get_image_generator(context):
+        if image_gen := get_camp_image_generator(context):
             image_gen.request_scene_image_generation(
                 description=updated_problem_block.text, context=context
             )
@@ -306,23 +373,31 @@ class QuestAgent(InterruptiblePythonAgent):
             context=context,
         )
         likelihood_text = likelihood_block.text.upper()
-        if likelihood_text.startswith("VERY UNLIKELY"):
-            required_roll = 0.9
-        elif likelihood_text.startswith("UNLIKELY"):
-            required_roll = 0.7
-        elif likelihood_text.startswith("LIKELY"):
-            required_roll = 0.3
-        elif likelihood_text.startswith("VERY LIKELY"):
-            required_roll = 0.1
+        likelihood_map = LIKELIHOOD_MAP.get(server_settings.difficulty)
+        if "VERY UNLIKELY" in likelihood_text:
+            required_roll = likelihood_map[Likelihood.VERY_UNLIKELY]
+        elif "VERY LIKELY" in likelihood_text:
+            required_roll = likelihood_map[Likelihood.VERY_LIKELY]
+        elif "UNLIKELY" in likelihood_text:
+            required_roll = likelihood_map[Likelihood.UNLIKELY]
+        elif "LIKELY" in likelihood_text:
+            required_roll = likelihood_map[Likelihood.LIKELY]
         else:
-            required_roll = 0.5
-        required_roll = 1 - (
-            (1 - required_roll) / server_settings.problem_solution_difficulty
-        )
+            required_roll = likelihood_map[Likelihood.UNKNOWN]
+
+        # Add minor randomness, but don't drop below 0.05 (2 on d20) or go above 0.95 (20 on d20)
+        required_roll_mod = 0.05 * (randint(-2, 2))
+        required_roll = min(0.95, max(0.05, required_roll + required_roll_mod))
+
         roll = random()  # noqa: S311
         succeeded = roll > required_roll
         dice_roll_message = json.dumps(
-            {"required": required_roll, "rolled": roll, "success": succeeded}
+            {
+                "required": required_roll,
+                "rolled": roll,
+                "success": succeeded,
+                "mod": required_roll_mod,
+            }
         )
         context.chat_history.append_system_message(
             dice_roll_message, tags=self.tags(QuestTag.DICE_ROLL, quest)
@@ -337,10 +412,13 @@ class QuestAgent(InterruptiblePythonAgent):
         quest_goal: str,
     ):
         num_paragraphs = randint(1, 2)  # noqa: S311
+        server_settings = get_server_settings(context=context)
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it totally works.\n"
             f"Describe what happens in {num_paragraphs} short paragraphs. As part of the description, DO NOT have "
-            f"{game_state.player.name} completing the quest goal of {quest_goal}"
+            f"{game_state.player.name} completing the quest goal of {quest_goal}. "
+            f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
+            f"{server_settings.narrative_voice}."
         )
         solution_block = send_story_generation(
             prompt=prompt,
@@ -353,9 +431,12 @@ class QuestAgent(InterruptiblePythonAgent):
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
         num_paragraphs = randint(1, 2)  # noqa: S311
+        server_settings = get_server_settings(context=context)
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it fails.\n"
-            f"Describe what happens in {num_paragraphs} short paragraphs."
+            f"Describe what happens in {num_paragraphs} short paragraphs. "
+            f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
+            f"{server_settings.narrative_voice}."
         )
         solution_block = send_story_generation(
             prompt=prompt,

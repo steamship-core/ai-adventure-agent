@@ -40,10 +40,12 @@ class ChatHistoryFilter(ABC):
         debug_messages = [f"{filter_for} input: "]
         for _, (block, inclusion_reason) in enumerate(filtered_blocks):
             debug_messages.append(
-                f"{block.index_in_file} [{inclusion_reason}] {block.text}"
+                f"{block.index_in_file} [{inclusion_reason}] ({block.chat_role}) {block.text}"
             )
         logging.debug("\n".join(debug_messages))
-        return [filtered_block[0].index_in_file for filtered_block in filtered_blocks]
+        return list(
+            {filtered_block[0].index_in_file for filtered_block in filtered_blocks}
+        )
 
 
 class TagFilter(ChatHistoryFilter):
@@ -132,6 +134,9 @@ class UnionFilter(ChatHistoryFilter):
         return result
 
 
+ROLE_TOKEN_BUFFER_SIZE = 10
+
+
 class TrimmingStoryContextFilter(ChatHistoryFilter):
     def __init__(
         self,
@@ -200,7 +205,10 @@ class TrimmingStoryContextFilter(ChatHistoryFilter):
                     f"Selecting block: ({block.index_in_file}) [{block.chat_role}] {block.text}"
                 )
                 selected_blocks.append(block)
-                total_tokens += self._calculate_and_store_token_count(block)
+                total_tokens += (
+                    self._calculate_and_store_token_count(block)
+                    + ROLE_TOKEN_BUFFER_SIZE
+                )
                 logging.debug(f"Total tokens: {total_tokens }")
                 break
 
@@ -223,7 +231,10 @@ class TrimmingStoryContextFilter(ChatHistoryFilter):
                         f"Selecting block: ({block.index_in_file}) [{block.chat_role}] {block.text}"
                     )
                     selected_blocks.append(block)
-                    total_tokens += self._calculate_and_store_token_count(block)
+                    total_tokens += (
+                        self._calculate_and_store_token_count(block)
+                        + ROLE_TOKEN_BUFFER_SIZE
+                    )
                     logging.debug(f"Total tokens: {total_tokens}")
                     break
 
@@ -240,12 +251,15 @@ class TrimmingStoryContextFilter(ChatHistoryFilter):
                 if value == self._current_quest_id:
                     if total_tokens < self._max_tokens:
                         block_tokens = self._calculate_and_store_token_count(block)
-                        if block_tokens + total_tokens < self._max_tokens:
+                        if (
+                            block_tokens + total_tokens + ROLE_TOKEN_BUFFER_SIZE
+                            < self._max_tokens
+                        ):
                             logging.debug(
                                 f"Selecting block: ({block.index_in_file}) [{block.chat_role}] {block.text}"
                             )
                             selected_blocks.append(block)
-                            total_tokens += block_tokens
+                            total_tokens += block_tokens + ROLE_TOKEN_BUFFER_SIZE
                             logging.debug(f"Total tokens: {total_tokens}")
 
         if total_tokens < self._max_tokens:
@@ -258,12 +272,15 @@ class TrimmingStoryContextFilter(ChatHistoryFilter):
                     continue
                 if total_tokens < self._max_tokens:
                     block_tokens = self._calculate_and_store_token_count(block)
-                    if block_tokens + total_tokens < self._max_tokens:
+                    if (
+                        block_tokens + total_tokens + ROLE_TOKEN_BUFFER_SIZE
+                        < self._max_tokens
+                    ):
                         logging.debug(
                             f"Selecting block: ({block.index_in_file}) [{block.chat_role}] {block.text}"
                         )
                         selected_blocks.append(block)
-                        total_tokens += block_tokens
+                        total_tokens += block_tokens + ROLE_TOKEN_BUFFER_SIZE
                         logging.debug(f"Total tokens: {total_tokens}")
 
         logging.debug(f"TOTAL_TOKENS = {total_tokens}, MAX_TOKENS = {self._max_tokens}")

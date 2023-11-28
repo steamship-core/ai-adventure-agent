@@ -2,7 +2,11 @@ from steamship import Block, MimeTypes, Tag
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
-from generators.generator_context_utils import get_image_generator, get_music_generator
+from generators.generator_context_utils import (
+    get_camp_image_generator,
+    get_music_generator,
+    get_profile_image_generator,
+)
 from schema.characters import HumanCharacter
 from schema.game_state import GameState
 from utils.context_utils import (
@@ -111,11 +115,11 @@ class OnboardingAgent(InterruptiblePythonAgent):
             save_game_state(game_state, context)
 
         if not game_state.image_generation_requested():
-            if image_gen := get_image_generator(context):
+            if image_gen := get_profile_image_generator(context):
                 task = image_gen.request_profile_image_generation(context=context)
                 character_image_block = task.wait().blocks[0]
                 context.chat_history.file.refresh()
-                game_state.player.profile_image_url = character_image_block.raw_data_url
+                game_state.player.image = character_image_block.raw_data_url
                 game_state.profile_image_url = character_image_block.raw_data_url
                 save_game_state(game_state, context)
 
@@ -127,7 +131,7 @@ class OnboardingAgent(InterruptiblePythonAgent):
             save_game_state(game_state, context)
 
         if not game_state.camp_image_requested() and (server_settings.narrative_tone):
-            if image_gen := get_image_generator(context):
+            if image_gen := get_camp_image_generator(context):
                 task = image_gen.request_camp_image_generation(context=context)
                 camp_image_block = task.wait().blocks[0]
                 context.chat_history.file.refresh()

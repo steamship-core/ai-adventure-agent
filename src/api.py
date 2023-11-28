@@ -1,9 +1,11 @@
 import json
 import logging
+import pathlib
 import time
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from pydantic import Field
+from pydantic_yaml import parse_yaml_raw_as
 from steamship import Steamship, SteamshipError
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
@@ -19,23 +21,29 @@ from steamship.agents.mixins.transports.telegram import (
 from steamship.agents.schema import Agent, AgentContext, Tool
 from steamship.data import TagKind
 from steamship.data.block import Block, StreamState
+from steamship.data.tags.tag_constants import RoleTag
 from steamship.invocable import Config
 from steamship.utils.repl import AgentREPL
 
 from agents.camp_agent import CampAgent
 from agents.diagnostic_agent import DiagnosticAgent
+from agents.generating_agent import GeneratingAgent
 from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
 from endpoints.camp_endpoints import CampMixin
 from endpoints.game_state_endpoints import GameStateMixin
+from endpoints.help_endpoints import HelpMixin
 from endpoints.npc_endpoints import NpcMixin
 from endpoints.onboarding_endpoints import OnboardingMixin
 from endpoints.quest_endpoints import QuestMixin
 from endpoints.server_endpoints import ServerSettingsMixin
+from schema.characters import HumanCharacter
 from schema.game_state import ActiveMode
+from schema.server_settings import ServerSettings
 from utils.agent_service import AgentService
-from utils.context_utils import get_game_state
+from utils.context_utils import get_game_state, save_game_state, save_server_settings
+from utils.tags import TagKindExtensions
 
 
 class AdventureGameService(AgentService):
@@ -103,6 +111,7 @@ class AdventureGameService(AgentService):
         CampMixin,  # Provides API Endpoints for Camp Management (used by the associated web app)
         NpcMixin,  # Provides API Endpoints for NPC Chat Management (used by the associated web app)
         OnboardingMixin,  # Provide API Endpoints for Onboarding
+        HelpMixin,  # Provide API Endpoints for hinting, etc.,
     ]
     """USED_MIXIN_CLASSES tells Steamship what additional HTTP endpoints to register on your AgentService."""
 
@@ -192,6 +201,10 @@ class AdventureGameService(AgentService):
             OnboardingMixin(client=self.client, agent_service=cast(AgentService, self))
         )
 
+        self.add_mixin(
+            HelpMixin(client=self.client, agent_service=cast(AgentService, self))
+        )
+
         # Instantiate the core game agents
         function_capable_llm = ChatOpenAI(self.client)
 
@@ -237,6 +250,9 @@ class AdventureGameService(AgentService):
             sub_agent = self.quest_agent
         elif active_mode == ActiveMode.CAMP:
             sub_agent = self.camp_agent
+        elif active_mode == ActiveMode.GENERATING:
+            # This is just a stub agent so that we don't throw an exception.
+            sub_agent = GeneratingAgent()
         else:
             raise SteamshipError(message=f"Unknown mode: {active_mode}")
 
@@ -254,6 +270,46 @@ class AdventureGameService(AgentService):
 
 class GameREPL(AgentREPL):
     last_seen_block = 0
+
+    def __init__(
+        self,
+        agent_class: Type[AgentService],
+        method: Optional[str] = None,
+        agent_package_config: Optional[Dict[str, Any]] = None,
+        client: Optional[Steamship] = None,
+        context_id: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            agent_class=agent_class,
+            method=method,
+            agent_package_config=agent_package_config,
+            client=client,
+            context_id=context_id,
+            **kwargs,
+        )
+        self.agent_instance = self.agent_class(client=client, config=self.config)
+
+    def run_with_client(self, client: Steamship, **kwargs):
+        # Override so we can not clobber self.agent_instance
+        try:
+            from termcolor import colored  # noqa: F401
+        except ImportError:
+
+            def colored(text: str, color: str, **kwargs):
+                return text
+
+        print("Starting REPL for Agent...")
+        print(
+            "If you make code changes, restart this REPL. Press CTRL+C to exit at any time.\n"
+        )
+
+        # Determine the responder, which may have been custom-supplied on the agent.
+        responder = getattr(self.agent_instance, self.method or "prompt")
+        while True:
+            input_text = input(colored(text="Input: ", color="blue"))  # noqa: F821
+            output = responder(prompt=input_text, context_id=self.context_id, **kwargs)
+            self.print_object_or_objects(output)
 
     def print_object_or_objects(
         self, output: Union[List, Any], metadata: Optional[Dict[str, Any]] = None
@@ -282,24 +338,42 @@ class GameREPL(AgentREPL):
         super().print_object_or_objects(output, metadata)
 
     def print_new_block(self, block: Block):
-        if TagKind.STATUS_MESSAGE not in [tag.kind for tag in block.tags]:
+        tag_kinds = {tag.kind for tag in block.tags}
+        # tag_names = {tag.name for tag in block.tags}
+        if (
+            TagKind.STATUS_MESSAGE not in tag_kinds
+            and TagKindExtensions.INSTRUCTIONS not in tag_kinds
+            and block.chat_role not in [RoleTag.USER]
+        ):
             tag_texts = "".join(
-                sorted(set([f"[{tag.kind},{tag.name}]" for tag in block.tags]))
+                sorted({f"[{tag.kind},{tag.name}]" for tag in block.tags})
             )
             if block.is_text():
-                print(f"{tag_texts} {block.text}")
+                print(f"{tag_texts} {block.text}\n")
             else:
                 print(f"{tag_texts} {block.raw_data_url}")
 
 
 if __name__ == "__main__":
-    # AgentREPL provides a mechanism for local execution of an AgentService method.
-    # This is used for simplified debugging as agents and tools are developed and
-    # added.
+    basepath = pathlib.Path(__file__).parent.resolve()
+    with open(basepath / "../example_content/evil_science.yaml") as settings_file:
+        yaml_string = settings_file.read()
+        server_settings = parse_yaml_raw_as(ServerSettings, yaml_string)
 
-    # NOTE: There's a bug in the repl where it doesn't respect my workspace selection below. It always creates a new one.
-    client = Steamship(workspace="snugly-crater-i8mli")
-    repl = GameREPL(
-        cast(AgentService, AdventureGameService), agent_package_config={}, client=client
-    )
-    repl.run(dump_history_on_exit=True)
+    with open(basepath / "../example_content/christine.yaml") as character_file:
+        yaml_string = character_file.read()
+        character = parse_yaml_raw_as(HumanCharacter, yaml_string)
+
+    with Steamship.temporary_workspace() as client:
+        repl = GameREPL(
+            cast(AgentService, AdventureGameService),
+            agent_package_config={},
+            client=client,
+        )
+        context = repl.agent_instance.build_default_context()
+        save_server_settings(server_settings, context)
+        game_state = get_game_state(context)
+        game_state.player = character
+        save_game_state(game_state, context)
+
+        repl.run()  # dumping history seems to provide empty results, so removing

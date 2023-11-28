@@ -12,7 +12,10 @@ class HaikuTweetGenerator(SocialMediaGenerator):
         game_state = get_game_state(context)
         generator = get_story_text_generator(context)
 
-        prompt = f"Write a funny, sassy haiku about the following story: {quest.text_summary}"
+        prompt = (
+            f"Write a funny, sassy haiku about the following story: {quest.text_summary}.\n"
+            f"The haiku should have a single stanza."
+        )
         haiku_task = generator.generate(text=prompt)
         haiku_task.wait()  # this should be a short Task
 
@@ -31,20 +34,20 @@ class HaikuTweetGenerator(SocialMediaGenerator):
         progress_bar = "".join([green_progress, grey_progress])
 
         # TODO: validate haiku length
-        tweet_body = f"{haiku_text}\n\n{progress_bar}\n\n#ai-adventure"
+        tweet_body = f"{haiku_text}\n\n{progress_bar}\n\n#aiadventure"
 
-        if len(quest.new_items) > 0:
-            item = quest.new_items[0]
-            # title = urllib.parse.quote(item.name, safe="")
-            # description = urllib.parse.quote(item.description, safe="")
-
-            # TODO: validate picture url format and indices
-            picture_url = item.picture_url
-            raw_less = picture_url.rstrip("/raw")
-            slash_index = raw_less.rfind("/") + 1
-            block_id = raw_less[slash_index:]
-            url = f"https://ai-adventure.steamship.com/og?blockId={block_id}"
-            # url = f"https://ai-adventure.steamship.com/social/items/share?title={title}&description={description}&block_id={block_id}"
-            tweet_body = f"{tweet_body}\n\n{url}"
+        # if len(quest.new_items) > 0:
+        #     item = quest.new_items[0]
+        #     # title = urllib.parse.quote(item.name, safe="")
+        #     # description = urllib.parse.quote(item.description, safe="")
+        #
+        #     # TODO: validate picture url format and indices
+        #     picture_url = item.picture_url
+        #     raw_less = picture_url.rstrip("/raw")
+        #     slash_index = raw_less.rfind("/") + 1
+        #     block_id = raw_less[slash_index:]
+        #     url = f"https://ai-adventure.steamship.com/og?blockId={block_id}"
+        #     # url = f"https://ai-adventure.steamship.com/social/items/share?title={title}&description={description}&block_id={block_id}"
+        #     tweet_body = f"{tweet_body}\n\n{url}"
 
         return tweet_body

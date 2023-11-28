@@ -10,6 +10,7 @@ While at the same time not committing to any huge abstraction overhead: this is 
 functions whose mechanics can change under the hood as we discover better ways to do things, and the game developer
 doesn't need to know.
 """
+import logging
 import time
 from typing import List, Optional, Tuple
 
@@ -164,7 +165,7 @@ def generate_quest_item(
 ) -> (str, str):
     """Generates a found item from a quest, returning a tuple of its name and description"""
     prompt = f"What item did {player.name} find during that story? It should fit the setting of the story and help {player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
-    block = do_generation(
+    block = do_token_trimmed_generation(
         context,
         prompt,
         prompt_tags=[
@@ -264,47 +265,51 @@ def generate_quest_arc(
         f"QUEST GOAL: get your nails trimmed QUEST LOCATION: Dog Wash\n"
         f"QUEST GOAL: win an award QUEST LOCATION: Westminister Dog Show\n"
     )
-    block = do_generation(
-        context,
-        prompt,
-        prompt_tags=[
-            Tag(
-                kind=TagKindExtensions.QUEST_ARC,
-                name=QuestArcTag.PROMPT,
-            )
-        ],
-        output_tags=[Tag(kind=TagKindExtensions.QUEST_ARC, name=QuestArcTag.RESULT)],
-        filter=TagFilter(
-            [
-                (TagKindExtensions.CHARACTER, CharacterTag.NAME),
-                (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
-                (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
-                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
-                (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
-                (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT),
-            ]
-        ),
-        generation_for="Quest Arc",
-        streaming=False,
-    )
     result: List[QuestDescription] = []
-    items = block.text.split("QUEST GOAL:")
-    for item in items:
-        if len(item.strip()) > 0 and "QUEST LOCATION" in item:
-            parts = item.split("QUEST LOCATION:")
-            if len(parts) == 2:
-                goal = parts[0].strip()
-                location = parts[1].strip().rstrip(".")
-                if "\n" in location:
-                    location = location[: location.index("\n")]
-                result.append(QuestDescription(goal=goal, location=location))
+    while len(result) != server_settings.quests_per_arc:
+        block = do_generation(
+            context,
+            prompt,
+            prompt_tags=[
+                Tag(
+                    kind=TagKindExtensions.QUEST_ARC,
+                    name=QuestArcTag.PROMPT,
+                )
+            ],
+            output_tags=[
+                Tag(kind=TagKindExtensions.QUEST_ARC, name=QuestArcTag.RESULT)
+            ],
+            filter=TagFilter(
+                [
+                    (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                    (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                    (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                    (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                    (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
+                    (TagKindExtensions.QUEST_ARC, QuestArcTag.PROMPT),
+                ]
+            ),
+            generation_for="Quest Arc",
+            streaming=False,
+        )
+        result = []
+        items = block.text.split("QUEST GOAL:")
+        for item in items:
+            if len(item.strip()) > 0 and "QUEST LOCATION" in item:
+                parts = item.split("QUEST LOCATION:")
+                if len(parts) == 2:
+                    goal = parts[0].strip()
+                    location = parts[1].strip().rstrip(".")
+                    if "\n" in location:
+                        location = location[: location.index("\n")]
+                    result.append(QuestDescription(goal=goal, location=location))
     return result
 
 
 def generate_story_intro(player: HumanCharacter, context: AgentContext) -> str:
     server_settings = get_server_settings(context)
     prompt = f"Please write a few sentences of introduction to the character {player.name} as they embark on their journey to {server_settings.adventure_goal}."
-    block = do_generation(
+    block = do_token_trimmed_generation(
         context,
         prompt,
         prompt_tags=[
@@ -417,13 +422,18 @@ def do_generation(
     # don't pollute workspace with temporary/working files that contain data like: "LIKELY"
     append_output_to_file = False if not output_file_id else True
 
+    logging.debug(
+        f"current prompt({prompt_block.index_in_file}, {tokens(prompt_block)}): {prompt}"
+    )
+    logging.debug(f"selected blocks: {sorted(block_indices)}")
+
     task = generator.generate(
         tags=output_tags,
         append_output_to_file=append_output_to_file,
         input_file_id=context.chat_history.file.id,
         output_file_id=output_file_id,
         streaming=streaming,
-        input_file_block_index_list=block_indices,
+        input_file_block_index_list=sorted(block_indices),
         options=options,
     )
     task.wait()
@@ -441,4 +451,54 @@ def await_streamed_block(block: Block, context: AgentContext) -> Block:
         time.sleep(0.4)
         block = Block.get(block.client, _id=block.id)
     context.chat_history.file.refresh()
+    return block
+
+
+def generate_action_choices(context: AgentContext) -> Block:
+
+    game_state = get_game_state(context)
+    quest_name = game_state.current_quest
+
+    prompt = (
+        f"Generate a multiple choice set of three options for the user to select {game_state.player.name}'s next "
+        f"action. The actions should be relevant to the story and the current challenge "
+        f"facing {game_state.player.name}. The generated actions should match the tone and narrative voice of the "
+        f"existing story.\n"
+        f"Action choices should be returned as a simple JSON list (and NOT a JSON object).\n"
+        f'Example: ["pet the dog", "launch missiles", "dance the Macarena"]'
+    )
+
+    block = do_token_trimmed_generation(
+        context,
+        prompt,
+        prompt_tags=[
+            # intentionally don't add this to the quest. it lives as sorta "out-of-quest" generation
+            # that still requires quest data.
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ACTION_CHOICES_PROMPT),
+        ],
+        output_tags=[
+            # provide a way to filter this out, in case this ends up in a saved file somewhere (not currently)
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.ACTION_CHOICES),
+        ],
+        filter=UnionFilter(
+            [
+                TagFilter(
+                    tag_types=[
+                        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
+                        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
+                    ]
+                ),
+                QuestNameFilter(quest_name=quest_name),
+                LastInventoryFilter(),
+            ]
+        ),
+        generation_for="Action Choices",
+        new_file=True,  # don't put this in the chat history. it is help content.
+        streaming=False,
+    )
     return block

@@ -10,11 +10,13 @@ from schema.quest import Quest, QuestDescription
 
 
 class ActiveMode(str, Enum):
+    GENERATING = "generating"  # Indicates that the game is in the process of generating itself and can't be used.
     ONBOARDING = "onboarding"
     CAMP = "camp"
     QUEST = "quest"
     NPC_CONVERSATION = "npc-conversation"
     DIAGNOSTIC = "diagnostic"
+    ERROR = "error"  # Indicates that the game has hit an unrecoverable error.
 
 
 class GameState(BaseModel):
@@ -67,6 +69,11 @@ class GameState(BaseModel):
         description="The name of the NPC that the user is currently in conversation with.",
     )
 
+    unrecoverable_error: Optional[str] = Field(
+        None,
+        description="If not null, the description of an unrecoverable error causing a halted game.",
+    )
+
     await_ask_key: Optional[str] = Field(
         None,
         description="The key of the last question asked to the user via context_utils.await_ask.",
@@ -109,7 +116,7 @@ class GameState(BaseModel):
         )
 
     def image_generation_requested(self) -> bool:
-        if self.player.profile_image_url:
+        if self.player.image:
             return True
         elif self.profile_image_url:
             return True
@@ -130,6 +137,8 @@ class GameState(BaseModel):
 
     @property
     def active_mode(self) -> ActiveMode:
+        if self.unrecoverable_error is not None:
+            return ActiveMode.ERROR
         if self.diagnostic_mode is not None:
             return ActiveMode.DIAGNOSTIC  # Diagnostic mode takes precedence
         if not self.is_onboarding_complete():

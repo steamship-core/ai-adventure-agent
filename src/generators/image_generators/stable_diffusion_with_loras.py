@@ -1,13 +1,14 @@
 import json
 from typing import Final, List
 
-from steamship import Tag, Task
+from steamship import SteamshipError, Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
 
 from generators.image_generator import ImageGenerator
+from schema.image_theme import StableDiffusionTheme
 from schema.objects import Item
-from utils.context_utils import get_game_state, get_server_settings
+from utils.context_utils import get_game_state, get_server_settings, get_theme
 from utils.tags import (
     CampTag,
     CharacterTag,
@@ -21,6 +22,15 @@ from utils.tags import (
 
 class StableDiffusionWithLorasImageGenerator(ImageGenerator):
     PLUGIN_HANDLE: Final[str] = "fal-sd-lora-image-generator"
+
+    def get_theme(self, theme_name: str, context) -> StableDiffusionTheme:
+        theme = get_theme(theme_name, context)
+        if theme.is_dalle:
+            raise SteamshipError(
+                f"Theme {theme_name} is DALL-E but this is the SD Generator"
+            )
+        d = theme.dict()
+        return StableDiffusionTheme.parse_obj(d)
 
     def generate(
         self,
@@ -177,6 +187,26 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
                 "tone": server_settings.narrative_tone,
             },
             image_size="landscape_16_9",
+            tags=tags,
+        )
+        task.wait()
+        return task
+
+    def request_adventure_image_generation(self, context: AgentContext) -> Task:
+        server_settings = get_server_settings(context)
+
+        tags = []
+
+        task = self.generate(
+            context=context,
+            theme_name=server_settings.camp_image_theme,
+            prompt="Cinematic, 8k, movie advertising image, {narrative_voice}, Movie Title: {name}",
+            negative_prompt="",
+            template_vars={
+                "narrative_voice": server_settings.narrative_voice,
+                "name": server_settings.name,
+            },
+            image_size="portrait_4_3",
             tags=tags,
         )
         task.wait()

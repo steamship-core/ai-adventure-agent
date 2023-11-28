@@ -29,7 +29,7 @@ class TagKindExtensions(str, Enum):
     INSTRUCTIONS = "instructions"
 
     # This tag is used to identify the token count for a block
-    TOKEN_COUNT = "token_count"
+    TOKEN_COUNT = "token_count"  # noqa: S105
 
 
 class AgentStatusMessageTag(str, Enum):
@@ -84,6 +84,8 @@ class StoryContextTag(str, Enum):
 class QuestTag(str, Enum):
     QUEST_CONTENT = "quest_content"
     QUEST_PROMPT = "quest_prompt"
+    ACTION_CHOICES_PROMPT = "action_choices_prompt"
+    ACTION_CHOICES = "action_choices"
     USER_SOLUTION = "user_solution"
     QUEST_ID = "quest_id"
     QUEST_SUMMARY = "quest_summary"
