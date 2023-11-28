@@ -61,7 +61,6 @@ class GenerateAllGenerator(ServerSettingsGenerator):
                 field_key_path,
                 wait_on_tasks,
                 agent_service,
-                generation_config,
                 generation_config=generation_config,
             )
             if should_block:

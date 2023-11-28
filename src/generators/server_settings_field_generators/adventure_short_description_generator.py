@@ -17,6 +17,28 @@ Genre: {narrative_voice}
 Writing Style: {narrative_tone}
 One-sentence Pitch:"""
 
+    PROMPT_FROM_DESCRIPTION = """## Instructions
+
+You are a master at summarizing stories for a publishing company.
+
+Please take the following story fragment and condense it into a single sentence summary.
+
+Be colorful and descriptive, but clear and specific with detail. Make sure the sentence captures the feeling of the setting, plot, and motivations.
+
+## Title
+
+{name}
+
+## Story
+
+{description}
+
+## One Sentence Summary
+
+Remember: You're a master at summarizing. Transform the story into a single sentence that captures the feeling of the setting, plot, and motivations.
+
+One Sentence Summary: """
+
     @staticmethod
     def get_field() -> str:
         return "short_description"
@@ -35,9 +57,17 @@ One-sentence Pitch:"""
         )
         name = variables.get("name", "Untitled")
 
+        if (
+            generation_config
+            and generation_config.get("variant") == "generate-from-description"
+        ):
+            prompt = self.PROMPT_FROM_DESCRIPTION
+        else:
+            prompt = self.PROMPT
+
         task = generator.generate(
             text=safe_format(
-                self.PROMPT,
+                prompt,
                 {
                     "narrative_voice": narrative_voice,
                     "narrative_tone": narrative_tone,

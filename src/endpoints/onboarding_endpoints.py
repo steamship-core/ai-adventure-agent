@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from steamship import Steamship, SteamshipError
@@ -112,6 +113,7 @@ class OnboardingMixin(PackageMixin):
         except RunNextAgentException:
             return game_state.chat_history_for_onboarding_complete
         except BaseException as e:
+            logging.error(e)
             context = self.agent_service.build_default_context()
             record_and_throw_unrecoverable_error(e, context)
 

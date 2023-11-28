@@ -20,6 +20,24 @@ Examples of genres:
 
 Genre Suggestion:"""
 
+    PROMPT_FROM_DESCRIPTION = """# Goal
+
+Tell me the genre for this upcoming award-winning piece of writing.
+
+Examples of genres:
+
+- fantasy adventure
+- children’s book
+- young adult novel
+- fanfic
+- high literature
+
+# Description of story
+
+{description}
+
+# Genre (and only the genre -- no other text!): """
+
     @staticmethod
     def get_field() -> str:
         return "narrative_voice"
@@ -31,8 +49,16 @@ Genre Suggestion:"""
         context: AgentContext,
         generation_config: Optional[dict] = None,
     ) -> Block:
+        if (
+            generation_config
+            and generation_config.get("variant") == "generate-from-description"
+        ):
+            prompt = self.PROMPT_FROM_DESCRIPTION
+        else:
+            prompt = self.PROMPT
+
         task = generator.generate(
-            text=safe_format(self.PROMPT, variables),
+            text=safe_format(prompt, variables),
             streaming=True,
             append_output_to_file=True,
             make_output_public=True,

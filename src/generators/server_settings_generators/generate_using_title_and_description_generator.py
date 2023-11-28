@@ -66,4 +66,31 @@ class GenerateUsingTitleAndDescriptionGenerator(ServerSettingsGenerator):
         if not description:
             raise ValueError("No description from which to generate an adventure.")
 
-        raise NotImplementedError()
+        last_task = wait_on_task
+        for field_key_path_and_should_block in GENERATE_KEY_PATHS_AND_SHOULD_BLOCK:
+            field_key_path = field_key_path_and_should_block[0]
+            should_block = field_key_path_and_should_block[1]
+
+            wait_on_tasks = [last_task] if last_task else []
+
+            # Either something like `name` or `characters.name`
+            if len(field_key_path) == 3:
+                field_name = field_key_path[2]
+            else:
+                field_name = field_key_path[0]
+
+            generation_config = generation_config or {}
+
+            generation_config.update({"variant": "generate-from-description"})
+
+            this_task = self.schedule_generation(
+                field_name,
+                field_key_path,
+                wait_on_tasks,
+                agent_service,
+                generation_config=generation_config,
+            )
+            if should_block:
+                last_task = this_task
+
+        return last_task
