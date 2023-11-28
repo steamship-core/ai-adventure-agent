@@ -1,6 +1,8 @@
+import pathlib
 from typing import Callable, Optional
 
 import pytest
+import yaml
 
 from api import AdventureGameService
 from schema.server_settings import ServerSettings
@@ -69,21 +71,25 @@ def test_server_settings_endpoint_update(
     assert ss3.adventure_goal != ss0.adventure_goal
     assert ss3.adventure_background == "BAR BAR"
 
-    import pathlib
 
-    import yaml
-
+@pytest.mark.parametrize("invocable_handler", [AdventureGameService], indirect=True)
+def test_server_settings_generate_preview(
+    invocable_handler: Callable[[str, str, Optional[dict]], dict]
+):
     basepath = pathlib.Path(__file__).parent.resolve()
     with open(basepath / "../../../example_content/image_theme.yaml") as file:
-        ss4: ServerSettings = ServerSettings.parse_obj(yaml.safe_load(file.read()))
-        for theme in ss4.image_themes:
+        ss: ServerSettings = ServerSettings.parse_obj(yaml.safe_load(file.read()))
+        for theme in ss.image_themes:
             assert hasattr(theme, "name")
 
-        invocable_handler("POST", "patch_server_settings", ss4.dict())
+        full_preview_dict = {
+            "field_name": "profile_image",
+            "unsaved_server_settings": ss.dict(),
+        }
 
-        ss5: ServerSettings = ServerSettings.parse_obj(
-            invocable_handler("GET", "server_settings", {}).get("data")
-        )
-
-        assert len(ss5.image_themes) == 1
-        assert hasattr(ss5.image_themes[0], "name")
+        resp = invocable_handler("POST", "generate_preview", full_preview_dict)
+        assert resp.get("http") is not None
+        http = resp.get("http")
+        assert http.get("status") is not None
+        status = http.get("status")
+        assert status == 200
