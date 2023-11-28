@@ -170,10 +170,10 @@ def SettingField(
     # TODO can also probably make a best-guess on type based on variable type
 
     meta_setting = dict(
-        default=default,
         label=label,
         description=description,
         type=type,  # todo probably.value when this is an enum
+        default=default,
         listof=listof,
         options=options,
         includeDynamicOptions=include_dynamic_options,
@@ -267,7 +267,7 @@ class ServerSettings(BaseModel):
     default_story_model: str = SettingField(
         default="gpt-3.5-turbo",
         label="Story LLM Model",
-        description="Model used to generate story text",
+        description="Model used to generate story text.",
         type="select",
         options=[
             {
@@ -870,10 +870,12 @@ Can include descriptions of genre, characters, specific items and locations that
         """
         s = cls()
         for field_name, field in cls.__fields__.items():
+            result = {"name": field_name}
             meta_setting = field.field_info.extra.get("meta_setting")
             if not meta_setting:
                 delattr(s, field_name)
                 continue
-            meta_setting["serverSetting"] = True
-            setattr(s, field_name, meta_setting)
+            result.update(meta_setting)
+            result["serverSetting"] = True
+            setattr(s, field_name, result)
         return s
