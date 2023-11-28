@@ -27,11 +27,11 @@ from steamship.utils.repl import AgentREPL
 
 from agents.camp_agent import CampAgent
 from agents.diagnostic_agent import DiagnosticAgent
+from agents.generating_agent import GeneratingAgent
 from agents.npc_agent import NpcAgent
 from agents.onboarding_agent import OnboardingAgent
 from agents.quest_agent import QuestAgent
 from endpoints.camp_endpoints import CampMixin
-from endpoints.game_editor_endpoints import GameEditorMixin
 from endpoints.game_state_endpoints import GameStateMixin
 from endpoints.help_endpoints import HelpMixin
 from endpoints.npc_endpoints import NpcMixin
@@ -111,7 +111,6 @@ class AdventureGameService(AgentService):
         CampMixin,  # Provides API Endpoints for Camp Management (used by the associated web app)
         NpcMixin,  # Provides API Endpoints for NPC Chat Management (used by the associated web app)
         OnboardingMixin,  # Provide API Endpoints for Onboarding
-        GameEditorMixin,
         HelpMixin,  # Provide API Endpoints for hinting, etc.,
     ]
     """USED_MIXIN_CLASSES tells Steamship what additional HTTP endpoints to register on your AgentService."""
@@ -203,10 +202,6 @@ class AdventureGameService(AgentService):
         )
 
         self.add_mixin(
-            GameEditorMixin(client=self.client, agent_service=cast(AgentService, self))
-        )
-
-        self.add_mixin(
             HelpMixin(client=self.client, agent_service=cast(AgentService, self))
         )
 
@@ -255,6 +250,9 @@ class AdventureGameService(AgentService):
             sub_agent = self.quest_agent
         elif active_mode == ActiveMode.CAMP:
             sub_agent = self.camp_agent
+        elif active_mode == ActiveMode.GENERATING:
+            # This is just a stub agent so that we don't throw an exception.
+            sub_agent = GeneratingAgent()
         else:
             raise SteamshipError(message=f"Unknown mode: {active_mode}")
 

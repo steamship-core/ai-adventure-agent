@@ -224,11 +224,13 @@ class QuestAgent(InterruptiblePythonAgent):
                 if isinstance(e, FinishActionException):
                     raise e
                 else:
+                    logging.exception(e)
+
                     prologue_msg = (
                         "Our Apologies: Something went wrong with writing the next part of the story. "
                         "Let's try again."
                     )
-                    # TODO(doug): do we want to indicate the input was flagged if that is the issue?
+
                     if "flagged" in str(e):
                         prologue_msg = "That response triggered the game’s content moderation filter. Please try again."
                         # flag original message as excluded (this will prevent "getting stuck")
@@ -238,6 +240,8 @@ class QuestAgent(InterruptiblePythonAgent):
                         # clear last sys message added by generate_solution (that copies the user submitted solution)
                         if sys_message := context.chat_history.last_system_message:
                             mark_block_as_excluded(sys_message)
+
+                    logging.error(f"Sent to user: {prologue_msg}")
 
                     # undo the game solution state, and start over
                     # todo: should we consider using a Command design pattern-like approach here for undo?
@@ -369,7 +373,7 @@ class QuestAgent(InterruptiblePythonAgent):
             context=context,
         )
         likelihood_text = likelihood_block.text.upper()
-        likelihood_map = LIKELIHOOD_MAP.get(server_settings.problem_solution_difficulty)
+        likelihood_map = LIKELIHOOD_MAP.get(server_settings.difficulty)
         if "VERY UNLIKELY" in likelihood_text:
             required_roll = likelihood_map[Likelihood.VERY_UNLIKELY]
         elif "VERY LIKELY" in likelihood_text:
@@ -380,10 +384,20 @@ class QuestAgent(InterruptiblePythonAgent):
             required_roll = likelihood_map[Likelihood.LIKELY]
         else:
             required_roll = likelihood_map[Likelihood.UNKNOWN]
+
+        # Add minor randomness, but don't drop below 0.05 (2 on d20) or go above 0.95 (20 on d20)
+        required_roll_mod = 0.05 * (randint(-2, 2))
+        required_roll = min(0.95, max(0.05, required_roll + required_roll_mod))
+
         roll = random()  # noqa: S311
         succeeded = roll > required_roll
         dice_roll_message = json.dumps(
-            {"required": required_roll, "rolled": roll, "success": succeeded}
+            {
+                "required": required_roll,
+                "rolled": roll,
+                "success": succeeded,
+                "mod": required_roll_mod,
+            }
         )
         context.chat_history.append_system_message(
             dice_roll_message, tags=self.tags(QuestTag.DICE_ROLL, quest)

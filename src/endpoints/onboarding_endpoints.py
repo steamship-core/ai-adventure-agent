@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from steamship import Steamship, SteamshipError
@@ -77,9 +78,7 @@ class OnboardingMixin(PackageMixin):
                 if image_gen := get_profile_image_generator(context):
                     task = image_gen.request_profile_image_generation(context=context)
                     character_image_block = task.wait().blocks[0]
-                    game_state.player.profile_image_url = (
-                        character_image_block.raw_data_url
-                    )
+                    game_state.player.image = character_image_block.raw_data_url
                     game_state.profile_image_url = character_image_block.raw_data_url
 
         save_game_state(game_state, context)
@@ -114,6 +113,7 @@ class OnboardingMixin(PackageMixin):
         except RunNextAgentException:
             return game_state.chat_history_for_onboarding_complete
         except BaseException as e:
+            logging.error(e)
             context = self.agent_service.build_default_context()
             record_and_throw_unrecoverable_error(e, context)
 
