@@ -1,23 +1,28 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class CharacterNameSuggestionGenerator(EditorFieldSuggestionGenerator):
-    PROMPT = """Suggest the name of Character #{this_index} in a story.
+class GenreGenerator(ServerSettingsFieldGenerator):
+    PROMPT = """Suggest a genre for a short story. Be creative, expansive, but concise!
 
-Story Name: {name}
-Story Genre: {narrative_voice}
-Story Goal: {adventure_goal}
-Character ${this_index} name:"""
+Examples of genres:
+
+- fantasy adventure
+- children’s book
+- young adult novel
+- fanfic
+- high literature
+
+Genre Suggestion:"""
 
     @staticmethod
     def get_field() -> str:
-        return "characters.name"
+        return "narrative_voice"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         task = generator.generate(

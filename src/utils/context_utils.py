@@ -170,13 +170,12 @@ def get_server_settings(
     if value:
         logging.debug(f"Parsing Server Settings from stored value: {value}")
         server_settings = ServerSettings.parse_obj(value)
-        context.metadata[_SERVER_SETTINGS_KEY] = server_settings
-        return server_settings
     else:
         logging.debug("Creating new Server Settings -- one didn't exist!")
         server_settings = ServerSettings()
-        context.metadata[_SERVER_SETTINGS_KEY] = server_settings
-        return server_settings
+
+    context.metadata[_SERVER_SETTINGS_KEY] = server_settings
+    return server_settings
 
 
 def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F821
@@ -199,14 +198,12 @@ def get_game_state(context: AgentContext) -> Optional["GameState"]:  # noqa: F82
     if value:
         logging.debug(f"Parsing game state from stored value: \n{value}")
         game_state = GameState.parse_obj(value)
-        context.metadata[_GAME_STATE_KEY] = game_state
-        return game_state
     else:
         logging.debug("Creating new game state -- one didn't exist!")
         game_state = GameState()
-        context.metadata[_GAME_STATE_KEY] = game_state
 
-        return game_state
+    context.metadata[_GAME_STATE_KEY] = game_state
+    return game_state
 
 
 def save_server_settings(server_settings, context: AgentContext):

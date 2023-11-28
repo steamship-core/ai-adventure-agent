@@ -1,16 +1,16 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class AdventureGoalSuggestionGenerator(EditorFieldSuggestionGenerator):
+class AdventureGoalGenerator(ServerSettingsFieldGenerator):
     PROMPT = """I need help! Finish the main character goal for this short story.
 
 Be short! But creative and colorful. It needs to REALLY capture attention!
 
-Examples of riveting goals:
+The goal should start with a verb. Examples of riveting goals:
 - destroy the Ring of Elders
 - get into Harvard
 - escape from jail
@@ -37,7 +37,7 @@ Here are the story details. Finish with the goal!
     def get_field() -> str:
         return "adventure_goal"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         task = generator.generate(

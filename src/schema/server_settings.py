@@ -175,8 +175,8 @@ class ServerSettings(BaseModel):
 
     image: Optional[str] = Field(
         default=None,
-        meta_settings={
-            "name": "adventure_image",
+        meta_setting={
+            "name": "image",
             "label": "Image",
             "description": "Select an image to represent this adventure.",
             "type": "image",
@@ -203,7 +203,7 @@ class ServerSettings(BaseModel):
     description: Optional[str] = Field(
         default="An amazing story of exploration.",
         meta_setting={
-            "name": "adventure_description",
+            "name": "description",
             "label": "Description",
             "description": "A longer description of this adventure. Go into detail!",
             "type": "textarea",
@@ -216,8 +216,8 @@ class ServerSettings(BaseModel):
 
     tags: Optional[List[Optional[str]]] = Field(
         default=None,
-        meta_settings={
-            "name": "adventure_tags",
+        meta_setting={
+            "name": "tags",
             "label": "Tags",
             "description": "A list of short string tags.",
             "type": "tag-list",
@@ -288,7 +288,7 @@ class ServerSettings(BaseModel):
         #  agent vs the UI yet
         default="My Adventure",
         meta_setting={
-            "name": "adventure_name",
+            "name": "name",
             "label": "Adventure Name",
             "description": "What name will others see this adventure by?",
             "type": "text",
@@ -301,7 +301,7 @@ class ServerSettings(BaseModel):
     short_description: Optional[str] = Field(
         default="An amazing story of exploration.",
         meta_setting={
-            "name": "adventure_short_description",
+            "name": "short_description",
             "label": "Short Description",
             "description": "A catchy one-liner to help your adventure stand out in the discover page",
             "type": "text",
@@ -569,6 +569,11 @@ Can include descriptions of genre, characters, specific items and locations that
                 "genre": "Description of the genre of the adventure.",
             },
         },
+    )
+
+    generation_task_id: str = Field(
+        "",
+        description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
     )
 
     item_image_prompt: str = Field(

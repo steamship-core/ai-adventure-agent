@@ -1,16 +1,16 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
 from generators.generator_context_utils import get_profile_image_generator
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 
 
-class CharacterImageSuggestionGenerator(EditorFieldSuggestionGenerator):
+class CharacterImageGenerator(ServerSettingsFieldGenerator):
     @staticmethod
     def get_field() -> str:
         return "characters.image"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         generator = get_profile_image_generator(context)

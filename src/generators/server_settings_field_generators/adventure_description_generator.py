@@ -1,30 +1,27 @@
 from steamship import Block, PluginInstance
 from steamship.agents.schema import AgentContext
 
-from generators.editor_field_suggestion_generator import EditorFieldSuggestionGenerator
+from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 
 
-class NarrativeVoiceSuggestionGenerator(EditorFieldSuggestionGenerator):
-    PROMPT = """Write a short genre suggestion for a story. Be expansive, creative, but concise!
+class AdventureDescriptionGenerator(ServerSettingsFieldGenerator):
+    PROMPT = """I need help! Please create a two paragraph pitch for an upcoming award-winning story.
 
-Examples of good outputs:
+It should be one or two (short) paragraphs, written very well, and not sound like advertising.
 
-- fantasy adventure
-- children’s book
-- young adult novel
-- fanfic
-- high literature
+Title: {name}
+Genre: {narrative_voice}
+Writing Style: {narrative_tone}
+One-liner: {short_description}
 
-Suggestion:
-
--"""
+Two paragraph pitch:"""
 
     @staticmethod
     def get_field() -> str:
-        return "narrative_voice"
+        return "description"
 
-    def suggest(
+    def inner_generate(
         self, variables: dict, generator: PluginInstance, context: AgentContext
     ) -> Block:
         task = generator.generate(
