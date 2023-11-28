@@ -921,7 +921,9 @@ Can include descriptions of genre, characters, specific items and locations that
         # Override values if they're present in the new version, but not in the old
         # Possible clobber here if the web doesn't send a value for a field with a default,
         # since it will be filled in when the ServerSettings object is init'd
-        for k, v in other.dict().items():
+        for k, _ in other.dict().items():
+            # Note: this preserves the types of inner objects.
+            v = getattr(other, k)
             if v is not None:
                 setattr(self, k, v)
 
