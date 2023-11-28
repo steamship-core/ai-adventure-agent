@@ -26,45 +26,7 @@ GENERAL_OPTIONS = [
     },
 ]
 
-MAGIC_MODE_OPTIONS = [
-    {
-        "name": "adventure_name",
-        "label": "Adventure Name",
-        "description": "What name will others see this adventure by?",
-        "type": "text",
-        "default": "",
-        "required": True,
-        "suggestOutputType": "name",
-    },
-    {
-        "name": "adventure_short_description",
-        "label": "Short Description",
-        "description": "A catchy one-liner to help your adventure stand out in the discover page",
-        "type": "text",
-        "default": "",
-        "required": True,
-        "suggestOutputType": "short_description",
-    },
-    {
-        # Validated
-        "name": "narrative_voice",
-        "label": "Genre",
-        "description": "What is the genre of your story? E.g.: children’s book, young adult novel, fanfic, high literature.",
-        "type": "text",
-        "default": "young adult novel",
-        "suggestOutputType": "narrative_voice",
-    },
-    {
-        # Validated
-        "name": "narrative_tone",
-        "label": "Writing Style",
-        "description": "What is the writing style of your story? E.g.: Serious, Silly, Gritty, Film Noir, Heady, etc.",
-        "type": "text",
-        "default": "silly",
-        "suggestOutputType": "narrative_tone",
-    },
-]
-
+MAGIC_MODE_OPTIONS = [s.name, s.source_story_text]
 
 STORY_OPTIONS = [
     {
@@ -252,7 +214,7 @@ SCHEMA = [
         "title": "Auto Generate",
         "description": "Generate an entire game from scratch.",
         "href": "magic-mode",
-        "settings": [],
+        "settings": MAGIC_MODE_OPTIONS,
     },
     {
         "spacer": True,

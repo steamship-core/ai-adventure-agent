@@ -170,7 +170,14 @@ class ServerSettings(BaseModel):
 
     source_story_text: Optional[str] = Field(
         default=None,
-        description="The short story text which this Adventure originates. This data is necessary during 'Magic Create' mode in the editor, but can be removed afterward.",
+        meta_setting={
+            "name": "source_story_text",
+            "label": "Generate from Story",
+            "description": "Optional. If you paste in a story or concept, we'll generate the adventure from that.",
+            "type": "longtext",
+            "default": "",
+            "required": False,
+        },
     )
 
     image: Optional[str] = Field(
