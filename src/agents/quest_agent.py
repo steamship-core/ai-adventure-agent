@@ -384,10 +384,20 @@ class QuestAgent(InterruptiblePythonAgent):
             required_roll = likelihood_map[Likelihood.LIKELY]
         else:
             required_roll = likelihood_map[Likelihood.UNKNOWN]
+
+        # Add minor randomness, but don't drop below 0.05 (2 on d20) or go above 0.95 (20 on d20)
+        required_roll_mod = 0.05 * (randint(-2, 2))
+        required_roll = min(0.95, max(0.05, required_roll + required_roll_mod))
+
         roll = random()  # noqa: S311
         succeeded = roll > required_roll
         dice_roll_message = json.dumps(
-            {"required": required_roll, "rolled": roll, "success": succeeded}
+            {
+                "required": required_roll,
+                "rolled": roll,
+                "success": succeeded,
+                "mod": required_roll_mod,
+            }
         )
         context.chat_history.append_system_message(
             dice_roll_message, tags=self.tags(QuestTag.DICE_ROLL, quest)
