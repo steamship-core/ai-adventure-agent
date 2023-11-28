@@ -187,19 +187,6 @@ class ServerSettings(BaseModel):
     )
     """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
 
-    short_description: Optional[str] = Field(
-        default="An amazing story of exploration.",
-        meta_setting={
-            "name": "adventure_short_description",
-            "label": "Short Description",
-            "description": "A catchy one-liner to help your adventure stand out in the discover page",
-            "type": "text",
-            "default": "",
-            "required": True,
-            "suggestOutputType": "short_description",
-        },
-    )
-
     description: Optional[str] = Field(
         default="An amazing story of exploration.",
         meta_setting={
@@ -373,6 +360,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "description": "Optional. If you wish for your adventure to have a fixed set of quests, define them here.",
             "type": "list",
             "listof": "object",
+            "required": True,
             "listSchema": [
                 # TODO FUTURE this could be pulled directly from QuestDescription
                 {
