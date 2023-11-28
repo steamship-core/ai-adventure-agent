@@ -119,7 +119,7 @@ class OnboardingAgent(InterruptiblePythonAgent):
                 task = image_gen.request_profile_image_generation(context=context)
                 character_image_block = task.wait().blocks[0]
                 context.chat_history.file.refresh()
-                game_state.player.profile_image_url = character_image_block.raw_data_url
+                game_state.player.image = character_image_block.raw_data_url
                 game_state.profile_image_url = character_image_block.raw_data_url
                 save_game_state(game_state, context)
 

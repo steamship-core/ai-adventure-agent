@@ -10,6 +10,7 @@ from schema.quest import Quest, QuestDescription
 
 
 class ActiveMode(str, Enum):
+    GENERATING = "generating"  # Indicates that the game is in the process of generating itself and can't be used.
     ONBOARDING = "onboarding"
     CAMP = "camp"
     QUEST = "quest"
@@ -115,7 +116,7 @@ class GameState(BaseModel):
         )
 
     def image_generation_requested(self) -> bool:
-        if self.player.profile_image_url:
+        if self.player.image:
             return True
         elif self.profile_image_url:
             return True
