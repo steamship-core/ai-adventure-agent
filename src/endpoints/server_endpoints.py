@@ -11,6 +11,9 @@ from generators.image_generators import get_image_generator
 from generators.server_settings_generators.generate_all_generator import (
     GenerateAllGenerator,
 )
+from generators.server_settings_generators.generate_using_title_and_description_generator import (
+    GenerateUsingTitleAndDescriptionGenerator,
+)
 from generators.utils import block_to_config_value, set_keypath_value
 from schema.objects import Item
 from schema.server_settings import ServerSettings
@@ -75,7 +78,14 @@ class ServerSettingsMixin(PackageMixin):
         **kwargs,
     ) -> Task:
         context = self.agent_service.build_default_context()
-        generator = GenerateAllGenerator()
+
+        if "source_story_text" in unsaved_server_settings:
+            logging.info("Generating from a story because `source_story_text`.")
+            generator = GenerateUsingTitleAndDescriptionGenerator()
+        else:
+            logging.info("Generating scratch since no `source_story_text`.")
+            generator = GenerateAllGenerator()
+
         last_task = generator.generate(
             self.agent_service,
             context,

@@ -3,9 +3,16 @@ from typing import Optional
 from steamship import Task
 from steamship.agents.schema import AgentContext
 
+from generators.server_settings_field_generators.adventure_name_generator import (
+    AdventureNameGenerator,
+)
 from generators.server_settings_generator import ServerSettingsGenerator
 from utils.agent_service import AgentService
-from utils.context_utils import get_server_settings
+from utils.context_utils import (
+    get_server_settings,
+    get_story_text_generator,
+    save_server_settings,
+)
 
 # Note: We go somewhat in reverse to the generate_all_generator since the idea here is to use an existing
 #       story and whiddle it down (rather than build up). The constituent generators know we're in this mode
@@ -62,7 +69,19 @@ class GenerateUsingTitleAndDescriptionGenerator(ServerSettingsGenerator):
         description = server_settings.description
 
         if not title:
-            raise ValueError("No title from which to generate an adventure.")
+            # Make one up.
+            text_generator = get_story_text_generator(context)
+            generator = AdventureNameGenerator()
+            block = generator.inner_generate(
+                server_settings.dict(),
+                text_generator,
+                context,
+                generation_config=generation_config,
+            )
+            server_settings.name = block.text
+            save_server_settings(server_settings, context)
+            title = server_settings.name
+
         if not description:
             raise ValueError("No description from which to generate an adventure.")
 
