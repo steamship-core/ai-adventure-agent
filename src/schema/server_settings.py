@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from pydantic import BaseModel, Field
 from steamship import SteamshipError
@@ -372,8 +372,8 @@ Can include descriptions of genre, characters, specific items and locations that
         description="Optional. If you wish for your adventure to have a fixed set of quests, define them here.",
         type="list",
         listof="object",
-        onboarding_title="What is the arc of quests you want your players to go on?",
-        onboarding_subtitle="Think of these as the chapters in your story.",
+        onboarding_title="Create a series of quests for your adventure.",
+        onboarding_subtitle="Adventures are comprised of a series of quests. Auto-generate a few you like -- you can edit them later!",
         list_schema=[
             # TODO FUTURE this could be pulled directly from QuestDescription
             {
@@ -835,66 +835,116 @@ Can include descriptions of genre, characters, specific items and locations that
 
     # Returns list of validation issues.
     def validate_prompts(self) -> List[str]:
+        s = ServerSettings.schema_instance()
+
         result = []
         result.append(
-            validate_prompt_args(self.camp_image_prompt, ["tone"], "Camp image prompt")
-        )
-        result.append(
             validate_prompt_args(
-                self.camp_image_negative_prompt, ["tone"], "Camp image negative prompt"
+                self.camp_image_prompt,
+                list(
+                    (cast(dict, s.camp_image_prompt))
+                    .get("variables_permitted", {})
+                    .keys()
+                ),
+                "Camp image prompt",
             )
         )
         result.append(
             validate_prompt_args(
-                self.item_image_prompt, ["name", "description"], "Item image prompt"
+                self.camp_image_negative_prompt,
+                list(
+                    (cast(dict, s.camp_image_negative_prompt))
+                    .get("variables_permitted", {})
+                    .keys()
+                ),
+                "Camp image negative prompt",
+            )
+        )
+        result.append(
+            validate_prompt_args(
+                self.item_image_prompt,
+                list(
+                    (cast(dict, s.item_image_prompt))
+                    .get("variables_permitted", {})
+                    .keys()
+                ),
+                "Item image prompt",
             )
         )
         result.append(
             validate_prompt_args(
                 self.item_image_negative_prompt,
-                ["name", "description"],
+                list(
+                    (cast(dict, s.item_image_negative_prompt))
+                    .get("variables_permitted", {})
+                    .keys()
+                ),
                 "Item image negative prompt",
             )
         )
         result.append(
             validate_prompt_args(
                 self.profile_image_prompt,
-                ["name", "description"],
+                list(
+                    (cast(dict, s.profile_image_prompt))
+                    .get("variables_permitted", {})
+                    .keys()
+                ),
                 "Profile image prompt",
             )
         )
         result.append(
             validate_prompt_args(
-                self.profile_image_prompt,
-                ["name", "description"],
+                self.profile_image_negative_prompt,
+                list(
+                    (cast(dict, s.profile_image_negative_prompt))
+                    .get("variables_permitted", {})
+                    .keys()
+                ),
                 "Profile image negative prompt",
             )
         )
         result.append(
             validate_prompt_args(
                 self.quest_background_image_prompt,
-                ["description"],
+                list(
+                    (cast(dict, s.quest_background_image_prompt))
+                    .get("variables_permitted", {})
+                    .keys()
+                ),
                 "Quest background image prompt",
             )
         )
         result.append(
             validate_prompt_args(
-                self.quest_background_image_prompt,
-                ["description"],
+                self.quest_background_image_negative_prompt,
+                list(
+                    (cast(dict, s.quest_background_image_negative_prompt))
+                    .get("variables_permitted", {})
+                    .keys()
+                ),
                 "Quest background image negative prompt",
             )
         )
         result.append(
             validate_prompt_args(
                 self.scene_music_generation_prompt,
-                ["tone", "description"],
+                list(
+                    (cast(dict, s.scene_music_generation_prompt))
+                    .get("variables_permitted", {})
+                    .keys()
+                ),
                 "Quest scene music prompt",
             )
         )
         result.append(
             validate_prompt_args(
                 self.camp_music_generation_prompt,
-                ["tone", "description"],
+                list(
+                    (cast(dict, s.camp_music_generation_prompt))
+                    .get("variables_permitted", {})
+                    .keys()
+                ),
                 "Camp music prompt",
             )
         )
