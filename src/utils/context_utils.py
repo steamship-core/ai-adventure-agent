@@ -164,7 +164,6 @@ def get_server_settings(
         # logging.info(
         #     f"Getting CACHED server_settings from workspace {context.client.config.workspace_handle}.",
         # )
-
         return context.metadata.get(_SERVER_SETTINGS_KEY)
 
     # Get it from the KV Store
@@ -222,9 +221,9 @@ def save_server_settings(server_settings, context: AgentContext):
         },
     )
 
-    # logging.info(
-    #     f"Saving server_settings from workspace {context.client.config.workspace_handle} {server_settings.dict()}.",
-    # )
+    logging.info(
+        f"Saving server_settings from workspace {context.client.config.workspace_handle} generation_task_id={server_settings.generation_task_id}.",
+    )
 
     # Save it to the KV Store
     value = server_settings.dict()
