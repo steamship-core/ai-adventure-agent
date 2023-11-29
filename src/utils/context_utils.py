@@ -161,9 +161,9 @@ def get_server_settings(
     )
 
     if _SERVER_SETTINGS_KEY in context.metadata:
-        logging.info(
-            f"Getting CACHED server_settings from workspace {context.client.config.workspace_handle}.",
-        )
+        # logging.info(
+        #     f"Getting CACHED server_settings from workspace {context.client.config.workspace_handle}.",
+        # )
         return context.metadata.get(_SERVER_SETTINGS_KEY)
 
     # Get it from the KV Store
