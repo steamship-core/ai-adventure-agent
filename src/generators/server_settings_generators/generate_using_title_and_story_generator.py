@@ -3,19 +3,12 @@ from typing import Optional
 from steamship import SteamshipError, Task
 from steamship.agents.schema import AgentContext
 
-from generators.server_settings_field_generators.adventure_name_generator import (
-    AdventureNameGenerator,
-)
 from generators.server_settings_generator import ServerSettingsGenerator
 from generators.server_settings_generators.generate_using_title_and_description_generator import (
     GenerateUsingTitleAndDescriptionGenerator,
 )
 from utils.agent_service import AgentService
-from utils.context_utils import (
-    get_server_settings,
-    get_story_text_generator,
-    save_server_settings,
-)
+from utils.context_utils import get_server_settings
 
 
 class GenerateUsingTitleAndStoryGenerator(ServerSettingsGenerator):
@@ -45,30 +38,21 @@ class GenerateUsingTitleAndStoryGenerator(ServerSettingsGenerator):
         # Assemble a linked list of things to generate
         server_settings = get_server_settings(context)
 
-        title = server_settings.name
         story = server_settings.source_story_text
-
-        if not title:
-            # Make one up.
-            text_generator = get_story_text_generator(context)
-            generator = AdventureNameGenerator()
-            block = generator.inner_generate(
-                server_settings.dict(),
-                text_generator,
-                context,
-                generation_config=generation_config,
-            )
-            server_settings.name = block.text
-            save_server_settings(server_settings, context)
-
         if not story:
             raise SteamshipError(
                 message="No story from which to generate an adventure."
             )
 
+        wait_on_tasks = [wait_on_task] if wait_on_task else []
+
         # First we generate the description from the story text.
         create_description_task = self.schedule_generation(
-            "description", ["description"], [], agent_service
+            "description",
+            ["description"],
+            wait_on_tasks=wait_on_tasks,
+            agent_service=agent_service,
+            generation_config=generation_config,
         )
 
         next_generator = GenerateUsingTitleAndDescriptionGenerator()
