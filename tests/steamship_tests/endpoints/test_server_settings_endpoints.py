@@ -17,6 +17,22 @@ def test_get_server_settings(
 
 
 @pytest.mark.parametrize("invocable_handler", [AdventureGameService], indirect=True)
+def test_get_server_settings_schema(
+    invocable_handler: Callable[[str, str, Optional[dict]], dict]
+):
+    gs = invocable_handler("GET", "server_settings_schema", {})
+    assert gs
+    thelist = gs.get("data")
+    name_count = 0
+    for block in thelist:
+        if settings := block.get("settings"):
+            for block in settings:
+                if block.get("name") == "name":
+                    name_count += 1
+    assert name_count == 1
+
+
+@pytest.mark.parametrize("invocable_handler", [AdventureGameService], indirect=True)
 def test_server_settings_endpoint(
     invocable_handler: Callable[[str, str, Optional[dict]], dict]
 ):

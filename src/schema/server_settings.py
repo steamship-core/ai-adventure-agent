@@ -317,6 +317,7 @@ class ServerSettings(BaseModel):
             "description": "What is the writing style of your story? E.g.: Serious, Silly, Gritty, Film Noir, Heady, etc.",
             "type": "text",
             "default": "silly",
+            "required": True,
             "suggestOutputType": "narrative_tone",
         },
     )
@@ -343,6 +344,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "description": "What is the genre of your story? E.g.: children’s book, young adult novel, fanfic, high literature.",
             "type": "text",
             "default": "young adult novel",
+            "required": True,
             "suggestOutputType": "narrative_voice",
         },
     )
