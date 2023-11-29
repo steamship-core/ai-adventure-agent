@@ -30,6 +30,7 @@ def inner_generate(
 @pytest.mark.parametrize(
     "invocable_handler_with_client", [AdventureGameService], indirect=True
 )
+@patch.object(GenerateUsingTitleAndStoryGenerator, "inner_generate", inner_generate)
 def test_generate_using_reddit_posts(
     invocable_handler_with_client: Tuple[
         Callable[[str, str, Optional[dict]], dict], Steamship
@@ -49,16 +50,13 @@ def test_generate_using_reddit_posts(
     server_settings.source_url = the_url
     save_server_settings(server_settings, context)
 
-    with patch.object(
-        GenerateUsingTitleAndStoryGenerator, "inner_generate", inner_generate
-    ):
-        generator = GenerateUsingRedditPostGenerator()
+    generator = GenerateUsingRedditPostGenerator()
 
-        task = generator.generate(service, context, {})
-        # This will contain the server_settings
-        print(task.output)
+    task = generator.generate(service, context, {})
+    # This will contain the server_settings
+    print(task.output)
 
-        server_settings = get_server_settings(context)
-        assert server_settings.source_url == the_url
-        assert server_settings.name == "Unplanned Outing"
-        assert "Claire Fuller" in server_settings.source_story_text
+    server_settings = get_server_settings(context)
+    assert server_settings.source_url == the_url
+    assert server_settings.name == "Unplanned Outing"
+    assert "Claire Fuller" in server_settings.source_story_text

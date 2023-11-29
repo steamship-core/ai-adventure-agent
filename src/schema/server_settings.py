@@ -218,7 +218,14 @@ class ServerSettings(BaseModel):
 
     source_story_text: Optional[str] = Field(
         default=None,
-        description="The short story text which this Adventure originates. This data is necessary during 'Magic Create' mode in the editor, but can be removed afterward.",
+        meta_setting={
+            "name": "source_story_text",
+            "label": "Generate from Story",
+            "description": "Optional. If you paste in a story or concept, we'll generate the adventure from that.",
+            "type": "longtext",
+            "default": "",
+            "required": False,
+        },
     )
 
     image: Optional[str] = SettingField(
@@ -365,6 +372,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 "type": "longtext",
             },
         ],
+
     )
 
     # Quest settings
@@ -601,6 +609,26 @@ Can include descriptions of genre, characters, specific items and locations that
                 "label": "Prompt Prefix",
                 "description": "Any extra words, including trigger words for LoRAs in this theme. Include a comma and spacing if you require it.",
                 "type": "longtext",
+        },
+    )
+
+    generation_task_id: Optional[str] = Field(
+        "",
+        description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
+    )
+
+    item_image_prompt: str = Field(
+        "16-bit retro-game style item in a hero's inventory. The items's name is: {name}. The item's description is: {description}.",
+        description="Prompt for generating item images.",
+        meta_setting={
+            "name": "item_image_prompt",
+            "label": "Item Image Prompt",
+            "description": "The prompt used to generate item images.",
+            "type": "longtext",
+            "default": "16-bit retro-game sprite for an {name}, {description}",
+            "variablesPermitted": {
+                "name": "The name of the item.",
+                "description": "Description of the item.",
             },
             {
                 "name": "prompt_suffix",
@@ -744,6 +772,58 @@ Can include descriptions of genre, characters, specific items and locations that
         options=DEFAULT_THEMES,
         default="pixel_art_1",
         include_dynamic_options="image-themes",
+    )
+
+    item_image_theme: str = Field(
+        "pixel_art_2",
+        meta_setting={
+            # VALIDATED
+            "name": "item_image_theme",
+            "label": "Item Image Theme",
+            "description": "Use a pre-made theme or add more in the **Image Themes** tab.",
+            "type": "select",
+            "options": DEFAULT_THEMES,
+            "default": "pixel_art_1",
+            "includeDynamicOptions": "image-themes",
+        },
+    )
+
+    profile_image_theme: str = Field(
+        "pixel_art_2",
+        meta_setting={
+            # VALIDATED
+            "name": "profile_image_theme",
+            "label": "Profile Image Theme",
+            "description": "Use a pre-made theme or add more in the **Image Themes** tab.",
+            "type": "select",
+            "options": DEFAULT_THEMES,
+            "default": "pixel_art_1",
+            "includeDynamicOptions": "image-themes",
+        },
+    )
+
+    game_engine_version: Optional[str] = Field(
+        None,
+        meta_settings={
+            "name": "game_engine_version",
+            "label": "Game Engine Version",
+            "description": "The version of the game engine to use",
+            "type": "text",
+        },
+    )
+
+    quest_background_theme: str = Field(
+        "pixel_art_2",
+        meta_setting={
+            # VALIDATED
+            "name": "quest_background_theme",
+            "label": "Quest Background Theme",
+            "description": "Use a pre-made theme or add more in the **Image Themes** tab.",
+            "type": "select",
+            "options": DEFAULT_THEMES,
+            "default": "pixel_art_1",
+            "includeDynamicOptions": "image-themes",
+        },
     )
 
     music_duration: int = SettingField(
