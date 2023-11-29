@@ -26,7 +26,7 @@ GENERAL_OPTIONS = [
     },
 ]
 
-MAGIC_MODE_OPTIONS = [s.name, s.source_story_text]
+MAGIC_MODE_OPTIONS = [s.source_story_text]
 
 STORY_OPTIONS = [
     {

@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from pydantic import BaseModel, Field
 from steamship import SteamshipError
@@ -140,30 +140,34 @@ DEFAULT_THEMES = [
 
 
 def SettingField(
-        default: Optional[Any],
-        label: str,
-        description: str,
-        type: str,  # todo make enum
-        listof: Optional[str] = None,  # todo make enum
-        options: Optional[List[Dict]] = None,  # todo make inflated class
-        include_dynamic_options: Optional[str] = None,  # TODO enum with image-themes
-        required: Optional[bool] = None,
-        unused: Optional[bool] = None,
-        list_schema: Optional[List[Dict]] = None,  # how to represent this?
-        requires_approval: Optional[bool] = None,
-        required_text: Optional[str] = None,
-        preview_output_type: Optional[str] = None,
-        approval_requested_field: Optional[str] = None,
-        variables_permitted: Optional[Dict[str, str]] = None,
-        min: Optional[Union[int | float]] = None,
-        **kwargs
+    default: Optional[Any],
+    label: str,
+    description: str,
+    type: str,  # todo make enum
+    listof: Optional[str] = None,  # todo make enum
+    options: Optional[List[Dict]] = None,  # todo make inflated class
+    include_dynamic_options: Optional[str] = None,  # TODO enum with image-themes
+    required: Optional[bool] = None,
+    unused: Optional[bool] = None,
+    list_schema: Optional[List[Dict]] = None,  # how to represent this?
+    requires_approval: Optional[bool] = None,
+    required_text: Optional[str] = None,
+    preview_output_type: Optional[str] = None,
+    approval_requested_field: Optional[str] = None,
+    variables_permitted: Optional[Dict[str, str]] = None,
+    onboarding_title: Optional[str] = None,
+    onboarding_subtitle: Optional[str] = None,
+    min: Optional[Union[int, float]] = None,
+    **kwargs,
 ) -> Any:
     """
     Pass along parameters into the pydantic-native way of expressing them while also expressing them as our schema type.
     `name` will be calculated from __fields__ later.
     """
     if "meta_setting" in kwargs:
-        raise ValueError("`meta_setting` is calculated, but was provided in arguments to SettingField.")
+        raise ValueError(
+            "`meta_setting` is calculated, but was provided in arguments to SettingField."
+        )
 
     # TODO do validations here against type, or possibly when we get the schema version on the class.
     # TODO can probably make a best-guess on label based on name, but that'd have to happen in post-process.
@@ -185,11 +189,17 @@ def SettingField(
         previewOutputType=preview_output_type,
         approvalRequestedField=approval_requested_field,
         variablesPermitted=variables_permitted,
-        min=min
+        onboardingTitle=onboarding_title,
+        onboardingSubtitle=onboarding_subtitle,
+        min=min,
     )
 
-    keep_nones_names = set("default")  # names of fields to keep in the dict when they're None
-    meta_setting = {k: v for k, v in meta_setting.items() if v is not None or k in keep_nones_names}
+    keep_nones_names = set(
+        "default"
+    )  # names of fields to keep in the dict when they're None
+    meta_setting = {
+        k: v for k, v in meta_setting.items() if v is not None or k in keep_nones_names
+    }
 
     return Field(
         default=default,
@@ -197,7 +207,8 @@ def SettingField(
         title=label,
         required=required,
         meta_setting=meta_setting,
-        **kwargs)
+        **kwargs,
+    )
 
 
 class ServerSettings(BaseModel):
@@ -216,16 +227,11 @@ class ServerSettings(BaseModel):
         description="The URL from which this Adventure was generated. E.g. A URL to a short story on the web.",
     )
 
-    source_story_text: Optional[str] = Field(
+    source_story_text: Optional[str] = SettingField(
         default=None,
-        meta_setting={
-            "name": "source_story_text",
-            "label": "Generate from Story",
-            "description": "Optional. If you paste in a story or concept, we'll generate the adventure from that.",
-            "type": "longtext",
-            "default": "",
-            "required": False,
-        },
+        label="Generate from Story",
+        description="Optional. If you paste in a story or concept, we'll generate the adventure from that.",
+        type="longtext",
     )
 
     image: Optional[str] = SettingField(
@@ -234,6 +240,8 @@ class ServerSettings(BaseModel):
         description="Select an image to represent this adventure.",
         type="image",
         required=True,
+        onboarding_title="Please upload or generate a title image.",
+        onboarding_subtitle="This is like your movie poster. It will advertise your adventure to others.",
     )
     """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
 
@@ -243,6 +251,8 @@ class ServerSettings(BaseModel):
         description="A catchy one-liner to help your adventure stand out in the discover page",
         type="text",
         required=True,
+        onboarding_title="Please write a one-sentence description of your adventure.",
+        onboarding_subtitle="This will help players understand what adventure they're about to play.",
     )
 
     description: Optional[str] = SettingField(
@@ -251,6 +261,8 @@ class ServerSettings(BaseModel):
         description="A longer description of this adventure. Go into detail!",
         type="textarea",
         required=True,
+        onboarding_title="Please write a more detailed description of your adventure.",
+        onboarding_subtitle="The more detail you provide in your description, the more engaging your AI generated adventure will be.",
     )
     """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
 
@@ -259,7 +271,7 @@ class ServerSettings(BaseModel):
         label="Tags",
         description="A list of short string tags.",
         type="tag-list",
-        listof="text"
+        listof="text",
     )
     """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
 
@@ -285,7 +297,7 @@ class ServerSettings(BaseModel):
                 "value": "gpt-4",
                 "label": "GPT 4",
             },
-        ]
+        ],
     )
     default_story_temperature: float = SettingField(
         # NEEDS WORK:
@@ -306,20 +318,26 @@ class ServerSettings(BaseModel):
     default_narration_model: str = Field("elevenlabs", description="")
 
     # Name
+
     name: Optional[str] = SettingField(
         default="",
         label="Adventure Name",
         description="What name will others see this adventure by?",
         type="text",
         required=True,
+        onboarding_title="What is the name of your adventure?",
+        onboarding_subtitle="A short and catchy name will help your adventure stand out.",
     )
 
     # Narrative settings
     narrative_tone: str = SettingField(
         default="silly",
         label="Writing Style",
-        description="What is the writing style of your story? E.g.: Serious, Silly, Gritty, Film Noir, Heady, etc.",
+        description="What is the writing style of your story? E.g.: Written with drama and heavy intellectual dialogue, like Aaron Sorkin's West Wing.",
         type="text",
+        required=True,
+        onboarding_title="What is the writing style you want to see?",
+        onboarding_subtitle="References to specific and well known styles or storytellers will work best.",
     )
 
     adventure_background: Optional[str] = SettingField(
@@ -336,6 +354,9 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Genre",
         description="What is the genre of your story? E.g.: children’s book, young adult novel, fanfic, high literature.",
         type="text",
+        required=True,
+        onboarding_title="What is the genre of your adventure?",
+        onboarding_subtitle="Selecting a short, evocative genre name will help generate a good adventure.",
     )
 
     adventure_goal: str = SettingField(
@@ -351,6 +372,8 @@ Can include descriptions of genre, characters, specific items and locations that
         description="Optional. If you wish for your adventure to have a fixed set of quests, define them here.",
         type="list",
         listof="object",
+        onboarding_title="Create a series of quests for your adventure.",
+        onboarding_subtitle="Adventures are comprised of a series of quests. Auto-generate a few you like -- you can edit them later!",
         list_schema=[
             # TODO FUTURE this could be pulled directly from QuestDescription
             {
@@ -372,15 +395,15 @@ Can include descriptions of genre, characters, specific items and locations that
                 "type": "longtext",
             },
         ],
-
+        required=True,
     )
 
     # Quest settings
     quests_per_arc: int = SettingField(
-        default=10,
+        default=5,
         label="Quests per Arc",
         description="If you don't have a pre-defined list of quests, this is how many will be generated",
-        type="int"
+        type="int",
     )
 
     min_problems_per_quest: int = SettingField(
@@ -388,7 +411,7 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Minimum Problems per Quest",
         description="What is the minimum number of problems a player must solve to complete a quest?",
         type="int",
-        min=1
+        min=1,
     )
 
     problems_per_quest_scale: float = SettingField(
@@ -396,7 +419,7 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Additional Problems per Quest Factor",
         description="A number between 0 and 1. The higher this is, the more additional problems a user will have to solve above the minimum.",
         type="float",
-        min=0
+        min=0,
     )
 
     max_additional_problems_per_quest: int = SettingField(
@@ -516,10 +539,12 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Item Image Prompt",
         description="The prompt used to generate item images.",
         type="longtext",
-        default="16-bit retro-game sprite for an {name}, {description}",
+        default="game sprite for an {name}, {description}",
         variables_permitted={
             "name": "The name of the item.",
             "description": "Description of the item.",
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
         },
     )
 
@@ -531,6 +556,8 @@ Can include descriptions of genre, characters, specific items and locations that
         variables_permitted={
             "name": "The name of the item.",
             "description": "Description of the item.",
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
         },
     )
 
@@ -552,6 +579,8 @@ Can include descriptions of genre, characters, specific items and locations that
         default="",
         variables_permitted={
             "name": "The name of the character.",
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
             "description": "Description of the character.",
         },
     )
@@ -560,8 +589,10 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Quest Background Prompt",
         description="The prompt for generating a quest background.",
         type="longtext",
-        default="16-bit background scene for a quest. The scene being depicted is: {description}",
+        default="background scene for a quest. The scene being depicted is: {description}",
         variables_permitted={
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
             "description": "Description of the quest the player is on.",
         },
     )
@@ -573,6 +604,8 @@ Can include descriptions of genre, characters, specific items and locations that
         type="longtext",
         default="",
         variables_permitted={
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
             "description": "Description of the quest the player is on.",
         },
     )
@@ -582,6 +615,11 @@ Can include descriptions of genre, characters, specific items and locations that
         description="The prompt used to generate music for a quest.  Game tone and scene description will be filled in as {tone} and {description}.",
         type="longtext",
         default="16-bit game score for a quest game scene. {tone}. Scene description: {description}",
+        variables_permitted={
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
+            "description": "Description of the quest the player is on.",
+        },
     )
 
     camp_music_generation_prompt: str = SettingField(
@@ -589,6 +627,11 @@ Can include descriptions of genre, characters, specific items and locations that
         description="The prompt used to generate music for camp.  Game tone will filled in as {tone}.",
         type="longtext",
         default="background music for a quest game camp scene. {tone}.",
+        variables_permitted={
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
+            "description": "Description of the quest the player is on.",
+        },
     )
 
     image_themes: List[Union[StableDiffusionTheme, DalleTheme]] = SettingField(
@@ -710,12 +753,12 @@ Can include descriptions of genre, characters, specific items and locations that
                         "value": "Euler A",
                     },
                 ],
-            }
-        ]
+            },
+        ],
     )
 
     generation_task_id: Optional[str] = Field(
-        "",
+        None,
         description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
     )
 
@@ -759,56 +802,11 @@ Can include descriptions of genre, characters, specific items and locations that
         include_dynamic_options="image-themes",
     )
 
-    item_image_theme: str = Field(
-        "pixel_art_2",
-        meta_setting={
-            # VALIDATED
-            "name": "item_image_theme",
-            "label": "Item Image Theme",
-            "description": "Use a pre-made theme or add more in the **Image Themes** tab.",
-            "type": "select",
-            "options": DEFAULT_THEMES,
-            "default": "pixel_art_1",
-            "includeDynamicOptions": "image-themes",
-        },
-    )
-
-    profile_image_theme: str = Field(
-        "pixel_art_2",
-        meta_setting={
-            # VALIDATED
-            "name": "profile_image_theme",
-            "label": "Profile Image Theme",
-            "description": "Use a pre-made theme or add more in the **Image Themes** tab.",
-            "type": "select",
-            "options": DEFAULT_THEMES,
-            "default": "pixel_art_1",
-            "includeDynamicOptions": "image-themes",
-        },
-    )
-
-    game_engine_version: Optional[str] = Field(
-        None,
-        meta_settings={
-            "name": "game_engine_version",
-            "label": "Game Engine Version",
-            "description": "The version of the game engine to use",
-            "type": "text",
-        },
-    )
-
-    quest_background_theme: str = Field(
-        "pixel_art_2",
-        meta_setting={
-            # VALIDATED
-            "name": "quest_background_theme",
-            "label": "Quest Background Theme",
-            "description": "Use a pre-made theme or add more in the **Image Themes** tab.",
-            "type": "select",
-            "options": DEFAULT_THEMES,
-            "default": "pixel_art_1",
-            "includeDynamicOptions": "image-themes",
-        },
+    game_engine_version: Optional[str] = SettingField(
+        default=None,
+        label="Game Engine Version",
+        description="The version of the game engine to use",
+        type="text",
     )
 
     music_duration: int = SettingField(
@@ -857,66 +855,116 @@ Can include descriptions of genre, characters, specific items and locations that
 
     # Returns list of validation issues.
     def validate_prompts(self) -> List[str]:
+        s = ServerSettings.schema_instance()
+
         result = []
         result.append(
-            validate_prompt_args(self.camp_image_prompt, ["tone"], "Camp image prompt")
-        )
-        result.append(
             validate_prompt_args(
-                self.camp_image_negative_prompt, ["tone"], "Camp image negative prompt"
+                self.camp_image_prompt,
+                list(
+                    (cast(dict, s.camp_image_prompt))
+                    .get("variablesPermitted", {})
+                    .keys()
+                ),
+                "Camp image prompt",
             )
         )
         result.append(
             validate_prompt_args(
-                self.item_image_prompt, ["name", "description"], "Item image prompt"
+                self.camp_image_negative_prompt,
+                list(
+                    (cast(dict, s.camp_image_negative_prompt))
+                    .get("variablesPermitted", {})
+                    .keys()
+                ),
+                "Camp image negative prompt",
+            )
+        )
+        result.append(
+            validate_prompt_args(
+                self.item_image_prompt,
+                list(
+                    (cast(dict, s.item_image_prompt))
+                    .get("variablesPermitted", {})
+                    .keys()
+                ),
+                "Item image prompt",
             )
         )
         result.append(
             validate_prompt_args(
                 self.item_image_negative_prompt,
-                ["name", "description"],
+                list(
+                    (cast(dict, s.item_image_negative_prompt))
+                    .get("variablesPermitted", {})
+                    .keys()
+                ),
                 "Item image negative prompt",
             )
         )
         result.append(
             validate_prompt_args(
                 self.profile_image_prompt,
-                ["name", "description"],
+                list(
+                    (cast(dict, s.profile_image_prompt))
+                    .get("variablesPermitted", {})
+                    .keys()
+                ),
                 "Profile image prompt",
             )
         )
         result.append(
             validate_prompt_args(
-                self.profile_image_prompt,
-                ["name", "description"],
+                self.profile_image_negative_prompt,
+                list(
+                    (cast(dict, s.profile_image_negative_prompt))
+                    .get("variablesPermitted", {})
+                    .keys()
+                ),
                 "Profile image negative prompt",
             )
         )
         result.append(
             validate_prompt_args(
                 self.quest_background_image_prompt,
-                ["description"],
+                list(
+                    (cast(dict, s.quest_background_image_prompt))
+                    .get("variablesPermitted", {})
+                    .keys()
+                ),
                 "Quest background image prompt",
             )
         )
         result.append(
             validate_prompt_args(
-                self.quest_background_image_prompt,
-                ["description"],
+                self.quest_background_image_negative_prompt,
+                list(
+                    (cast(dict, s.quest_background_image_negative_prompt))
+                    .get("variablesPermitted", {})
+                    .keys()
+                ),
                 "Quest background image negative prompt",
             )
         )
         result.append(
             validate_prompt_args(
                 self.scene_music_generation_prompt,
-                ["tone", "description"],
+                list(
+                    (cast(dict, s.scene_music_generation_prompt))
+                    .get("variablesPermitted", {})
+                    .keys()
+                ),
                 "Quest scene music prompt",
             )
         )
         result.append(
             validate_prompt_args(
                 self.camp_music_generation_prompt,
-                ["tone", "description"],
+                list(
+                    (cast(dict, s.camp_music_generation_prompt))
+                    .get("variablesPermitted", {})
+                    .keys()
+                ),
                 "Camp music prompt",
             )
         )

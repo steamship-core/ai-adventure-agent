@@ -10,6 +10,9 @@ from generators.server_settings_field_generators.adventure_background_generator 
 from generators.server_settings_field_generators.adventure_description_generator import (
     AdventureDescriptionGenerator,
 )
+from generators.server_settings_field_generators.adventure_fixed_quest_arc_generator import (
+    AdventureFixedQuestArcGenerator,
+)
 from generators.server_settings_field_generators.adventure_goal_generator import (
     AdventureGoalGenerator,
 )
@@ -64,6 +67,7 @@ class EditorSuggestionGenerator:
         AdventureShortDescriptionGenerator.get_field(): AdventureShortDescriptionGenerator(),
         AdventureDescriptionGenerator.get_field(): AdventureDescriptionGenerator(),
         AdventureTagGenerator.get_field(): AdventureTagGenerator(),
+        AdventureFixedQuestArcGenerator.get_field(): AdventureFixedQuestArcGenerator(),
     }
 
     def generate(  # noqa: C901

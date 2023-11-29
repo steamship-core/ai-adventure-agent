@@ -165,21 +165,21 @@ class StableDiffusionTheme(ImageTheme):
 # Pixel Art XL (https://civitai.com/models/120096/pixel-art-xl) by https://civitai.com/user/NeriJS
 PIXEL_ART_THEME_1 = StableDiffusionTheme(
     name="pixel_art_1",
-    prompt_prefix="(pixel art) ",
+    prompt_prefix="(pixel art) 16-bit retro, ",
     loras=["https://civitai.com/api/download/models/135931"],
 )
 
 # Pixel Art SDXL RW (https://civitai.com/models/114334/pixel-art-sdxl-rw) by https://civitai.com/user/leonnn1
 PIXEL_ART_THEME_2 = StableDiffusionTheme(
     name="pixel_art_2",
-    prompt_prefix="((pixelart)) ",
+    prompt_prefix="((pixelart)) 16-bit retro, ",
     loras=["https://civitai.com/api/download/models/123593"],
 )
 
 # From https://www.fal.ai/models/sd-loras
 PIXEL_ART_THEME_3 = StableDiffusionTheme(
     name="pixel_art_3",
-    prompt_prefix="isometric, ",
+    prompt_prefix="isometric, 16-bit retro, ",
     negative_prompt_prefix="cartoon, painting, illustration, (worst quality, low quality, normal quality:2), (watermark), immature, child, ",
     model_architecture="sdxl",
     num_inference_steps=50,
