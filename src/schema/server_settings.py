@@ -139,24 +139,83 @@ DEFAULT_THEMES = [
 ]
 
 
+def SettingField(
+    default: Optional[Any],
+    label: str,
+    description: str,
+    type: str,  # todo make enum
+    listof: Optional[str] = None,  # todo make enum
+    options: Optional[List[Dict]] = None,  # todo make inflated class
+    include_dynamic_options: Optional[str] = None,  # TODO enum with image-themes
+    required: Optional[bool] = None,
+    unused: Optional[bool] = None,
+    list_schema: Optional[List[Dict]] = None,  # how to represent this?
+    requires_approval: Optional[bool] = None,
+    required_text: Optional[str] = None,
+    preview_output_type: Optional[str] = None,
+    approval_requested_field: Optional[str] = None,
+    variables_permitted: Optional[Dict[str, str]] = None,
+    onboarding_title: Optional[str] = None,
+    onboarding_subtitle: Optional[str] = None,
+    min: Optional[Union[int, float]] = None,
+    **kwargs,
+) -> Any:
+    """
+    Pass along parameters into the pydantic-native way of expressing them while also expressing them as our schema type.
+    `name` will be calculated from __fields__ later.
+    """
+    if "meta_setting" in kwargs:
+        raise ValueError(
+            "`meta_setting` is calculated, but was provided in arguments to SettingField."
+        )
+
+    # TODO do validations here against type, or possibly when we get the schema version on the class.
+    # TODO can probably make a best-guess on label based on name, but that'd have to happen in post-process.
+    # TODO can also probably make a best-guess on type based on variable type
+
+    meta_setting = dict(
+        label=label,
+        description=description,
+        type=type,  # todo probably.value when this is an enum
+        default=default,
+        listof=listof,
+        options=options,
+        includeDynamicOptions=include_dynamic_options,
+        required=required,
+        unused=unused,
+        listSchema=list_schema,
+        requiresApproval=requires_approval,
+        requiredText=required_text,
+        previewOutputType=preview_output_type,
+        approvalRequestedField=approval_requested_field,
+        variablesPermitted=variables_permitted,
+        onboardingTitle=onboarding_title,
+        onboardingSubtitle=onboarding_subtitle,
+        min=min,
+    )
+
+    keep_nones_names = set(
+        "default"
+    )  # names of fields to keep in the dict when they're None
+    meta_setting = {
+        k: v for k, v in meta_setting.items() if v is not None or k in keep_nones_names
+    }
+
+    return Field(
+        default=default,
+        description=description,
+        title=label,
+        required=required,
+        meta_setting=meta_setting,
+        **kwargs,
+    )
+
+
 class ServerSettings(BaseModel):
     """Server Settings for the AI Adventure Game set by the Game Host.
 
     These are intended to be set by the game operator (not the user).
     """
-
-    @classmethod
-    def setting_schema(cls, name: str) -> Dict[str, Any]:
-        field = cls.__fields__.get(name)
-        if not field:
-            raise AttributeError(f"No field named {name}")
-        meta_setting = field.field_info.extra.get("meta_setting")
-        if not meta_setting:
-            raise AttributeError(f"Field {name} has no setting schema")
-        # See TODO on name
-        # meta_setting["default"] = field.default
-        meta_setting["serverSetting"] = True
-        return meta_setting
 
     # Language Generation Settings - Function calling
     default_function_capable_llm_model: str = Field("gpt-3.5-turbo", description="")
@@ -168,58 +227,49 @@ class ServerSettings(BaseModel):
         description="The URL from which this Adventure was generated. E.g. A URL to a short story on the web.",
     )
 
-    source_story_text: Optional[str] = Field(
+    source_story_text: Optional[str] = SettingField(
         default=None,
-        meta_setting={
-            "name": "source_story_text",
-            "label": "Generate from Story",
-            "description": "Optional. If you paste in a story or concept, we'll generate the adventure from that.",
-            "type": "longtext",
-            "default": "",
-            "required": False,
-        },
+        label="Generate from Story",
+        description="Optional. If you paste in a story or concept, we'll generate the adventure from that.",
+        type="longtext",
     )
 
-    image: Optional[str] = Field(
-        default=None,
-        meta_setting={
-            "name": "image",
-            "label": "Image",
-            "description": "Select an image to represent this adventure.",
-            "type": "image",
-            "default": "",
-            "required": True,
-            "suggestOutputType": "image",
-        },
+    image: Optional[str] = SettingField(
+        default="",
+        label="Image",
+        description="Select an image to represent this adventure.",
+        type="image",
+        required=True,
     )
     """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
 
-    description: Optional[str] = Field(
-        default="An amazing story of exploration.",
-        meta_setting={
-            "name": "description",
-            "label": "Description",
-            "description": "A longer description of this adventure. Go into detail!",
-            "type": "textarea",
-            "default": "",
-            "required": True,
-            "suggestOutputType": "description",
-        },
+    short_description: Optional[str] = SettingField(
+        default="",
+        label="Short Description",
+        description="A catchy one-liner to help your adventure stand out in the discover page",
+        type="text",
+        required=True,
+    )
+
+    description: Optional[str] = SettingField(
+        default="",
+        label="Description",
+        description="A longer description of this adventure. Go into detail!",
+        type="textarea",
+        required=True,
     )
     """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
 
-    tags: Optional[List[Optional[str]]] = Field(
+    tags: Optional[List[Optional[str]]] = SettingField(
         default=None,
-        meta_setting={
-            "name": "tags",
-            "label": "Tags",
-            "description": "A list of short string tags.",
-            "type": "tag-list",
-            "listof": "text",
-        },
+        label="Tags",
+        description="A list of short string tags.",
+        type="tag-list",
+        listof="text",
     )
     """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
 
+    # TODO what to do about this one?  It's not currently exported.
     characters: Optional[List[Optional[Character]]] = Field(
         default=None,
         description="The pre-made Characters one can play with this Adventure, for use on the profile marketing page and also during 'Magic Create' mode in the editor.",
@@ -227,226 +277,143 @@ class ServerSettings(BaseModel):
     """For use on the profile marketing page, during 'Magic Create' mode in the editor, and during onboarding."""
 
     # Language Generation Settings - Story telling
-    default_story_model: str = Field(
-        "gpt-3.5-turbo",
-        meta_setting={
-            # Validated
-            "name": "default_story_model",
-            "label": "Story LLM Model",
-            "description": "Model used to generate story text.",
-            "type": "select",
-            "default": "gpt-3.5-turbo",
-            "options": [
-                {
-                    "value": "gpt-3.5-turbo",
-                    "label": "GPT 3.5 Turbo",
-                },
-                {
-                    "value": "gpt-4",
-                    "label": "GPT 4",
-                },
-            ],
-        },
+    default_story_model: str = SettingField(
+        default="gpt-3.5-turbo",
+        label="Story LLM Model",
+        description="Model used to generate story text.",
+        type="select",
+        options=[
+            {
+                "value": "gpt-3.5-turbo",
+                "label": "GPT 3.5 Turbo",
+            },
+            {
+                "value": "gpt-4",
+                "label": "GPT 4",
+            },
+        ],
     )
-    default_story_temperature: float = Field(
-        0.7,
-        meta_setting={
-            # NEEDS WORK:
-            # TODO: Add a post-processing step to coerce this to a float.
-            "name": "default_story_temperature",
-            "label": "Story LLM Temperature",
-            "description": "Temperature (creativity-factor) for the narrative generation. 0=Robot, 1=Bonkers, 0.4=Default",
-            "type": "float",
-            "default": 0.7,
-        },
+    default_story_temperature: float = SettingField(
+        # NEEDS WORK:
+        # TODO: Add a post-processing step to coerce this to a float.
+        default=0.7,
+        label="Story LLM Temperature",
+        description="Temperature (creativity-factor) for the narrative generation. 0=Robot, 1=Bonkers, 0.4=Default",
+        type="float",
     )
-    default_story_max_tokens: int = Field(
-        512,
-        meta_setting={
-            # NEEDS WORK:
-            # TODO: Add a post-processing step to coerce this to an int.
-            "name": "default_story_max_tokens",
-            "label": "Story LLM Max Tokens",
-            "description": "Maximum number of tokens permitted during generation. 256=Default",
-            "type": "int",
-            "default": 512,
-        },
+    default_story_max_tokens: int = SettingField(
+        default=512,
+        label="Story LLM Max Tokens",
+        description="Maximum number of tokens permitted during generation. 256=Default",
+        type="int",
     )
 
     # Narration Generation Settings
     default_narration_model: str = Field("elevenlabs", description="")
 
     # Name
-    name: Optional[str] = Field(
-        # TODO default is duplicated here, because I haven't thought through the scenario of what it defaults to on the
-        #  agent vs the UI yet
-        default="My Adventure",
-        meta_setting={
-            "name": "name",
-            "label": "Adventure Name",
-            "description": "What name will others see this adventure by?",
-            "onboardingTitle": "[onboarding title]",
-            "onboardingSubtitle": "[onboarding subtitle]",
-            "type": "text",
-            "default": "",
-            "required": True,
-            "suggestOutputType": "name",
-        },
-    )
 
-    short_description: Optional[str] = Field(
-        default="An amazing story of exploration.",
-        meta_setting={
-            "name": "short_description",
-            "label": "Short Description",
-            "description": "A catchy one-liner to help your adventure stand out in the discover page",
-            "type": "text",
-            "default": "",
-            "required": True,
-            "suggestOutputType": "short_description",
-        },
+    name: Optional[str] = SettingField(
+        default="",
+        label="Adventure Name",
+        description="What name will others see this adventure by?",
+        type="text",
+        required=True,
     )
 
     # Narrative settings
-    narrative_tone: str = Field(
+    narrative_tone: str = SettingField(
         default="silly",
-        meta_setting={
-            # Validated
-            "name": "narrative_tone",
-            "label": "Writing Style",
-            "description": "What is the writing style of your story? E.g.: Serious, Silly, Gritty, Film Noir, Heady, etc.",
-            "type": "text",
-            "default": "silly",
-            "required": True,
-            "suggestOutputType": "narrative_tone",
-        },
+        label="Writing Style",
+        description="What is the writing style of your story? E.g.: Written with drama and heavy intellectual dialogue, like Aaron Sorkin's West Wing.",
+        type="text",
+        required=True,
     )
 
-    adventure_background: Optional[str] = Field(
-        meta_setting={
-            # Validated
-            "name": "adventure_background",
-            "label": "Adventure Background",
-            "description": """Description of the background setting in which the adventure will take place.
+    adventure_background: Optional[str] = SettingField(
+        default="A fantasy world",
+        label="Adventure Background",
+        description="""Description of the background setting in which the adventure will take place.
 
 Can include descriptions of genre, characters, specific items and locations that exist in the world, references to real-world things, etc.""",
-            "type": "longtext",
-            "default": "A fantasy world",
-            "suggestOutputType": "adventure_background",
-        },
+        type="longtext",
     )
 
-    narrative_voice: Optional[str] = Field(
-        meta_setting={
-            # Validated
-            "name": "narrative_voice",
-            "label": "Genre",
-            "description": "What is the genre of your story? E.g.: children’s book, young adult novel, fanfic, high literature.",
-            "type": "text",
-            "default": "young adult novel",
-            "required": True,
-            "suggestOutputType": "narrative_voice",
-        },
+    narrative_voice: Optional[str] = SettingField(
+        default="young adult novel",
+        label="Genre",
+        description="What is the genre of your story? E.g.: children’s book, young adult novel, fanfic, high literature.",
+        type="text",
+        required=True,
     )
 
-    adventure_goal: str = Field(
+    adventure_goal: str = SettingField(
         default="To rid the world of evil",
-        meta_setting={
-            # Validated
-            "name": "adventure_goal",
-            "label": "Adventure Goal",
-            "description": "What is the ultimate goal / motivation of this adventure?",
-            "type": "longtext",
-            "default": "To rid the world of evil",
-            "suggestOutputType": "adventure_goal",
-        },
+        label="Adventure Goal",
+        description="What is the ultimate goal / motivation of this adventure?",
+        type="longtext",
     )
 
-    fixed_quest_arc: Optional[List[QuestDescription]] = Field(
+    fixed_quest_arc: Optional[List[QuestDescription]] = SettingField(
         default=None,
-        meta_setting={
-            # VALIDATED
-            "name": "fixed_quest_arc",
-            "label": "Fixed Quest Arc",
-            "description": "Optional. If you wish for your adventure to have a fixed set of quests, define them here.",
-            "type": "list",
-            "listof": "object",
-            "suggestOutputType": "fixed_quest_arc",
-            "required": True,
-            "listSchema": [
-                # TODO FUTURE this could be pulled directly from QuestDescription
-                {
-                    "name": "goal",
-                    "label": "Goal",
-                    "description": "The goal of the quest.",
-                    "type": "text",
-                },
-                {
-                    "name": "location",
-                    "label": "Location",
-                    "description": "The location of the quest.",
-                    "type": "text",
-                },
-                {
-                    "name": "description",
-                    "label": "Description",
-                    "description": "Optional description of the quest's desired characteristics.",
-                    "type": "longtext",
-                },
-            ],
-        },
+        label="Fixed Quest Arc",
+        description="Optional. If you wish for your adventure to have a fixed set of quests, define them here.",
+        type="list",
+        listof="object",
+        list_schema=[
+            # TODO FUTURE this could be pulled directly from QuestDescription
+            {
+                "name": "goal",
+                "label": "Goal",
+                "description": "The goal of the quest.",
+                "type": "text",
+            },
+            {
+                "name": "location",
+                "label": "Location",
+                "description": "The location of the quest.",
+                "type": "text",
+            },
+            {
+                "name": "description",
+                "label": "Description",
+                "description": "Optional description of the quest's desired characteristics.",
+                "type": "longtext",
+            },
+        ],
+        required=True,
     )
 
     # Quest settings
-    quests_per_arc: int = Field(
+    quests_per_arc: int = SettingField(
         default=10,
-        meta_setting={
-            # TODO: Validate int
-            "name": "quests_per_arc",
-            "label": "Quests per Arc",
-            "description": "If you don't have a pre-defined list of quests, this is how many will be generated",
-            "type": "int",
-            "default": 10,
-        },
+        label="Quests per Arc",
+        description="If you don't have a pre-defined list of quests, this is how many will be generated",
+        type="int",
     )
 
-    min_problems_per_quest: int = Field(
+    min_problems_per_quest: int = SettingField(
         default=2,
-        meta_setting={
-            # TODO: Validate int
-            "name": "min_problems_per_quest",
-            "label": "Minimum Problems per Quest",
-            "description": "What is the minimum number of problems a player must solve to complete a quest?",
-            "type": "int",
-            "default": 2,
-            "min": 1,
-        },
+        label="Minimum Problems per Quest",
+        description="What is the minimum number of problems a player must solve to complete a quest?",
+        type="int",
+        min=1,
     )
 
-    problems_per_quest_scale: float = Field(
+    problems_per_quest_scale: float = SettingField(
         default=0.25,
-        meta_setting={
-            # TODO: Validate int
-            "name": "problems_per_quest_scale",
-            "label": "Additional Problems per Quest Factor",
-            "description": "A number between 0 and 1. The higher this is, the more additional problems a user will have to solve above the minimum.",
-            "type": "float",
-            "default": 0.25,
-            "min": 0,
-        },
+        label="Additional Problems per Quest Factor",
+        description="A number between 0 and 1. The higher this is, the more additional problems a user will have to solve above the minimum.",
+        type="float",
+        min=0,
     )
 
-    max_additional_problems_per_quest: int = Field(
+    max_additional_problems_per_quest: int = SettingField(
         default=2,
-        meta_setting={
-            # TODO: Validate int
-            "name": "max_additional_problems_per_quest",
-            "label": "Maximum additional problems per quest",
-            "description": "The maximum additional problems per quest that can be randomly added above and beyond the minimum required number.",
-            "type": "int",
-            "default": 2,
-            "min": 1,
-        },
+        label="Maximum additional problems per quest",
+        description="The maximum additional problems per quest that can be randomly added above and beyond the minimum required number.",
+        type="int",
+        min=1,
     )
 
     # TODO (PR) this is different than problem_solution_difficulty, is this getting used?
@@ -460,115 +427,300 @@ Can include descriptions of genre, characters, specific items and locations that
     # TODO: Remove quest_cost entirely to reduce dead code?
     quest_cost: int = Field(0, description="The cost of going on one quest")
 
-    camp_image_prompt: str = Field(
-        "{tone} camp.",
-        meta_setting={
-            # VALIDATED
-            "name": "camp_image_prompt",
-            "label": "Camp Image Prompt",
-            "description": "Prompt for generating the camp image.",
-            "type": "longtext",
-            "default": "{tone} {genre} camp.",
-            "variablesPermitted": {
-                "tone": "Description of the tone of the adventure.",
-                "genre": "Description of the genre of the adventure.",
-            },
+    camp_image_prompt: str = SettingField(
+        label="Camp Image Prompt",
+        description="Prompt for generating the camp image.",
+        type="longtext",
+        default="{tone} {genre} camp.",
+        variables_permitted={
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
         },
     )
 
     # Narration settings
-    narration_voice: AvailableVoice = Field(
-        AvailableVoice.DOROTHY,
-        meta_setting={
-            # VALIDATED
-            "name": "narration_voice",
-            "label": "Narration Voice",
-            "description": "Voice used to generate narration.",
-            "type": "options",
-            "default": "adam",
-            # TODO FUTURE like listObject this could be populated from the enum, theoretically
-            "options": [
-                {
-                    "value": "dorothy",
-                    "audioSample": "dorothy",
-                    "label": "Dorothy",
-                    "description": "British woman with a clear voice for storytelling.",
-                },
-                {
-                    "value": "knightly",
-                    "audioSample": "knightly",
-                    "label": "Knightly",
-                    "description": "Old British man. A deep and smooth voice for storytelling and podcast.",
-                },
-                {
-                    "value": "oswald",
-                    "audioSample": "oswald",
-                    "label": "Oswald",
-                    "description": "Intelligent Professor.",
-                },
-                {
-                    "value": "marcus",
-                    "audioSample": "marcus",
-                    "label": "Marcus",
-                    "description": "An authoritative and deep voice. Great for audio books or news.",
-                },
-                {
-                    "value": "bria",
-                    "audioSample": "bria",
-                    "label": "Bria",
-                    "description": "A young female with a softly spoken tone, perfect for storytelling or ASMR.",
-                },
-                {
-                    "value": "alex",
-                    "audioSample": "alex",
-                    "label": "Alex",
-                    "description": "Young american man. Is a strong and expressive narrator.",
-                },
-                {
-                    "value": "valentino",
-                    "audioSample": "valentino",
-                    "label": "Valentino",
-                    "description": "A great voice with depth. The voice is deep with a great accent, and works well for meditations.",
-                },
-                {
-                    "value": "natasha",
-                    "audioSample": "natasha",
-                    "label": "Natasha",
-                    "description": "A valley girl female voice. Great for shorts.",
-                },
-                {
-                    "value": "brian",
-                    "audioSample": "brian",
-                    "label": "Brian",
-                    "description": "Great voice for nature documentaries.",
-                },
-                {
-                    "value": "joanne",
-                    "audioSample": "joanne",
-                    "label": "Joanne",
-                    "description": "Young american woman. A soft and pleasant voice for a great character.",
-                },
-            ],
-        },
+    narration_voice: AvailableVoice = SettingField(
+        default=AvailableVoice.DOROTHY,
+        label="Narration Voice",
+        description="Voice used to generate narration.",
+        type="options",
+        options=[
+            {
+                "value": "dorothy",
+                "audioSample": "dorothy",
+                "label": "Dorothy",
+                "description": "British woman with a clear voice for storytelling.",
+            },
+            {
+                "value": "knightly",
+                "audioSample": "knightly",
+                "label": "Knightly",
+                "description": "Old British man. A deep and smooth voice for storytelling and podcast.",
+            },
+            {
+                "value": "oswald",
+                "audioSample": "oswald",
+                "label": "Oswald",
+                "description": "Intelligent Professor.",
+            },
+            {
+                "value": "marcus",
+                "audioSample": "marcus",
+                "label": "Marcus",
+                "description": "An authoritative and deep voice. Great for audio books or news.",
+            },
+            {
+                "value": "bria",
+                "audioSample": "bria",
+                "label": "Bria",
+                "description": "A young female with a softly spoken tone, perfect for storytelling or ASMR.",
+            },
+            {
+                "value": "alex",
+                "audioSample": "alex",
+                "label": "Alex",
+                "description": "Young american man. Is a strong and expressive narrator.",
+            },
+            {
+                "value": "valentino",
+                "audioSample": "valentino",
+                "label": "Valentino",
+                "description": "A great voice with depth. The voice is deep with a great accent, and works well for meditations.",
+            },
+            {
+                "value": "natasha",
+                "audioSample": "natasha",
+                "label": "Natasha",
+                "description": "A valley girl female voice. Great for shorts.",
+            },
+            {
+                "value": "brian",
+                "audioSample": "brian",
+                "label": "Brian",
+                "description": "Great voice for nature documentaries.",
+            },
+            {
+                "value": "joanne",
+                "audioSample": "joanne",
+                "label": "Joanne",
+                "description": "Young american woman. A soft and pleasant voice for a great character.",
+            },
+        ],
     )
 
     # Image model settings
 
-    camp_image_negative_prompt: str = Field(
-        "",
+    camp_image_negative_prompt: str = SettingField(
+        label="Camp Image Negative Prompt",
         description="Negative prompt for generating camp images.",
-        meta_setting={
-            # VALIDATED
-            "name": "camp_image_negative_prompt",
-            "label": "Camp Image Negative Prompt",
-            "description": "Negative prompt for generating camp images.",
-            "type": "longtext",
-            "default": "",
-            "variablesPermitted": {
-                "tone": "Description of the tone of the adventure.",
-                "genre": "Description of the genre of the adventure.",
-            },
+        type="longtext",
+        default="",
+        variables_permitted={
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
         },
+    )
+
+    item_image_prompt: str = SettingField(
+        label="Item Image Prompt",
+        description="The prompt used to generate item images.",
+        type="longtext",
+        default="16-bit retro-game sprite for an {name}, {description}",
+        variables_permitted={
+            "name": "The name of the item.",
+            "description": "Description of the item.",
+        },
+    )
+
+    item_image_negative_prompt: str = SettingField(
+        label="Item Image Negative Prompt",
+        description="The negative prompt for generating item images.",
+        type="longtext",
+        default="",
+        variables_permitted={
+            "name": "The name of the item.",
+            "description": "Description of the item.",
+        },
+    )
+
+    profile_image_prompt: str = SettingField(
+        label="Profile Image Prompt",
+        description="The prompt that will be used to generate the player's profile image.",
+        type="longtext",
+        default="close-up profile picture, focus on head, {name}, {description}",
+        variables_permitted={
+            "name": "The name of the character.",
+            "description": "Description of the character.",
+        },
+    )
+
+    profile_image_negative_prompt: str = SettingField(
+        label="Profile Image Negative Prompt",
+        description="The negative prompt for generating profile images.",
+        type="longtext",
+        default="",
+        variables_permitted={
+            "name": "The name of the character.",
+            "description": "Description of the character.",
+        },
+    )
+
+    quest_background_image_prompt: str = SettingField(
+        label="Quest Background Prompt",
+        description="The prompt for generating a quest background.",
+        type="longtext",
+        default="16-bit background scene for a quest. The scene being depicted is: {description}",
+        variables_permitted={
+            "description": "Description of the quest the player is on.",
+        },
+    )
+
+    quest_background_image_negative_prompt: str = SettingField(
+        name="quest_background_image_negative_prompt",
+        label="Quest Background Negative Prompt",
+        description="The negative prompt for generating quest background.",
+        type="longtext",
+        default="",
+        variables_permitted={
+            "description": "Description of the quest the player is on.",
+        },
+    )
+
+    scene_music_generation_prompt: str = SettingField(
+        label="Quest Music Prompt",
+        description="The prompt used to generate music for a quest.  Game tone and scene description will be filled in as {tone} and {description}.",
+        type="longtext",
+        default="16-bit game score for a quest game scene. {tone}. Scene description: {description}",
+    )
+
+    camp_music_generation_prompt: str = SettingField(
+        label="Camp Music Prompt",
+        description="The prompt used to generate music for camp.  Game tone will filled in as {tone}.",
+        type="longtext",
+        default="background music for a quest game camp scene. {tone}.",
+    )
+
+    image_themes: List[Union[StableDiffusionTheme, DalleTheme]] = SettingField(
+        default=[],
+        label="Image Themes",
+        description="Themes available to use in image generation. Reference these from the **Camp**, **Quests**, and **Items** settings pages.",
+        type="list",
+        listof="object",
+        list_schema=[
+            {
+                "name": "name",
+                "label": "Name",
+                "description": "Name of the theme.",
+                "type": "text",
+            },
+            {
+                "name": "prompt_prefix",
+                "label": "Prompt Prefix",
+                "description": "Any extra words, including trigger words for LoRAs in this theme. Include a comma and spacing if you require it.",
+                "type": "longtext",
+            },
+            {
+                "name": "prompt_suffix",
+                "label": "Prompt Suffix",
+                "description": "Any extra words, including trigger words for LoRAs in this theme. Include a command and spacing if you require it.",
+                "type": "longtext",
+            },
+            {
+                "name": "negative_prompt_prefix",
+                "label": "Negative Prompt Prefix",
+                "description": "Any extra words, including trigger words for LoRAs in this theme. Include a comma and spacing if you require it.",
+                "type": "longtext",
+            },
+            {
+                "name": "negative_prompt_suffix",
+                "label": "Negative Prompt Suffix",
+                "description": "Any extra words, including trigger words for LoRAs in this theme. Include a command and spacing if you require it.",
+                "type": "longtext",
+            },
+            {
+                "name": "model",
+                "label": "Generation Model",
+                "description": "Which model to use.",
+                "type": "select",
+                "options": [
+                    {
+                        "label": "Stable Diffusion 1.5",
+                        "value": "runwayml/stable-diffusion-v1-5",
+                    },
+                    {
+                        "label": "Stable Diffusion XL 1.0",
+                        "value": "stabilityai/stable-diffusion-xl-base-1.0",
+                    },
+                ],
+            },
+            {
+                "name": "loras",
+                "label": "Loras",
+                "description": "List of LoRAs to use for image generation",
+                "type": "list",
+                "listof": "text",
+            },
+            {
+                "name": "seed",
+                "label": "Random Seed",
+                "description": "The same seed and prompt passed to the same version of StableDiffusion will output the same image every time.",
+                "type": "int",
+                "default": -1,
+            },
+            {
+                "name": "num_inference_steps",
+                "label": "Num Inference Steps",
+                "description": "Increasing the number of steps tells Stable Diffusion that it should take more steps to generate your final result which can increase the amount of detail in your image.",
+                "type": "int",
+                "default": 30,
+            },
+            {
+                "name": "guidance_scale",
+                "label": "Guidance Scale",
+                "description": "The CFG(Classifier Free Guidance) scale is a measure of how close you want the model to stick to your prompt when looking for a related image to show you.",
+                "type": "float",
+                "default": 7.5,
+            },
+            {
+                "name": "clip_skip",
+                "label": "Clip Skip",
+                "description": "Skips part of the image generation process, leading to slightly different results. This means the image renders faster, too.",
+                "type": "int",
+                "default": 0,
+            },
+            {
+                "name": "scheduler",
+                "label": "Scheduler",
+                "description": "Scheduler (or sampler) to use for the image denoising process.",
+                "type": "select",
+                "options": [
+                    {
+                        "label": "DPM++ 2M",
+                        "value": "DPM++ 2M",
+                    },
+                    {
+                        "label": "DPM++ 2M Karras",
+                        "value": "DPM++ 2M Karras",
+                    },
+                    {
+                        "label": "DPM++ 2M SDE",
+                        "value": "DPM++ 2M SDE",
+                    },
+                    {
+                        "label": "DPM++ 2M SDE Karras",
+                        "value": "DPM++ 2M SDE Karras",
+                    },
+                    {
+                        "label": "Euler",
+                        "value": "Euler",
+                    },
+                    {
+                        "label": "Euler A",
+                        "value": "Euler A",
+                    },
+                ],
+            },
+        ],
     )
 
     generation_task_id: Optional[str] = Field(
@@ -576,330 +728,60 @@ Can include descriptions of genre, characters, specific items and locations that
         description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
     )
 
-    item_image_prompt: str = Field(
-        "16-bit retro-game style item in a hero's inventory. The items's name is: {name}. The item's description is: {description}.",
-        description="Prompt for generating item images.",
-        meta_setting={
-            "name": "item_image_prompt",
-            "label": "Item Image Prompt",
-            "description": "The prompt used to generate item images.",
-            "type": "longtext",
-            "default": "16-bit retro-game sprite for an {name}, {description}",
-            "variablesPermitted": {
-                "name": "The name of the item.",
-                "description": "Description of the item.",
-            },
-        },
+    camp_image_theme: str = SettingField(
+        # VALIDATED
+        label="Camp Image Theme",
+        description="Use a pre-made theme or add more in the **Image Themes** tab.",
+        type="select",
+        options=DEFAULT_THEMES,
+        default="pixel_art_1",
+        include_dynamic_options="image-themes",
     )
 
-    item_image_negative_prompt: str = Field(
-        "",
-        meta_setting={
-            # VALIDATED
-            "name": "item_image_negative_prompt",
-            "label": "Item Image Negative Prompt",
-            "description": "The negative prompt for generating item images.",
-            "type": "longtext",
-            "default": "",
-            "variablesPermitted": {
-                "name": "The name of the item.",
-                "description": "Description of the item.",
-            },
-        },
+    item_image_theme: str = SettingField(
+        # VALIDATED
+        label="Item Image Theme",
+        description="Use a pre-made theme or add more in the **Image Themes** tab.",
+        type="select",
+        options=DEFAULT_THEMES,
+        default="pixel_art_1",
+        include_dynamic_options="image-themes",
     )
 
-    profile_image_prompt: str = Field(
-        "16-bit retro-game style profile picture of a hero on an adventure. The hero's name is: {name}. The hero has a description of: {description}.",
-        meta_setting={
-            # VALIDATED
-            "name": "profile_image_prompt",
-            "label": "Profile Image Prompt",
-            "description": "The prompt that will be used to generate the player's profile image.",
-            "type": "longtext",
-            "default": "close-up profile picture, focus on head, {name}, {description}",
-            "variablesPermitted": {
-                "name": "The name of the character.",
-                "description": "Description of the character.",
-            },
-        },
+    profile_image_theme: str = SettingField(
+        # VALIDATED
+        label="Profile Image Theme",
+        description="Use a pre-made theme or add more in the **Image Themes** tab.",
+        type="select",
+        options=DEFAULT_THEMES,
+        default="pixel_art_1",
+        include_dynamic_options="image-themes",
     )
 
-    profile_image_negative_prompt: str = Field(
-        "",
-        meta_setting={
-            # VALIDATED
-            "name": "profile_image_negative_prompt",
-            "label": "Profile Image Negative Prompt",
-            "description": "The negative prompt for generating profile images.",
-            "type": "longtext",
-            "default": "",
-            "variablesPermitted": {
-                "name": "The name of the character.",
-                "description": "Description of the character.",
-            },
-        },
+    quest_background_theme: str = SettingField(
+        # VALIDATED
+        label="Quest Background Theme",
+        description="Use a pre-made theme or add more in the **Image Themes** tab.",
+        type="select",
+        options=DEFAULT_THEMES,
+        default="pixel_art_1",
+        include_dynamic_options="image-themes",
     )
 
-    quest_background_image_prompt: str = Field(
-        "16-bit background scene for a quest. The scene being depicted is: {description}",
-        meta_setting={
-            # VALIDATED
-            "name": "quest_background_image_prompt",
-            "label": "Quest Background Prompt",
-            "description": "The prompt for generating a quest background.",
-            "type": "longtext",
-            "default": "16-bit background scene for a quest. The scene being depicted is: {description}",
-            "variablesPermitted": {
-                "description": "Description of the quest the player is on.",
-            },
-        },
+    game_engine_version: Optional[str] = SettingField(
+        default=None,
+        label="Game Engine Version",
+        description="The version of the game engine to use",
+        type="text",
     )
 
-    quest_background_image_negative_prompt: str = Field(
-        "",
-        meta_setting={
-            # VALIDATED
-            "name": "quest_background_image_negative_prompt",
-            "label": "Quest Background Negative Prompt",
-            "description": "The negative prompt for generating quest background.",
-            "type": "longtext",
-            "default": "",
-            "variablesPermitted": {
-                "description": "Description of the quest the player is on.",
-            },
-        },
-    )
-
-    scene_music_generation_prompt: str = Field(
-        "16-bit game score for a quest game scene. {tone}. Scene description: {description}",
-        meta_setting={
-            # VALIDATED
-            "name": "scene_music_generation_prompt",
-            "label": "Quest Music Prompt",
-            "description": "The prompt used to generate music for a quest.  Game tone and scene description will be filled in as {tone} and {description}.",
-            "type": "longtext",
-            "default": "16-bit game score for a quest game scene. {tone}. Scene description: {description}",
-        },
-    )
-
-    camp_music_generation_prompt: str = Field(
-        "background music for a quest game camp scene. {tone}.",
-        meta_setting={
-            # VALIDATED
-            "name": "camp_music_generation_prompt",
-            "label": "Camp Music Prompt",
-            "description": "The prompt used to generate music for camp.  Game tone will filled in as {tone}.",
-            "type": "longtext",
-            "default": "background music for a quest game camp scene. {tone}.",
-        },
-    )
-
-    image_themes: List[Union[StableDiffusionTheme, DalleTheme]] = Field(
-        [],
-        meta_setting={
-            # VALIDATED
-            "name": "image_themes",
-            "label": "Image Themes",
-            "description": "Themes available to use in image generation. Reference these from the **Camp**, **Quests**, and **Items** settings pages.",
-            "type": "list",
-            "listof": "object",
-            "listSchema": [
-                {
-                    "name": "name",
-                    "label": "Name",
-                    "description": "Name of the theme.",
-                    "type": "text",
-                },
-                {
-                    "name": "prompt_prefix",
-                    "label": "Prompt Prefix",
-                    "description": "Any extra words, including trigger words for LoRAs in this theme. Include a comma and spacing if you require it.",
-                    "type": "longtext",
-                },
-                {
-                    "name": "prompt_suffix",
-                    "label": "Prompt Suffix",
-                    "description": "Any extra words, including trigger words for LoRAs in this theme. Include a command and spacing if you require it.",
-                    "type": "longtext",
-                },
-                {
-                    "name": "negative_prompt_prefix",
-                    "label": "Negative Prompt Prefix",
-                    "description": "Any extra words, including trigger words for LoRAs in this theme. Include a comma and spacing if you require it.",
-                    "type": "longtext",
-                },
-                {
-                    "name": "negative_prompt_suffix",
-                    "label": "Negative Prompt Suffix",
-                    "description": "Any extra words, including trigger words for LoRAs in this theme. Include a command and spacing if you require it.",
-                    "type": "longtext",
-                },
-                {
-                    "name": "model",
-                    "label": "Generation Model",
-                    "description": "Which model to use.",
-                    "type": "select",
-                    "options": [
-                        {
-                            "label": "Stable Diffusion 1.5",
-                            "value": "runwayml/stable-diffusion-v1-5",
-                        },
-                        {
-                            "label": "Stable Diffusion XL 1.0",
-                            "value": "stabilityai/stable-diffusion-xl-base-1.0",
-                        },
-                    ],
-                },
-                {
-                    "name": "loras",
-                    "label": "Loras",
-                    "description": "List of LoRAs to use for image generation",
-                    "type": "list",
-                    "listof": "text",
-                },
-                {
-                    "name": "seed",
-                    "label": "Random Seed",
-                    "description": "The same seed and prompt passed to the same version of StableDiffusion will output the same image every time.",
-                    "type": "int",
-                    "default": -1,
-                },
-                {
-                    "name": "num_inference_steps",
-                    "label": "Num Inference Steps",
-                    "description": "Increasing the number of steps tells Stable Diffusion that it should take more steps to generate your final result which can increase the amount of detail in your image.",
-                    "type": "int",
-                    "default": 30,
-                },
-                {
-                    "name": "guidance_scale",
-                    "label": "Guidance Scale",
-                    "description": "The CFG(Classifier Free Guidance) scale is a measure of how close you want the model to stick to your prompt when looking for a related image to show you.",
-                    "type": "float",
-                    "default": 7.5,
-                },
-                {
-                    "name": "clip_skip",
-                    "label": "Clip Skip",
-                    "description": "Skips part of the image generation process, leading to slightly different results. This means the image renders faster, too.",
-                    "type": "int",
-                    "default": 0,
-                },
-                {
-                    "name": "scheduler",
-                    "label": "Scheduler",
-                    "description": "Scheduler (or sampler) to use for the image denoising process.",
-                    "type": "select",
-                    "options": [
-                        {
-                            "label": "DPM++ 2M",
-                            "value": "DPM++ 2M",
-                        },
-                        {
-                            "label": "DPM++ 2M Karras",
-                            "value": "DPM++ 2M Karras",
-                        },
-                        {
-                            "label": "DPM++ 2M SDE",
-                            "value": "DPM++ 2M SDE",
-                        },
-                        {
-                            "label": "DPM++ 2M SDE Karras",
-                            "value": "DPM++ 2M SDE Karras",
-                        },
-                        {
-                            "label": "Euler",
-                            "value": "Euler",
-                        },
-                        {
-                            "label": "Euler A",
-                            "value": "Euler A",
-                        },
-                    ],
-                },
-            ],
-        },
-    )
-
-    camp_image_theme: str = Field(
-        "pixel_art_2",
-        meta_setting={
-            # VALIDATED
-            "name": "camp_image_theme",
-            "label": "Camp Image Theme",
-            "description": "Use a pre-made theme or add more in the **Image Themes** tab.",
-            "type": "select",
-            "options": DEFAULT_THEMES,
-            "default": "pixel_art_1",
-            "includeDynamicOptions": "image-themes",
-        },
-    )
-
-    item_image_theme: str = Field(
-        "pixel_art_2",
-        meta_setting={
-            # VALIDATED
-            "name": "item_image_theme",
-            "label": "Item Image Theme",
-            "description": "Use a pre-made theme or add more in the **Image Themes** tab.",
-            "type": "select",
-            "options": DEFAULT_THEMES,
-            "default": "pixel_art_1",
-            "includeDynamicOptions": "image-themes",
-        },
-    )
-
-    profile_image_theme: str = Field(
-        "pixel_art_2",
-        meta_setting={
-            # VALIDATED
-            "name": "profile_image_theme",
-            "label": "Profile Image Theme",
-            "description": "Use a pre-made theme or add more in the **Image Themes** tab.",
-            "type": "select",
-            "options": DEFAULT_THEMES,
-            "default": "pixel_art_1",
-            "includeDynamicOptions": "image-themes",
-        },
-    )
-
-    game_engine_version: Optional[str] = Field(
-        None,
-        meta_settings={
-            "name": "game_engine_version",
-            "label": "Game Engine Version",
-            "description": "The version of the game engine to use",
-            "type": "text",
-        },
-    )
-
-    quest_background_theme: str = Field(
-        "pixel_art_2",
-        meta_setting={
-            # VALIDATED
-            "name": "quest_background_theme",
-            "label": "Quest Background Theme",
-            "description": "Use a pre-made theme or add more in the **Image Themes** tab.",
-            "type": "select",
-            "options": DEFAULT_THEMES,
-            "default": "pixel_art_1",
-            "includeDynamicOptions": "image-themes",
-        },
-    )
-
-    music_duration: int = Field(
+    music_duration: int = SettingField(
         default=10,
-        description="Length of music to generate in seconds. Must be less than 30.",
         le=30,
         ge=0,
-        meta_setting={
-            # VALIDATED
-            "name": "music_duration",
-            "label": "Music Duration",
-            "description": "Duration of music to generate. Default=10. Max=30. IMPORTANT: Values less than 15 are safest because generation takes so long.",
-            "type": "int",
-            "default": 10,
-        },
+        label="Music Duration",
+        description="Duration of music to generate. Default=10. Max=30. IMPORTANT: Values less than 15 are safest because generation takes so long.",
+        type="int",
     )
 
     @property
@@ -1017,10 +899,12 @@ Can include descriptions of genre, characters, specific items and locations that
         """
         s = cls()
         for field_name, field in cls.__fields__.items():
+            result = {"name": field_name}
             meta_setting = field.field_info.extra.get("meta_setting")
             if not meta_setting:
                 delattr(s, field_name)
                 continue
-            meta_setting["serverSetting"] = True
-            setattr(s, field_name, meta_setting)
+            result.update(meta_setting)
+            result["serverSetting"] = True
+            setattr(s, field_name, result)
         return s
