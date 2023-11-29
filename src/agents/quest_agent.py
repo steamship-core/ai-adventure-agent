@@ -389,6 +389,8 @@ class QuestAgent(InterruptiblePythonAgent):
         # Add minor randomness, but don't drop below 0.05 (2 on d20) or go above 0.95 (20 on d20)
         required_roll_mod = 0.05 * (randint(-2, 2))
         required_roll = min(0.95, max(0.05, required_roll + required_roll_mod))
+        # make sure we don't get weird floating point near values
+        required_roll = round(required_roll, 2)
 
         roll = random()  # noqa: S311
         succeeded = roll > required_roll
