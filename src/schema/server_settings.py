@@ -240,6 +240,8 @@ class ServerSettings(BaseModel):
         description="Select an image to represent this adventure.",
         type="image",
         required=True,
+        onboarding_title="Please upload or generate a title image.",
+        onboarding_subtitle="This is like your movie poster. It will advertise your adventure to others.",
     )
     """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
 
@@ -249,6 +251,8 @@ class ServerSettings(BaseModel):
         description="A catchy one-liner to help your adventure stand out in the discover page",
         type="text",
         required=True,
+        onboarding_title="Please write a one-sentence description of your adventure.",
+        onboarding_subtitle="This will help players understand what adventure they're about to play.",
     )
 
     description: Optional[str] = SettingField(
@@ -257,6 +261,8 @@ class ServerSettings(BaseModel):
         description="A longer description of this adventure. Go into detail!",
         type="textarea",
         required=True,
+        onboarding_title="Please write a more detailed description of your adventure.",
+        onboarding_subtitle="The more detail you provide in your description, the more engaging your AI generated adventure will be.",
     )
     """For use on the profile marketing page and also during 'Magic Create' mode in the editor."""
 
@@ -319,6 +325,8 @@ class ServerSettings(BaseModel):
         description="What name will others see this adventure by?",
         type="text",
         required=True,
+        onboarding_title="What is the name of your adventure?",
+        onboarding_subtitle="A short and catchy name will help your adventure stand out.",
     )
 
     # Narrative settings
@@ -328,6 +336,8 @@ class ServerSettings(BaseModel):
         description="What is the writing style of your story? E.g.: Written with drama and heavy intellectual dialogue, like Aaron Sorkin's West Wing.",
         type="text",
         required=True,
+        onboarding_title="What is the writing style you want to see?",
+        onboarding_subtitle="References to specific and well known styles or storytellers will work best.",
     )
 
     adventure_background: Optional[str] = SettingField(
@@ -345,6 +355,8 @@ Can include descriptions of genre, characters, specific items and locations that
         description="What is the genre of your story? E.g.: children’s book, young adult novel, fanfic, high literature.",
         type="text",
         required=True,
+        onboarding_title="What is the genre of your adventure?",
+        onboarding_subtitle="Selecting a short, evocative genre name will help generate a good adventure.",
     )
 
     adventure_goal: str = SettingField(
@@ -360,6 +372,8 @@ Can include descriptions of genre, characters, specific items and locations that
         description="Optional. If you wish for your adventure to have a fixed set of quests, define them here.",
         type="list",
         listof="object",
+        onboarding_title="What is the arc of quests you want your players to go on?",
+        onboarding_subtitle="Think of these as the chapters in your story.",
         list_schema=[
             # TODO FUTURE this could be pulled directly from QuestDescription
             {
@@ -386,7 +400,7 @@ Can include descriptions of genre, characters, specific items and locations that
 
     # Quest settings
     quests_per_arc: int = SettingField(
-        default=10,
+        default=5,
         label="Quests per Arc",
         description="If you don't have a pre-defined list of quests, this is how many will be generated",
         type="int",

@@ -99,6 +99,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             template_vars={
                 "tone": server_settings.narrative_tone,
                 "name": item.name,
+                "genre": server_settings.narrative_voice,
                 "description": item.description,
             },
             image_size="square_hd",
@@ -133,6 +134,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             negative_prompt=server_settings.profile_image_negative_prompt,
             template_vars={
                 "name": name,
+                "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
                 "description": description,
             },
             image_size="portrait_4_3",
@@ -161,6 +164,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             negative_prompt=server_settings.quest_background_image_negative_prompt,
             template_vars={
                 "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
                 "description": description,
             },
             image_size="landscape_16_9",
@@ -185,6 +189,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             negative_prompt=server_settings.camp_image_negative_prompt,
             template_vars={
                 "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
             },
             image_size="landscape_16_9",
             tags=tags,
@@ -205,6 +210,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             template_vars={
                 "narrative_voice": server_settings.narrative_voice,
                 "name": server_settings.name,
+                "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
             },
             image_size="portrait_4_3",
             tags=tags,
