@@ -65,3 +65,4 @@ def test_generate_using_title_and_description_generator(
     )
     assert server_settings.source_url == the_url
     assert server_settings.name == "Unplanned Outing"
+    assert "Claire" in server_settings.description

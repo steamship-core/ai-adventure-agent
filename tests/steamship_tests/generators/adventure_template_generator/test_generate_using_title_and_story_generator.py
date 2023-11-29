@@ -55,7 +55,21 @@ def no_cache_get_server_settings(
 @pytest.mark.parametrize(
     "invocable_handler_with_client", [AdventureGameService], indirect=True
 )
-@patch("utils.context_utils.get_server_settings", no_cache_get_server_settings)
+@patch(
+    "endpoints.server_endpoints.get_server_settings",
+    no_cache_get_server_settings,
+    create=True,
+)
+@patch(
+    "generators.server_settings_generator.get_server_settings",
+    no_cache_get_server_settings,
+    create=True,
+)
+@patch(
+    "generators.editor_suggestion_generator.get_server_settings",
+    no_cache_get_server_settings,
+    create=True,
+)
 @patch.object(
     GenerateUsingTitleAndDescriptionGenerator, "inner_generate", inner_generate
 )
@@ -84,7 +98,10 @@ def test_generate_using_title_and_story(
     # This will contain the server_settings
     print(task.output)
 
-    server_settings = get_server_settings(context)
+    server_settings: ServerSettings = ServerSettings.parse_obj(
+        invocable_handler("GET", "server_settings", {}).get("data")
+    )
     assert server_settings.source_url == the_url
     assert server_settings.name == "Unplanned Outing"
     assert "Claire Fuller" in server_settings.source_story_text
+    assert "Claire" in server_settings.description

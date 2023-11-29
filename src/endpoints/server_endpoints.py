@@ -11,8 +11,8 @@ from generators.image_generators import get_image_generator
 from generators.server_settings_generators.generate_all_generator import (
     GenerateAllGenerator,
 )
-from generators.server_settings_generators.generate_using_title_and_description_generator import (
-    GenerateUsingTitleAndDescriptionGenerator,
+from generators.server_settings_generators.generate_using_title_and_story_generator import (
+    GenerateUsingTitleAndStoryGenerator,
 )
 from generators.utils import block_to_config_value, set_keypath_value
 from schema.objects import Item
@@ -40,6 +40,7 @@ class ServerSettingsMixin(PackageMixin):
     def post_server_settings(self, **kwargs) -> dict:
         """Set the server settings."""
         try:
+            logging.info(f"POST /save_server_settings {kwargs}")
             server_settings = ServerSettings.parse_obj(kwargs)
             context = self.agent_service.build_default_context()
             existing_state = get_server_settings(context)
@@ -84,9 +85,9 @@ class ServerSettingsMixin(PackageMixin):
         )
         if unsaved_server_settings and "source_story_text" in unsaved_server_settings:
             logging.info("Generating from a story because `source_story_text`.")
-            generator = GenerateUsingTitleAndDescriptionGenerator()
+            generator = GenerateUsingTitleAndStoryGenerator()
         else:
-            logging.info("Generating scratch since no `source_story_text`.")
+            logging.info("Generating from scratch since no `source_story_text`.")
             generator = GenerateAllGenerator()
 
         last_task = generator.generate(

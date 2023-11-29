@@ -3,16 +3,9 @@ from typing import Optional
 from steamship import SteamshipError, Task
 from steamship.agents.schema import AgentContext
 
-from generators.server_settings_field_generators.adventure_name_generator import (
-    AdventureNameGenerator,
-)
 from generators.server_settings_generator import ServerSettingsGenerator
 from utils.agent_service import AgentService
-from utils.context_utils import (
-    get_server_settings,
-    get_story_text_generator,
-    save_server_settings,
-)
+from utils.context_utils import get_server_settings
 
 # Note: We go somewhat in reverse to the generate_all_generator since the idea here is to use an existing
 #       story and whiddle it down (rather than build up). The constituent generators know we're in this mode
@@ -64,30 +57,23 @@ class GenerateUsingTitleAndDescriptionGenerator(ServerSettingsGenerator):
     ) -> Task:
         # Assemble a linked list of things to generate
         server_settings = get_server_settings(context)
+        fields_to_generate = []
 
         title = server_settings.name
-        description = server_settings.description
-
         if not title:
-            # Make one up.
-            text_generator = get_story_text_generator(context)
-            generator = AdventureNameGenerator()
-            block = generator.inner_generate(
-                server_settings.dict(),
-                text_generator,
-                context,
-                generation_config=generation_config,
-            )
-            server_settings.name = block.text
-            save_server_settings(server_settings, context)
+            fields_to_generate.append([["name"], True])
 
+        description = server_settings.description
         if not description:
             raise SteamshipError(
                 message="No description from which to generate an adventure."
             )
 
         last_task = wait_on_task
-        for field_key_path_and_should_block in GENERATE_KEY_PATHS_AND_SHOULD_BLOCK:
+
+        fields_to_generate.extend(GENERATE_KEY_PATHS_AND_SHOULD_BLOCK)
+
+        for field_key_path_and_should_block in fields_to_generate:
             field_key_path = field_key_path_and_should_block[0]
             should_block = field_key_path_and_should_block[1]
 
