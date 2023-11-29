@@ -539,10 +539,12 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Item Image Prompt",
         description="The prompt used to generate item images.",
         type="longtext",
-        default="16-bit retro-game sprite for an {name}, {description}",
+        default="game sprite for an {name}, {description}",
         variables_permitted={
             "name": "The name of the item.",
             "description": "Description of the item.",
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
         },
     )
 
@@ -554,6 +556,8 @@ Can include descriptions of genre, characters, specific items and locations that
         variables_permitted={
             "name": "The name of the item.",
             "description": "Description of the item.",
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
         },
     )
 
@@ -575,6 +579,8 @@ Can include descriptions of genre, characters, specific items and locations that
         default="",
         variables_permitted={
             "name": "The name of the character.",
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
             "description": "Description of the character.",
         },
     )
@@ -583,8 +589,10 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Quest Background Prompt",
         description="The prompt for generating a quest background.",
         type="longtext",
-        default="16-bit background scene for a quest. The scene being depicted is: {description}",
+        default="background scene for a quest. The scene being depicted is: {description}",
         variables_permitted={
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
             "description": "Description of the quest the player is on.",
         },
     )
@@ -596,6 +604,8 @@ Can include descriptions of genre, characters, specific items and locations that
         type="longtext",
         default="",
         variables_permitted={
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
             "description": "Description of the quest the player is on.",
         },
     )
@@ -605,6 +615,11 @@ Can include descriptions of genre, characters, specific items and locations that
         description="The prompt used to generate music for a quest.  Game tone and scene description will be filled in as {tone} and {description}.",
         type="longtext",
         default="16-bit game score for a quest game scene. {tone}. Scene description: {description}",
+        variables_permitted={
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
+            "description": "Description of the quest the player is on.",
+        },
     )
 
     camp_music_generation_prompt: str = SettingField(
@@ -612,6 +627,11 @@ Can include descriptions of genre, characters, specific items and locations that
         description="The prompt used to generate music for camp.  Game tone will filled in as {tone}.",
         type="longtext",
         default="background music for a quest game camp scene. {tone}.",
+        variables_permitted={
+            "tone": "Description of the tone of the adventure.",
+            "genre": "Description of the genre of the adventure.",
+            "description": "Description of the quest the player is on.",
+        },
     )
 
     image_themes: List[Union[StableDiffusionTheme, DalleTheme]] = SettingField(
@@ -843,7 +863,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 self.camp_image_prompt,
                 list(
                     (cast(dict, s.camp_image_prompt))
-                    .get("variables_permitted", {})
+                    .get("variablesPermitted", {})
                     .keys()
                 ),
                 "Camp image prompt",
@@ -854,7 +874,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 self.camp_image_negative_prompt,
                 list(
                     (cast(dict, s.camp_image_negative_prompt))
-                    .get("variables_permitted", {})
+                    .get("variablesPermitted", {})
                     .keys()
                 ),
                 "Camp image negative prompt",
@@ -865,7 +885,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 self.item_image_prompt,
                 list(
                     (cast(dict, s.item_image_prompt))
-                    .get("variables_permitted", {})
+                    .get("variablesPermitted", {})
                     .keys()
                 ),
                 "Item image prompt",
@@ -876,7 +896,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 self.item_image_negative_prompt,
                 list(
                     (cast(dict, s.item_image_negative_prompt))
-                    .get("variables_permitted", {})
+                    .get("variablesPermitted", {})
                     .keys()
                 ),
                 "Item image negative prompt",
@@ -887,7 +907,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 self.profile_image_prompt,
                 list(
                     (cast(dict, s.profile_image_prompt))
-                    .get("variables_permitted", {})
+                    .get("variablesPermitted", {})
                     .keys()
                 ),
                 "Profile image prompt",
@@ -898,7 +918,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 self.profile_image_negative_prompt,
                 list(
                     (cast(dict, s.profile_image_negative_prompt))
-                    .get("variables_permitted", {})
+                    .get("variablesPermitted", {})
                     .keys()
                 ),
                 "Profile image negative prompt",
@@ -909,7 +929,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 self.quest_background_image_prompt,
                 list(
                     (cast(dict, s.quest_background_image_prompt))
-                    .get("variables_permitted", {})
+                    .get("variablesPermitted", {})
                     .keys()
                 ),
                 "Quest background image prompt",
@@ -920,7 +940,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 self.quest_background_image_negative_prompt,
                 list(
                     (cast(dict, s.quest_background_image_negative_prompt))
-                    .get("variables_permitted", {})
+                    .get("variablesPermitted", {})
                     .keys()
                 ),
                 "Quest background image negative prompt",
@@ -931,7 +951,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 self.scene_music_generation_prompt,
                 list(
                     (cast(dict, s.scene_music_generation_prompt))
-                    .get("variables_permitted", {})
+                    .get("variablesPermitted", {})
                     .keys()
                 ),
                 "Quest scene music prompt",
@@ -942,7 +962,7 @@ Can include descriptions of genre, characters, specific items and locations that
                 self.camp_music_generation_prompt,
                 list(
                     (cast(dict, s.camp_music_generation_prompt))
-                    .get("variables_permitted", {})
+                    .get("variablesPermitted", {})
                     .keys()
                 ),
                 "Camp music prompt",
