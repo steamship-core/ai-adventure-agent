@@ -36,3 +36,6 @@ class DummyGenerator(MusicGenerator, ImageGenerator):
 
     def request_camp_music_generation(self, context: AgentContext) -> Task:
         return self.dummy_generation()
+
+    def request_adventure_image_generation(self, context: AgentContext) -> Task:
+        return self.dummy_generation()
