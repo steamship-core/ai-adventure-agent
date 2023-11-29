@@ -285,6 +285,8 @@ class ServerSettings(BaseModel):
             "name": "name",
             "label": "Adventure Name",
             "description": "What name will others see this adventure by?",
+            "onboardingTitle": "[onboarding title]",
+            "onboardingSubtitle": "[onboarding subtitle]",
             "type": "text",
             "default": "",
             "required": True,
@@ -367,6 +369,7 @@ Can include descriptions of genre, characters, specific items and locations that
             "description": "Optional. If you wish for your adventure to have a fixed set of quests, define them here.",
             "type": "list",
             "listof": "object",
+            "suggestOutputType": "fixed_quest_arc",
             "required": True,
             "listSchema": [
                 # TODO FUTURE this could be pulled directly from QuestDescription
@@ -567,7 +570,7 @@ Can include descriptions of genre, characters, specific items and locations that
     )
 
     generation_task_id: Optional[str] = Field(
-        "",
+        None,
         description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
     )
 
