@@ -1,0 +1,90 @@
+characters:
+  - name: The Prisoner
+    image: https://ywo4zgeb2hydwgmk.public.blob.vercel-storage.com/a154067b-ed4e-443f-ba91-a715279c2791-1f9d9654-c518-46a4-b2bb-b3c2042ce786-prisoner-iDJ2fxCDMYunghrnND1PzHxZCxgZCd.PNG
+    tagline: Any death but that of the pit!
+    background: Sentenced to death for unspecified crimes by black-robed judges of
+      the Spanish Inquisition
+    description: >-
+      - Gaunt and emaciated, with sunken eyes and hollow cheeks
+
+      - Wearing tattered and dirty clothing, barely recognizable as a prisoner
+
+      - Hair unkempt and matted, giving a wild and desperate look
+
+
+      ## Skills
+
+
+      - Agile and nimble, able to navigate through tight spaces and avoid traps
+
+      - Resourceful, finding ways to make use of the limited objects in the chamber
+
+      - Quick thinker, able to adapt to new situations and come up with creative solutions
+
+
+      ## Struggles
+
+
+      - Constant fear and paranoia, always on edge and anticipating the next torture
+
+      - Physical pain and exhaustion from the constant torment and lack of rest
+
+      - Mental anguish and torment, haunted by the screams and cries of past prisoners
+
+
+      ## Quirks
+
+
+      - Talks to himself, as a way to keep his sanity and ease his loneliness
+
+      - Obsessively counts the seconds in his head, a habit formed from the pendulum's swings
+
+      - Develops a strange bond with a small mouse that scurries around the chamber
+image_themes:
+  - name: Stable Diffusion XL Raw
+    model: stabilityai/stable-diffusion-xl-base-1.0
+    scheduler: DPM++ 2M
+    prompt_prefix: dark foreboding (macabre)
+    negative_prompt_prefix: low quality, cartoon, bright
+adventure_goal: To escape the chamber, avoiding falling in the pit or getting
+  sliced by the pendulum or ravaged by the rodents, or burned by the walls, or
+  any of the other tortures.
+adventure_name: "The Pit and The Pendulum "
+music_duration: 15
+narrative_tone: as written by Edgar Allen Poe, with a heavy focus on the senses.
+  First-person narrator with a haunting and introspective tone.
+adventure_image: https://ywo4zgeb2hydwgmk.public.blob.vercel-storage.com/a154067b-ed4e-443f-ba91-a715279c2791-691ed2d0-5760-4d7c-9b27-a97af3e92cb0-poe-pit-pendulum-3-teESeak3JFDHpj0RafMbWrJTQldk5Q.PNG
+narration_voice: valentino
+narrative_voice: short-story popular horror; eerie, suspenseful, and chilling.
+adventure_background: Takes place in the confines of a dark torture chamber. The
+  chamber is 100 paces around, and contains a dark deep dit and a large
+  threatening razor-edged pendulum. The chamber walls are movable and can be
+  heated to unbearable temperatures. Various rodents inhabit the chamber. The
+  prisoner is in and out of consciousness throughout various stages of the
+  story.
+adventure_description: 'In "The Pit and The Pendulum," embark on a chilling
+  journey through the depths of terror as an innocent character battles against
+  sadistic tormentors during the ruthless era of the Spanish Inquisition. The
+  prisoner is sentenced to death for an unspecified set of crimes, during an
+  arduous, surrealist trial. Upon sentencing, the prisoner faints, awaking later
+  in a dark pit. This is where their adventure begins. The prisoner must
+  confront many challenges in an attempt to escape, some mental, some physical,
+  some imposed by his captors, some personal. '
+adventure_short_description: Endure the horrors of the Spanish Inquisition
+camp_music_generation_prompt: dark, haunting background sounds from a isolated torture chamber
+scene_music_generation_prompt: dark, haunting background sounds from a isolated torture chamber
+adventure_player_singular_noun: Prisoner
+name: "The Pit and The Pendulum "
+description: 'In "The Pit and The Pendulum," embark on a chilling journey
+  through the depths of terror as an innocent character battles against sadistic
+  tormentors during the ruthless era of the Spanish Inquisition. The prisoner is
+  sentenced to death for an unspecified set of crimes, during an arduous,
+  surrealist trial. Upon sentencing, the prisoner faints, awaking later in a
+  dark pit. This is where their adventure begins. The prisoner must confront
+  many challenges in an attempt to escape, some mental, some physical, some
+  imposed by his captors, some personal. '
+short_description: Endure the horrors of the Spanish Inquisition
+image: https://ywo4zgeb2hydwgmk.public.blob.vercel-storage.com/a154067b-ed4e-443f-ba91-a715279c2791-691ed2d0-5760-4d7c-9b27-a97af3e92cb0-poe-pit-pendulum-3-teESeak3JFDHpj0RafMbWrJTQldk5Q.PNG
+tags: []
+adventure_public: false
+adventure_public_requested: false
