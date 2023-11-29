@@ -609,26 +609,6 @@ Can include descriptions of genre, characters, specific items and locations that
                 "label": "Prompt Prefix",
                 "description": "Any extra words, including trigger words for LoRAs in this theme. Include a comma and spacing if you require it.",
                 "type": "longtext",
-        },
-    )
-
-    generation_task_id: Optional[str] = Field(
-        "",
-        description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
-    )
-
-    item_image_prompt: str = Field(
-        "16-bit retro-game style item in a hero's inventory. The items's name is: {name}. The item's description is: {description}.",
-        description="Prompt for generating item images.",
-        meta_setting={
-            "name": "item_image_prompt",
-            "label": "Item Image Prompt",
-            "description": "The prompt used to generate item images.",
-            "type": "longtext",
-            "default": "16-bit retro-game sprite for an {name}, {description}",
-            "variablesPermitted": {
-                "name": "The name of the item.",
-                "description": "Description of the item.",
             },
             {
                 "name": "prompt_suffix",
@@ -730,8 +710,13 @@ Can include descriptions of genre, characters, specific items and locations that
                         "value": "Euler A",
                     },
                 ],
-            },
+            }
         ]
+    )
+
+    generation_task_id: Optional[str] = Field(
+        "",
+        description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
     )
 
     camp_image_theme: str = SettingField(
