@@ -194,7 +194,7 @@ class DalleImageGenerator(ImageGenerator):
 
         task = self.generate(
             context=context,
-            theme_name=server_settings.camp_image_theme,
+            theme_name=server_settings.adventure_image_theme,
             prompt="Cinematic, 8k, movie advertising image, {narrative_voice}, Movie Title: {name}",
             template_vars={
                 "narrative_voice": server_settings.narrative_voice,
