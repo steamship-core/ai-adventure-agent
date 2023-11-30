@@ -359,6 +359,14 @@ Can include descriptions of genre, characters, specific items and locations that
         onboarding_subtitle="Selecting a short, evocative genre name will help generate a good adventure.",
     )
 
+    generate_music: Optional[bool] = SettingField(
+        default=False,
+        label="Generate Music",
+        description="Should this adventure generate music?",
+        type="checkbox",
+        required=False,
+    )
+
     adventure_goal: str = SettingField(
         default="To rid the world of evil",
         label="Adventure Goal",

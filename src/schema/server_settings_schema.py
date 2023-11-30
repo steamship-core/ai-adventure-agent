@@ -182,6 +182,7 @@ IMAGE_OPTIONS = [
 VOICE_OPTIONS = [s.narration_voice]
 
 MUSIC_OPTIONS = [
+    s.generate_music,
     s.scene_music_generation_prompt,
     s.camp_music_generation_prompt,
     s.music_duration,

@@ -138,7 +138,11 @@ class OnboardingAgent(InterruptiblePythonAgent):
                 game_state.camp.image_block_url = camp_image_block.raw_data_url
                 save_game_state(game_state, context)
 
-        if not game_state.camp_audio_requested() and (server_settings.narrative_tone):
+        if (
+            not game_state.camp_audio_requested()
+            and (server_settings.narrative_tone)
+            and server_settings.generate_music
+        ):
             if music_gen := get_music_generator(context):
                 task = music_gen.request_camp_music_generation(context=context)
                 camp_audio_block = task.wait().blocks[0]
