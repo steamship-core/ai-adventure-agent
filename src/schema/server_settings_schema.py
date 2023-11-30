@@ -183,6 +183,7 @@ IMAGE_OPTIONS = [
 VOICE_OPTIONS = [s.narration_voice]
 
 MUSIC_OPTIONS = [
+    s.generate_music,
     s.scene_music_generation_prompt,
     s.camp_music_generation_prompt,
     s.music_duration,
@@ -211,12 +212,12 @@ SCHEMA = [
         "href": "general-settings",
         "settings": GENERAL_OPTIONS,
     },
-    {
-        "title": "Auto Generate",
-        "description": "Generate an entire game from scratch.",
-        "href": "magic-mode",
-        "settings": MAGIC_MODE_OPTIONS,
-    },
+    # {
+    #     "title": "Auto Generate",
+    #     "description": "Generate an entire game from scratch.",
+    #     "href": "magic-mode",
+    #     "settings": MAGIC_MODE_OPTIONS,
+    # },
     {
         "spacer": True,
         "title": "Game",
