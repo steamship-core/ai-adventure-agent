@@ -36,6 +36,12 @@ class ServerSettingsFieldGenerator(BaseModel, ABC):
         if task and task.output and task.output.blocks:
             block = task.output.blocks[0]
             # Make sure to await the full stream.
-            block.text = block.raw().decode("utf-8")
-            return block
+            try:
+                block.text = block.raw().decode("utf-8")
+                return block
+            except BaseException as ex:
+                raise SteamshipError(
+                    message="Unable to generate content. This is often a result of the content moderation throwing a warning.",
+                    error=ex,
+                )
         raise SteamshipError(message="Unable to fetch suggestion")
