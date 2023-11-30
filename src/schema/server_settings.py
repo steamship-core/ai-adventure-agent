@@ -117,6 +117,11 @@ DEFAULT_THEMES = [
         "imageSample": "/image_samples/pixel_art_3.png",
     },
     {
+        "value": "stable_diffusion_xl_no_loras",
+        "label": "Stable Diffusion XL",
+        "imageSample": "/image_samples/stable_diffusion_xl_no_loras.png",
+    },
+    {
         "value": "dall_e_2_standard",
         "label": "DALL-E 2",
         "imageSample": "/image_samples/dall_e_2_standard.png",
