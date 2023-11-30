@@ -227,6 +227,12 @@ EPIC_REALISM = StableDiffusionTheme(
     clip_skip=0,
 )
 
+SD_XL_NO_LORAS = StableDiffusionTheme(
+    name="stable_diffusion_xl_no_loras",
+    negative_prompt_prefix="cartoon, painting, illustration, (worst quality, low quality, normal quality:2), (watermark), immature, child, ",
+    model_architecture="sdxl",
+)
+
 DALL_E_3_VIVID_STANDARD = DalleTheme(
     name="dall_e_3_vivid_standard",
     model="dall-e-3",
@@ -286,6 +292,7 @@ PREMADE_THEMES = [
     FF7R,
     CINEMATIC_ANIMATION,
     EPIC_REALISM,
+    SD_XL_NO_LORAS,
     DALL_E_3_NATURAL_HD,
     DALL_E_3_NATURAL_STANDARD,
     DALL_E_3_VIVID_HD,

@@ -204,7 +204,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
         task = self.generate(
             context=context,
-            theme_name=server_settings.camp_image_theme,
+            theme_name=server_settings.adventure_image_theme,
             prompt="Cinematic, 8k, movie advertising image, {narrative_voice}, Movie Title: {name}",
             negative_prompt="",
             template_vars={
@@ -213,7 +213,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
                 "tone": server_settings.narrative_tone,
                 "genre": server_settings.narrative_voice,
             },
-            image_size="portrait_4_3",
+            image_size="landscape_16_9",
             tags=tags,
         )
         task.wait()
