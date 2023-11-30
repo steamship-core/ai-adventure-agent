@@ -211,12 +211,12 @@ SCHEMA = [
         "href": "general-settings",
         "settings": GENERAL_OPTIONS,
     },
-    {
-        "title": "Auto Generate",
-        "description": "Generate an entire game from scratch.",
-        "href": "magic-mode",
-        "settings": MAGIC_MODE_OPTIONS,
-    },
+    # {
+    #     "title": "Auto Generate",
+    #     "description": "Generate an entire game from scratch.",
+    #     "href": "magic-mode",
+    #     "settings": MAGIC_MODE_OPTIONS,
+    # },
     {
         "spacer": True,
         "title": "Game",
