@@ -354,9 +354,10 @@ class QuestAgent(InterruptiblePythonAgent):
                 description=updated_problem_block.text, context=context
             )
         if music_gen := get_music_generator(context):
-            music_gen.request_scene_music_generation(
-                description=updated_problem_block.text, context=context
-            )
+            if server_settings.generate_music:
+                music_gen.request_scene_music_generation(
+                    description=updated_problem_block.text, context=context
+                )
 
     def evaluate_solution(
         self, game_state: GameState, context: AgentContext, quest: Quest
