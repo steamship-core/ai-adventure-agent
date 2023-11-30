@@ -17,6 +17,7 @@ GENERAL_OPTIONS = [
     s.description,
     s.tags,
     s.image,
+    s.adventure_image_theme,
     {
         "name": "adventure_player_singular_noun",
         "label": "Noun for a 'Player'",

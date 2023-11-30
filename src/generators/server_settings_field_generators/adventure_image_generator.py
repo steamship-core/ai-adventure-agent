@@ -21,7 +21,7 @@ class AdventureImageGenerator(ServerSettingsFieldGenerator):
         generation_config: Optional[dict] = None,
     ) -> Block:
         server_settings = get_server_settings(context)
-        theme = get_theme(server_settings.camp_image_theme, context)
+        theme = get_theme(server_settings.adventure_image_theme, context)
         generator = get_image_generator(theme)
         task = generator.request_adventure_image_generation(context)
         task.wait()
