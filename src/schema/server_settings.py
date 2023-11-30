@@ -363,7 +363,7 @@ Can include descriptions of genre, characters, specific items and locations that
         default=False,
         label="Generate Music",
         description="Should this adventure generate music?",
-        type="checkbox",
+        type="boolean",
         required=False,
     )
 
