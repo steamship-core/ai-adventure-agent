@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import List, Union
 
@@ -17,6 +18,8 @@ def safe_format(text: str, params: dict) -> str:
 def block_to_config_value(block: Block) -> str:
     if block.mime_type == MimeTypes.TXT:
         generated_value = block.raw().decode("utf-8").strip("\"'\n\t ")
+    elif block.mime_type == MimeTypes.JSON:
+        generated_value = json.loads(block.raw())
     else:
         generated_value = block.to_public_url()
     return generated_value

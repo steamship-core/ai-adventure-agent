@@ -126,6 +126,8 @@ class DalleImageGenerator(ImageGenerator):
             prompt=server_settings.profile_image_prompt,
             template_vars={
                 "name": name,
+                "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
                 "description": description,
             },
             image_size="1024x1792",
@@ -153,6 +155,7 @@ class DalleImageGenerator(ImageGenerator):
             prompt=server_settings.quest_background_image_prompt,
             template_vars={
                 "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
                 "description": description,
             },
             image_size="1792x1024",
@@ -176,6 +179,7 @@ class DalleImageGenerator(ImageGenerator):
             prompt=server_settings.camp_image_prompt,
             template_vars={
                 "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
             },
             image_size="1792x1024",
             tags=tags,
@@ -195,6 +199,8 @@ class DalleImageGenerator(ImageGenerator):
             template_vars={
                 "narrative_voice": server_settings.narrative_voice,
                 "name": server_settings.name,
+                "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
             },
             image_size="1024x1792",
             tags=tags,

@@ -157,20 +157,21 @@ class QuestAgent(InterruptiblePythonAgent):
                         QuestIdTag(quest_id=quest.name),
                     ],
                 )
-                num_paragraphs = randint(1, 2)  # noqa: S311
+                num_paragraphs = randint(1, 1)  # noqa: S311
                 prompt = (
-                    f"Describe the first few things they do in a {num_paragraphs} short paragraphs. "
-                    f"DO NOT present them with a challenge or obstacle in this description. Just set the scene."
+                    f"Generate the introduction to the quest in {num_paragraphs} short paragraph(s). "
+                    f"DO NOT present {game_state.player.name} with a challenge or obstacle in this description. "
+                    f"Just set the scene. "
                     f"{game_state.player.name} MUST NOT achieve their goal in the generated paragraphs. "
                     f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
                     f"'{server_settings.narrative_voice}'."
                 )
             else:
                 # here as a fallback
-                num_paragraphs = randint(1, 2)  # noqa: S311
+                num_paragraphs = randint(1, 1)  # noqa: S311
                 prompt = (
                     f"{game_state.player.name} is embarking on a quest. Describe the first few things they do "
-                    f"in a {num_paragraphs} short paragraphs."
+                    f"in {num_paragraphs} short paragraph(s)."
                 )
             block = send_story_generation(
                 prompt=prompt,
@@ -388,6 +389,8 @@ class QuestAgent(InterruptiblePythonAgent):
         # Add minor randomness, but don't drop below 0.05 (2 on d20) or go above 0.95 (20 on d20)
         required_roll_mod = 0.05 * (randint(-2, 2))
         required_roll = min(0.95, max(0.05, required_roll + required_roll_mod))
+        # make sure we don't get weird floating point near values
+        required_roll = round(required_roll, 2)
 
         roll = random()  # noqa: S311
         succeeded = roll > required_roll

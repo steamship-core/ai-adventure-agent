@@ -1,6 +1,6 @@
 from typing import Optional
 
-from steamship import Task
+from steamship import SteamshipError, Task
 from steamship.agents.schema import AgentContext
 
 from generators.server_settings_generator import ServerSettingsGenerator
@@ -57,17 +57,23 @@ class GenerateUsingTitleAndDescriptionGenerator(ServerSettingsGenerator):
     ) -> Task:
         # Assemble a linked list of things to generate
         server_settings = get_server_settings(context)
+        fields_to_generate = []
 
         title = server_settings.name
-        description = server_settings.description
-
         if not title:
-            raise ValueError("No title from which to generate an adventure.")
+            fields_to_generate.append([["name"], True])
+
+        description = server_settings.description
         if not description:
-            raise ValueError("No description from which to generate an adventure.")
+            raise SteamshipError(
+                message="No description from which to generate an adventure."
+            )
 
         last_task = wait_on_task
-        for field_key_path_and_should_block in GENERATE_KEY_PATHS_AND_SHOULD_BLOCK:
+
+        fields_to_generate.extend(GENERATE_KEY_PATHS_AND_SHOULD_BLOCK)
+
+        for field_key_path_and_should_block in fields_to_generate:
             field_key_path = field_key_path_and_should_block[0]
             should_block = field_key_path_and_should_block[1]
 

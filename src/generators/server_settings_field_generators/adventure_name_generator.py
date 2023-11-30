@@ -13,7 +13,23 @@ class AdventureNameGenerator(ServerSettingsFieldGenerator):
 
 Genre: {narrative_voice}
 Writing Style: {narrative_tone}
-Suggested Title:"""
+Suggested Title (only a single, short title! nothing else!):"""
+
+    PROMPT_FROM_STORY = """## Instructions
+
+You are a master editor who creates the best names for short stories.
+
+Please take the following story fragment and turn it into a great story title.
+
+## Story
+
+{source_story_text}
+
+## Title
+
+Remember: You're a master editor great at summarizing. Come up with the best title, and only write a single title; nothing else.
+
+Title: """
 
     @staticmethod
     def get_field() -> str:
@@ -53,10 +69,19 @@ Suggested Title:"""
                 ]
             )
 
+        if variables.get("source_story_text"):
+            prompt = self.PROMPT_FROM_STORY
+        else:
+            prompt = self.PROMPT
+
         task = generator.generate(
             text=safe_format(
-                self.PROMPT,
-                {"narrative_voice": narrative_voice, "narrative_tone": narrative_tone},
+                prompt,
+                {
+                    "narrative_voice": narrative_voice,
+                    "narrative_tone": narrative_tone,
+                    "source_story_text": variables.get("source_story_text"),
+                },
             ),
             streaming=True,
             append_output_to_file=True,

@@ -161,6 +161,9 @@ def get_server_settings(
     )
 
     if _SERVER_SETTINGS_KEY in context.metadata:
+        # logging.info(
+        #     f"Getting CACHED server_settings from workspace {context.client.config.workspace_handle}.",
+        # )
         return context.metadata.get(_SERVER_SETTINGS_KEY)
 
     # Get it from the KV Store
@@ -210,12 +213,16 @@ def save_server_settings(server_settings, context: AgentContext):
     """Save ServerSettings to the KeyValue store."""
 
     logging.debug(
-        f"Saving Server Settings from workspace {context.client.config.workspace_handle}.",
+        f"Saving server_settings from workspace {context.client.config.workspace_handle}.",
         extra={
             AgentLogging.IS_MESSAGE: True,
             AgentLogging.MESSAGE_TYPE: AgentLogging.THOUGHT,
             AgentLogging.MESSAGE_AUTHOR: AgentLogging.AGENT,
         },
+    )
+
+    logging.info(
+        f"Saving server_settings from workspace {context.client.config.workspace_handle} generation_task_id={server_settings.generation_task_id}.",
     )
 
     # Save it to the KV Store

@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from steamship import Block, PluginInstance
@@ -53,6 +54,7 @@ Summary:"""
         generation_config: Optional[dict] = None,
     ) -> Block:
         if variables.get("source_story_text"):
+            logging.info("Generating description from short_story_text")
             prompt = self.PROMPT_FROM_SOURCE_STORY
         else:
             prompt = self.PROMPT_NO_SOURCE_STORY
@@ -64,4 +66,5 @@ Summary:"""
             make_output_public=True,
         )
         block = self.task_to_str_block(task)
+        logging.info(f"Generated description: {block.text}")
         return block
