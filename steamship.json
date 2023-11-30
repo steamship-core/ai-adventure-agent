@@ -1,7 +1,7 @@
 {
 	"type": "package",
 	"handle": "ai-adventure",
-	"version": "2.2.1",
+	"version": "2.2.4",
 	"description": "",
 	"author": "",
 	"entrypoint": "Unused",
