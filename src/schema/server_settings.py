@@ -139,7 +139,7 @@ DEFAULT_THEMES = [
 ]
 
 
-def SettingField(
+def SettingField(  # noqa: N802
     default: Optional[Any],
     label: str,
     description: str,
@@ -173,7 +173,7 @@ def SettingField(
     # TODO can probably make a best-guess on label based on name, but that'd have to happen in post-process.
     # TODO can also probably make a best-guess on type based on variable type
 
-    meta_setting = dict(
+    meta_setting = dict(  # noqa: C408
         label=label,
         description=description,
         type=type,  # todo probably.value when this is an enum
@@ -760,6 +760,16 @@ Can include descriptions of genre, characters, specific items and locations that
     generation_task_id: Optional[str] = Field(
         None,
         description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
+    )
+
+    adventure_image_theme: Optional[str] = SettingField(
+        # VALIDATED
+        label="Adventure Image Theme",
+        description="Use a pre-made theme or add more in the **Image Themes** tab.",
+        type="select",
+        options=DEFAULT_THEMES,
+        default="stable_diffusion_xl_no_loras",
+        include_dynamic_options="image-themes",
     )
 
     camp_image_theme: str = SettingField(
