@@ -298,7 +298,7 @@ class ServerSettings(BaseModel):
 
     # Language Generation Settings - Story telling
     default_story_model: str = SettingField(
-        default="gpt-4-1106-preview",
+        default="gpt-3.5-turbo",
         label="Story LLM Model",
         description="Model used to generate story text.",
         type="select",
@@ -309,6 +309,10 @@ class ServerSettings(BaseModel):
             },
             {
                 "value": "gpt-4-1106-preview",
+                "label": "GPT 4 turbo preview",
+            },
+            {
+                "value": "gpt-4",
                 "label": "GPT 4",
             },
         ],
