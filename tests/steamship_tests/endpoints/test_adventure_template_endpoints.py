@@ -130,7 +130,7 @@ def test_generate_character_suggestion(
 @pytest.mark.parametrize(
     "invocable_handler_with_client", [AdventureGameService], indirect=True
 )
-def test_generate_character_image_suggestion(
+def test_generate_character_image_suggestion_dalle(
     invocable_handler_with_client: Tuple[
         Callable[[str, str, Optional[dict]], dict], Steamship
     ]
@@ -139,7 +139,56 @@ def test_generate_character_image_suggestion(
     task_dict = invocable_handler(
         "POST",
         "generate_suggestion",
-        {"field_name": "name", "field_key_path": ["characters", 0, "image"]},
+        {
+            "field_name": "name",
+            "field_key_path": ["characters", 0, "image"],
+            "unsaved_server_settings": {
+                "profile_image_theme": "dall_e_2_neon_cyberpunk",
+                "characters": [
+                    {
+                        "name": "Mr. Meatball",
+                        "description": "Giant friendly monster made of meatballs and cheese",
+                    }
+                ],
+            },
+        },
+    )
+    block = Block.parse_obj(task_dict.get("data"))
+
+    url = f"{client.config.api_base}block/{block.id}/raw"
+    response = requests.get(url)
+    assert response.ok
+
+
+@pytest.mark.parametrize(
+    "invocable_handler_with_client", [AdventureGameService], indirect=True
+)
+def test_generate_character_image_suggestion_stable_diffusion(
+    invocable_handler_with_client: Tuple[
+        Callable[[str, str, Optional[dict]], dict], Steamship
+    ]
+):
+    invocable_handler, client = invocable_handler_with_client
+    task_dict = invocable_handler(
+        "POST",
+        "generate_suggestion",
+        {
+            "field_name": "name",
+            "field_key_path": ["characters", 1, "image"],
+            "unsaved_server_settings": {
+                "profile_image_theme": "stable_diffusion_xl_no_loras",
+                "characters": [
+                    {
+                        "name": "Mr. Meatball",
+                        "description": "Giant friendly monster made of meatballs and cheese",
+                    },
+                    {
+                        "name": "Mike Mechanic",
+                        "description": "strong (handsome) blue-haired, always wears overalls",
+                    },
+                ],
+            },
+        },
     )
     block = Block.parse_obj(task_dict.get("data"))
 

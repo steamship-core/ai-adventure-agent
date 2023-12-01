@@ -29,3 +29,10 @@ class ImageGenerator(BaseModel, ABC):
     @abstractmethod
     def request_adventure_image_generation(self, context: AgentContext) -> Task:
         pass
+
+    @abstractmethod
+    def request_character_image_generation(
+        self, name: str, description: str, context: AgentContext
+    ) -> Task:
+        """Request character image generation. This is for static generation from the editor."""
+        pass
