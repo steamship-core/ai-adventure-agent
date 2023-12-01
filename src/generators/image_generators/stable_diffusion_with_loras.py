@@ -145,6 +145,28 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         task.wait()
         return task
 
+    def request_character_image_generation(
+        self, name: str, description: str, context: AgentContext
+    ) -> Task:
+        server_settings = get_server_settings(context)
+        task = self.generate(
+            context=context,
+            theme_name=server_settings.profile_image_theme,
+            prompt=server_settings.profile_image_prompt,
+            negative_prompt=server_settings.profile_image_negative_prompt,
+            template_vars={
+                "name": name,
+                "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
+                "description": description,
+            },
+            image_size="portrait_4_3",
+            tags=[],  # no tags, as this shouldn't be used in chathistory for anything else (at the moment)
+        )
+
+        task.wait()
+        return task
+
     def request_scene_image_generation(
         self, description: str, context: AgentContext
     ) -> Task:

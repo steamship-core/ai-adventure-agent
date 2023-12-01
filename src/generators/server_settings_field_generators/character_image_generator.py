@@ -19,7 +19,12 @@ class CharacterImageGenerator(ServerSettingsFieldGenerator):
         context: AgentContext,
         generation_config: Optional[dict] = None,
     ) -> Block:
+
+        name = variables.get("this_name", "")
+        description = variables.get("this_description", "")
         generator = get_profile_image_generator(context)
-        task = generator.request_profile_image_generation(context)
+        task = generator.request_character_image_generation(
+            name=name, description=description, context=context
+        )
         task.wait()
         return task.output.blocks[0]
