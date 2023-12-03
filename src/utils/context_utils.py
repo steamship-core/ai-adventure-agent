@@ -377,15 +377,13 @@ def get_function_capable_llm(
     if not generator:
         # Lazily create
         server_settings: ServerSettings = get_server_settings(context)
-        game_state = get_game_state(context)
-        preferences = game_state.preferences
 
         open_ai_models = ["gpt-3.5-turbo", "gpt-4-1106-preview", "gpt-4"]
 
         model_name = server_settings._select_model(
             open_ai_models,
-            default=server_settings.default_story_model,
-            preferred=preferences.narration_model,
+            default=server_settings.default_function_capable_llm_model,
+            preferred="gpt-4",
         )
 
         plugin_handle = None
