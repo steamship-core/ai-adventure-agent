@@ -21,7 +21,6 @@ import logging
 from typing import List, Optional, Union
 
 from steamship import Block, PluginInstance
-from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
@@ -38,6 +37,7 @@ _FUNCTION_CAPABLE_LLM = (
 )
 _BACKGROUND_MUSIC_GENERATOR_KEY = "background-music-generator"
 _NARRATION_GENERATOR_KEY = "narration-generator"
+_QUEST_GENERATOR_KEY = "quest-arc-generator"
 _SERVER_SETTINGS_KEY = "server-settings"
 _GAME_STATE_KEY = "user-settings"
 
@@ -97,6 +97,33 @@ def get_story_text_generator(
         )
 
         context.metadata[_STORY_GENERATOR_KEY] = generator
+
+    return generator
+
+
+def get_quest_arc_generator(
+    context: AgentContext, default: Optional[PluginInstance] = None
+) -> Optional[PluginInstance]:
+    generator = context.metadata.get(_QUEST_GENERATOR_KEY, default)
+
+    if not generator:
+        # Lazily create
+        server_settings: ServerSettings = get_server_settings(context)
+
+        # Hard coded.
+        model_name = "gpt-4"
+        plugin_handle = "gpt-4"
+
+        generator = context.client.use_plugin(
+            plugin_handle,
+            config={
+                "model": model_name,
+                "max_tokens": server_settings.default_story_max_tokens,
+                "temperature": server_settings.default_story_temperature,
+            },
+        )
+
+        context.metadata[_QUEST_GENERATOR_KEY] = generator
 
     return generator
 
@@ -343,14 +370,40 @@ def switch_history_to_current_quest(
 
 
 def get_function_capable_llm(
-    context: AgentContext, default: Optional[ChatLLM] = None  # noqa: F821
-) -> Optional[ChatLLM]:  # noqa: F821
-    llm = context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
-    if not llm:
-        # Lazy create
-        llm = ChatOpenAI(context.client)
-        context.metadata[_FUNCTION_CAPABLE_LLM] = llm
-    return llm
+    context: AgentContext, default: Optional[PluginInstance] = None
+) -> Optional[PluginInstance]:
+    generator = context.metadata.get(_FUNCTION_CAPABLE_LLM, default)
+
+    if not generator:
+        # Lazily create
+        server_settings: ServerSettings = get_server_settings(context)
+        game_state = get_game_state(context)
+        preferences = game_state.preferences
+
+        open_ai_models = ["gpt-3.5-turbo", "gpt-4-1106-preview", "gpt-4"]
+
+        model_name = server_settings._select_model(
+            open_ai_models,
+            default=server_settings.default_story_model,
+            preferred=preferences.narration_model,
+        )
+
+        plugin_handle = None
+        if model_name in open_ai_models:
+            plugin_handle = "gpt-4"
+
+        generator = context.client.use_plugin(
+            plugin_handle,
+            config={
+                "model": model_name,
+                "max_tokens": server_settings.default_function_capable_llm_max_tokens,
+                "temperature": server_settings.default_function_capable_llm_temperature,
+            },
+        )
+
+        context.metadata[_FUNCTION_CAPABLE_LLM] = generator
+
+    return generator
 
 
 def _key_for_question(blocks: List[Block], key: Optional[str] = None) -> str:

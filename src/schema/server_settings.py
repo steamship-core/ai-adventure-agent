@@ -229,7 +229,7 @@ class ServerSettings(BaseModel):
     """
 
     # Language Generation Settings - Function calling
-    default_function_capable_llm_model: str = Field("gpt-3.5-turbo", description="")
+    default_function_capable_llm_model: str = Field("gpt-4", description="")
     default_function_capable_llm_temperature: float = Field(0.0, description="")
     default_function_capable_llm_max_tokens: int = Field(512, description="")
 
