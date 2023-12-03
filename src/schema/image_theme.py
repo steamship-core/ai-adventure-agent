@@ -30,7 +30,7 @@ class ImageTheme(BaseModel):
 
     def make_prompt(self, prompt: str, prompt_params: Optional[dict] = None):
         """Applies the included suffixes and then interpolates any {referenced} variables."""
-        template = f"{self.prompt_prefix or ''}{prompt}{self.prompt_suffix or ''}"
+        template = f"{self.prompt_prefix or ''} {prompt} {self.prompt_suffix or ''}"
         return safe_format(template, prompt_params or {})
 
     @property

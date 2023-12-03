@@ -39,7 +39,7 @@ Character Physical Description (one line):"""
                     "short_description": variables.get("short_description"),
                     "narrative_voice": variables.get("narrative_voice"),
                     "narrative_tone": variables.get("narrative_tone"),
-                    "this_name": variables.get("this_index"),
+                    "this_name": variables.get("this_name"),
                     "this_tagline": variables.get("this_tagline"),
                     "this_background": variables.get("this_background"),
                 },
