@@ -28,15 +28,10 @@ from utils.tags import CharacterTag, InstructionsTag, StoryContextTag, TagKindEx
 def _is_allowed_by_moderation(user_input: str, openai_api_key: str) -> bool:
     start = time.perf_counter()
     openai.api_key = openai_api_key
-    try:
-        moderation = openai.Moderation.create(input=user_input)
-        result = moderation["results"][0]["flagged"]
-        logging.debug(f"One moderation: {time.perf_counter() - start}")
-        return not result
-    except Exception as e:
-        if "flagged" in str(e):
-            return False
-        return True
+    moderation = openai.Moderation.create(input=user_input)
+    result = moderation["results"][0]["flagged"]
+    logging.debug(f"One moderation: {time.perf_counter() - start}")
+    return not result
 
 
 class OnboardingAgent(InterruptiblePythonAgent):
