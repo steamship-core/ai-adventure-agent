@@ -125,6 +125,10 @@ class AdventureGameService(AgentService):
             "pNInz6obpgDQGcFmaJgB",
             description="[Optional] ElevenLabs voice ID (default: Adam)",
         )
+        openai_api_key: str = Field(
+            "",
+            description="An openAI API key to use. If left default, will use Steamship's API key.",
+        )
 
     config: BasicAgentServiceConfig
     """The configuration block that users who create an instance of this agent will provide."""
@@ -198,7 +202,11 @@ class AdventureGameService(AgentService):
         )
 
         self.add_mixin(
-            OnboardingMixin(client=self.client, agent_service=cast(AgentService, self))
+            OnboardingMixin(
+                client=self.client,
+                agent_service=cast(AgentService, self),
+                openai_api_key=self.config.openai_api_key,
+            )
         )
 
         self.add_mixin(
@@ -209,7 +217,10 @@ class AdventureGameService(AgentService):
         function_capable_llm = ChatOpenAI(self.client)
 
         self.onboarding_agent = OnboardingAgent(
-            client=self.client, tools=[], llm=function_capable_llm
+            client=self.client,
+            tools=[],
+            llm=function_capable_llm,
+            openai_api_key=self.config.openai_api_key,
         )
         self.quest_agent = QuestAgent(tools=[], llm=function_capable_llm)
         self.camp_agent = CampAgent(llm=function_capable_llm)

@@ -3,7 +3,6 @@ import time
 from typing import Optional
 
 from steamship import Steamship, SteamshipError
-from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.service.agent_service import AgentService
 from steamship.invocable import post
 from steamship.invocable.package_mixin import PackageMixin
@@ -23,17 +22,21 @@ class OnboardingMixin(PackageMixin):
 
     agent_service: AgentService
     client: Steamship
+    openai_api_key: str
 
-    def __init__(self, client: Steamship, agent_service: AgentService):
+    def __init__(
+        self, client: Steamship, agent_service: AgentService, openai_api_key: str
+    ):
         self.client = client
         self.agent_service = agent_service
+        self.openai_api_key = openai_api_key
 
     @post("/set_character_name")
     def set_character_name(self, name: str, **kwargs):
         """Set the character name (moderation is enabled)"""
         context = self.agent_service.build_default_context(**kwargs)
 
-        if not _is_allowed_by_moderation(name, context):
+        if not _is_allowed_by_moderation(name, self.openai_api_key):
             raise SteamshipError(
                 "Supplied 'name' was rejected by game's moderation filter. Please try again."
             )
@@ -47,7 +50,7 @@ class OnboardingMixin(PackageMixin):
         """Set the character background (moderation is enabled)."""
         context = self.agent_service.build_default_context(**kwargs)
 
-        if not _is_allowed_by_moderation(background, context):
+        if not _is_allowed_by_moderation(background, self.openai_api_key):
             raise SteamshipError(
                 "Supplied 'background' was rejected by game's moderation filter. Please try again."
             )
@@ -66,7 +69,7 @@ class OnboardingMixin(PackageMixin):
         """Set the character description (moderation is enabled)."""
         context = self.agent_service.build_default_context(**kwargs)
 
-        if not _is_allowed_by_moderation(description, context):
+        if not _is_allowed_by_moderation(description, self.openai_api_key):
             raise SteamshipError(
                 "Supplied 'description' was rejected by game's moderation filter. Please try again."
             )
@@ -77,41 +80,58 @@ class OnboardingMixin(PackageMixin):
         if game_state.player.description and game_state.player.name:
             if (not game_state.image_generation_requested()) or update:
                 if image_gen := get_profile_image_generator(context):
+                    start = time.perf_counter()
                     task = image_gen.request_profile_image_generation(context=context)
                     character_image_block = task.wait().blocks[0]
                     game_state.player.image = character_image_block.raw_data_url
                     game_state.profile_image_url = character_image_block.raw_data_url
+                    logging.debug(
+                        f"Onboarding endpoint image gen: {time.perf_counter()-start}"
+                    )
 
         save_game_state(game_state, context)
 
     @post("/complete_onboarding")
     def complete_onboarding(self, **kwargs) -> bool:
         """Attempts to complete onboarding."""
+        start = time.perf_counter()
         try:
             context = self.agent_service.build_default_context()
             game_state = get_game_state(context)
 
             # TODO: streamline for mass validation ?
             moderation_start = time.perf_counter()
-            self.set_character_name(game_state.player.name)
-            self.set_character_background(game_state.player.background)
-            self.set_character_description(game_state.player.description)
-            print(f"Moderation time: {time.perf_counter() - moderation_start}")
-
-            game_state = get_game_state(context)
+            if not _is_allowed_by_moderation(
+                game_state.player.name, self.openai_api_key
+            ):
+                raise SteamshipError(
+                    "Supplied 'name' was rejected by game's moderation filter. Please try again."
+                )
+            if not _is_allowed_by_moderation(
+                game_state.player.background, self.openai_api_key
+            ):
+                raise SteamshipError(
+                    "Supplied 'background' was rejected by game's moderation filter. Please try again."
+                )
+            if not _is_allowed_by_moderation(
+                game_state.player.description, self.openai_api_key
+            ):
+                raise SteamshipError(
+                    "Supplied 'description' was rejected by game's moderation filter. Please try again."
+                )
+            logging.debug(f"Moderation time: {time.perf_counter() - moderation_start}")
 
             if game_state.active_mode != ActiveMode.ONBOARDING:
                 raise SteamshipError(
                     message=f"Unable to complete onboarding -- it appears to be complete! Currently in state {game_state.active_mode.value}"
                 )
 
-            # TODO: This should really be from the agent service
-            function_capable_llm = ChatOpenAI(self.client)
             self.onboarding_agent = OnboardingAgent(
-                client=self.client, tools=[], llm=function_capable_llm
+                client=self.client, tools=[], openai_api_key=self.openai_api_key
             )
-
+            logging.debug(f"Before agent: {time.perf_counter() - start}")
             self.onboarding_agent.run(context)
+            logging.debug(f"After agent: {time.perf_counter() - start}")
             return True
         except RunNextAgentException:
             return game_state.chat_history_for_onboarding_complete
