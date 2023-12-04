@@ -10,7 +10,7 @@ from steamship.invocable import (
 )
 from steamship.invocable.invocable import Invocable
 from steamship.invocable.lambda_handler import create_safe_handler as _create_handler
-from steamship_tests.test_utils import get_steamship_client, random_name
+from test_utils import get_steamship_client, random_name
 
 
 @pytest.fixture()

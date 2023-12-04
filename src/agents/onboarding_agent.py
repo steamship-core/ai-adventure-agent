@@ -1,3 +1,5 @@
+import time
+
 from steamship import Block, MimeTypes, Tag
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
@@ -23,10 +25,12 @@ from utils.tags import CharacterTag, InstructionsTag, StoryContextTag, TagKindEx
 
 
 def _is_allowed_by_moderation(user_input: str, context: AgentContext) -> bool:
+    start = time.perf_counter()
     generator = get_story_text_generator(context)
     try:
         task = generator.generate(text=user_input)
         task.wait()
+        print(f"One moderation: {time.perf_counter() - start}")
         return True
     except Exception as e:
         if "flagged" in str(e):

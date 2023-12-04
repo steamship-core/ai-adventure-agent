@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Optional
 
 from steamship import Steamship, SteamshipError
@@ -91,9 +92,11 @@ class OnboardingMixin(PackageMixin):
             game_state = get_game_state(context)
 
             # TODO: streamline for mass validation ?
+            moderation_start = time.perf_counter()
             self.set_character_name(game_state.player.name)
             self.set_character_background(game_state.player.background)
             self.set_character_description(game_state.player.description)
+            print(f"Moderation time: {time.perf_counter() - moderation_start}")
 
             game_state = get_game_state(context)
 
