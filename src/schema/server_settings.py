@@ -438,6 +438,27 @@ Can include descriptions of genre, characters, specific items and locations that
                 "description": "Other information or instructions for the story of this quest, which will not be shown to the user.",
                 "type": "longtext",
             },
+            {
+                "name": "challenges",
+                "label": "Problems",
+                "description": "Optional ordered list of problems that will be encountered on this quest.",
+                "type": "list",
+                "listof": "object",
+                "listSchema": [
+                    {
+                        "name": "name",
+                        "label": "Name",
+                        "description": "Name of the challenge.",
+                        "type": "text",
+                    },
+                    {
+                        "name": "description",
+                        "label": "Description",
+                        "description": "Describe the challenge.",
+                        "type": "longtext",
+                    },
+                ],
+            }
         ],
         required=True,
     )

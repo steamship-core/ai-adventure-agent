@@ -5,7 +5,7 @@ from enum import Enum
 from random import randint, random
 from typing import Dict, List
 
-from steamship import Tag
+from steamship import SteamshipError, Tag
 from steamship.agents.logging import AgentLogging
 from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
@@ -15,7 +15,7 @@ from generators.generator_context_utils import (
     get_quest_background_image_generator,
 )
 from schema.game_state import GameState
-from schema.quest import Quest, QuestDescription
+from schema.quest import Quest, QuestChallenge, QuestDescription
 from schema.server_settings import Difficulty
 from tools.end_quest_tool import EndQuestTool
 from utils.context_utils import (
@@ -114,6 +114,19 @@ class QuestAgent(InterruptiblePythonAgent):
             logging.warning("QUEST DESCRIPTION IS NONE.")
             quest_description = None
 
+        # copy challenge description over to quest
+        if quest_description:
+            # TODO(dougreid): should we give these things IDs so that we only copy new ones?
+            # or is this logic OK as a placeholder?
+            if len(quest_description.challenges) != len(quest.challenges):
+                for challenge in quest_description.challenges:
+                    quest.challenges.append(
+                        QuestChallenge(
+                            name=challenge.name,
+                            description=challenge.description,
+                        )
+                    )
+
         logging.debug(
             "Running Quest Agent",
             extra={
@@ -205,14 +218,13 @@ class QuestAgent(InterruptiblePythonAgent):
                 },
             )
 
-        if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
-            quest.user_problem_solutions.append(
-                await_ask(
-                    f"What does {player.name} do next?",
-                    context,
-                    key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
-                )
+        if not quest.all_problems_solved():
+            user_solution = await_ask(
+                f"What does {player.name} do next?",
+                context,
+                key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
             )
+            quest.add_user_solution(user_solution)
             save_game_state(game_state, context)
 
             # Special hack for debugging - allow us to insta-win or insta-lose.
@@ -239,14 +251,13 @@ class QuestAgent(InterruptiblePythonAgent):
                     ):
                         blocks = EndQuestTool().run([], context, failed=True)
                         raise FinishActionException(FinishAction(output=blocks))
-                    quest.user_problem_solutions.pop()
-                    quest.user_problem_solutions.append(
-                        await_ask(
-                            f"What does {player.name} do next?",
-                            context=context,
-                            key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
-                        )
+                    quest.rollback_solution()
+                    user_solution = await_ask(
+                        f"What does {player.name} do next?",
+                        context=context,
+                        key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
                     )
+                    quest.add_user_solution(user_solution)
             except Exception as e:
                 if isinstance(e, FinishActionException):
                     raise e
@@ -282,17 +293,16 @@ class QuestAgent(InterruptiblePythonAgent):
                         )
                     )
 
-            if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
+            if not quest.all_problems_solved():
                 self.create_problem(
                     game_state, context, quest, quest_description=quest_description
                 )
-                quest.user_problem_solutions.append(
-                    await_ask(
-                        f"What does {player.name} do next?",
-                        context,
-                        key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
-                    )
+                user_solution = await_ask(
+                    f"What does {player.name} do next?",
+                    context,
+                    key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
                 )
+                quest.add_user_solution(user_solution)
 
         if not quest.sent_outro:
             quest.sent_outro = True
@@ -334,7 +344,33 @@ class QuestAgent(InterruptiblePythonAgent):
         quest: Quest,
         quest_description: QuestDescription,
     ):
-        if len(quest.user_problem_solutions) == quest.num_problems_to_encounter - 1:
+        if len(quest.challenges) > 0:
+            # this is a specified-challenges type of quest
+            solved_challenges = sum([1 if x.solution else 0 for x in quest.challenges])
+            total_challenges = len(quest.challenges)
+            if (
+                isinstance(solved_challenges, int)
+                and solved_challenges < total_challenges
+            ):
+                current_challenge = quest.challenges[solved_challenges]
+                num_paragraphs = randint(1, 2)  # noqa: S311
+                server_settings = get_server_settings(context=context)
+                prompt = (
+                    f"Tell the story using a tone of '{server_settings.narrative_tone}' with a narrative voice of "
+                    f"{server_settings.narrative_voice} of {game_state.player.name} encountering a challenge on their "
+                    f"current quest ({quest_description.location}, {quest_description.goal}).\n"
+                    f"The challenge should be: {current_challenge.name} - {current_challenge.description}.\n"
+                    f"DO NOT solve the challenge for {game_state.player.name}.\n"
+                    f"The story MUST continue the current story arc of the quest. The story SHOULD allow "
+                    f"{game_state.player.name} to decide how to attempt to solve the challenge.\n"
+                    f"Write exactly {num_paragraphs} short paragraph(s) in the tone of {server_settings.narrative_tone} "
+                    f"with {server_settings.narrative_voice}."
+                )
+            else:
+                raise SteamshipError(
+                    "trying to solve more than the number of challenges."
+                )
+        elif len(quest.user_problem_solutions) == quest.num_problems_to_encounter - 1:
             # if last problem, try to make it make sense for wrapping things up
             num_paragraphs = randint(1, 2)  # noqa: S311
             server_settings = get_server_settings(context=context)
@@ -414,7 +450,7 @@ class QuestAgent(InterruptiblePythonAgent):
             required_roll = likelihood_map[Likelihood.UNKNOWN]
 
         # Add minor randomness, but don't drop below 0.05 (2 on d20) or go above 0.95 (20 on d20)
-        required_roll_mod = 0.05 * (randint(-2, 2))
+        required_roll_mod = 0.05 * (randint(-2, 2))  # noqa: S311
         required_roll = min(0.95, max(0.05, required_roll + required_roll_mod))
         # make sure we don't get weird floating point near values
         required_roll = round(required_roll, 2)

@@ -1,12 +1,52 @@
+import uuid
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
 from schema.characters import Item
 
+# from schema.server_settings import SettingField
+
+
+class QuestChallengeDescription(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
+    name: Optional[str] = Field(
+        default="",
+        description="Short name for the challenge",
+    )
+
+    description: Optional[str] = Field(
+        default="",
+        description="Description of the challenge",
+    )
+
+
+class QuestChallenge(QuestChallengeDescription):
+    class Config:
+        arbitrary_types_allowed = True
+
+    id: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description="unique identifier for the challenge",
+    )
+
+    attempts: int = Field(
+        default=0,
+        description="Number of attempts at solution",
+    )
+
+    solution: Optional[str] = Field(
+        default=None, description="User-provided solution to the challenge"
+    )
+
 
 class QuestDescription(BaseModel):
     """The sketch of a quest the user will go on"""
+
+    class Config:
+        arbitrary_types_allowed = True
 
     goal: str = Field(description="The goal of the quest")
 
@@ -17,6 +57,11 @@ class QuestDescription(BaseModel):
     other_information: Optional[str] = Field(
         None,
         description="Other information or instructions for the story of this quest, which will not be shown to the user.",
+    )
+
+    challenges: Optional[List[QuestChallengeDescription]] = Field(
+        default=[],
+        description="An ordered list of challenges that will be encountered on this quest.",
     )
 
 
@@ -91,3 +136,34 @@ class Quest(BaseModel):
     social_media_summary: Optional[str] = Field(
         None, description="A social-media friendly summary"
     )
+
+    challenges: Optional[List[QuestChallenge]] = Field(
+        default=[],
+        description="A list of challenges that MUST be encountered on this quest.",
+    )
+
+    def all_problems_solved(self) -> bool:
+        if len(self.challenges) > 0:
+            solved_challenges = sum([1 if x.solution else 0 for x in self.challenges])
+            return solved_challenges == len(self.challenges)
+        else:
+            return len(self.user_problem_solutions) == self.num_problems_to_encounter
+
+    def add_user_solution(self, user_solution: str):
+        self.user_problem_solutions.append(user_solution)
+        if len(self.challenges) > 0:
+            solved_challenges = sum([1 if x.solution else 0 for x in self.challenges])
+            if isinstance(solved_challenges, int) and solved_challenges < len(
+                self.challenges
+            ):
+                self.challenges[solved_challenges].attempts = (
+                    self.challenges[solved_challenges].attempts + 1
+                )
+                self.challenges[solved_challenges].solution = user_solution
+
+    def rollback_solution(self):
+        self.user_problem_solutions.pop()
+        if len(self.challenges) > 0:
+            solved_challenges = sum([1 if x.solution else 0 for x in self.challenges])
+            if isinstance(solved_challenges, int):
+                self.challenges[solved_challenges - 1].solution = None
