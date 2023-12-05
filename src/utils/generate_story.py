@@ -1,3 +1,5 @@
+import sys
+
 import yaml
 from steamship import Steamship
 
@@ -44,6 +46,9 @@ class StoryGenerator:
 
 
 if __name__ == "__main__":
+    media_name = "Captain America"
+    if len(sys.argv) > 1:
+        media_name = sys.argv[1]
     with Steamship.temporary_workspace() as client:
         story_gen = StoryGenerator(client)
-        print(yaml.dump(story_gen.generate_story("Captain America")))
+        print(yaml.dump(story_gen.generate_story(media_name)))
