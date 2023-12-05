@@ -9,15 +9,9 @@ from pydantic_yaml import parse_yaml_raw_as
 from steamship import Steamship, SteamshipError
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
-from steamship.agents.mixins.transports.slack import (
-    SlackTransport,
-    SlackTransportConfig,
-)
+from steamship.agents.mixins.transports.slack import SlackTransport
 from steamship.agents.mixins.transports.steamship_widget import SteamshipWidgetTransport
-from steamship.agents.mixins.transports.telegram import (
-    TelegramTransport,
-    TelegramTransportConfig,
-)
+from steamship.agents.mixins.transports.telegram import TelegramTransport
 from steamship.agents.schema import Agent, AgentContext, Tool
 from steamship.data import TagKind
 from steamship.data.block import Block, StreamState
@@ -151,26 +145,6 @@ class AdventureGameService(AgentService):
         self.add_mixin(
             SteamshipWidgetTransport(
                 client=self.client,
-                agent_service=cast(AgentService, self),
-            )
-        )
-
-        # Support Slack
-        self.add_mixin(
-            SlackTransport(
-                client=self.client,
-                config=SlackTransportConfig(),
-                agent_service=cast(AgentService, self),
-            )
-        )
-
-        # Support Telegram
-        self.add_mixin(
-            TelegramTransport(
-                client=self.client,
-                config=TelegramTransportConfig(
-                    bot_token=self.config.telegram_bot_token
-                ),
                 agent_service=cast(AgentService, self),
             )
         )
