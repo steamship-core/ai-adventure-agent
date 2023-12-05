@@ -11,3 +11,4 @@ logs/
 .pytest_cache
 harness_output/**/*.txt
 harness_output/**/*.md
+src/.steamship/secrets.toml
