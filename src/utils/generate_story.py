@@ -18,14 +18,14 @@ class StoryGenerator:
         return self.generator.generate(text=prompt, streaming=False).wait_until_completed().blocks[0].text
 
     def generate_story(self, media_name: str):
-        characters = self.ask_gpt_min(f"Respond with one name per line.  Who are the main characters associated with \"{media_name}\"?")
+        characters = self.ask_gpt_min(f"Respond with one name per line.  Who are the main characters associated with \"{media_name}\"?  List protagonists first.")
         title = self.ask_gpt_min(f"Come up with the title for an unpublished \"{media_name}\" story involving the characters:\n\n{characters}")
         description = self.ask_gpt_min(f"Come up with three paragraphs describing the beginning of a plot for the unpublished \"{media_name}\" story \"{title}\" involving the characters:\n\n{characters}")
         summary = self.ask_gpt_min(f"Come up with a one sentence summary of this story:\n\n{description}")
 
         character_names = characters.split("\n")
         chars = []
-        for character_name in character_names[:3]:
+        for character_name in character_names[:1]:
             tagline = self.ask_gpt_min(f"Describe the character \"{character_name}\" from \"{media_name}\" in one sentence.")
             char = {
                 "name": character_name,
