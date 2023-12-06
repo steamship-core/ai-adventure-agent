@@ -234,13 +234,6 @@ class ServerSettings(BaseModel):
         type="longtext",
     )
 
-    media_name: Optional[str] = SettingField(
-        default=None,
-        label="Generate from known literary reference",
-        description="Optional. If you provide a known story or literary universe, we'll generate the adventure from that.  E.g., \"Sherlock Holmes\" or \"The Iliad\"",
-        type="text"
-    )
-
     image: Optional[str] = SettingField(
         default="",
         label="Image",
