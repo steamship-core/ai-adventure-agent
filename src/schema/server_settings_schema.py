@@ -57,26 +57,7 @@ STORY_OPTIONS = [
     s.min_problems_per_quest,
     s.problems_per_quest_scale,
     s.max_additional_problems_per_quest,
-    {
-        # TODO: Validate float
-        "name": "problem_solution_difficulty",
-        "label": "Problem difficulty scale factor",
-        "description": """The difficulty scale factor applied to the LLM’s estimation of how likely a user’s solution is to solve the problem.  User’s random number between (0,1) must exceed the modified value to succeed.
-
-Base Values:
-- VERY UNLIKELY=0.9
-- UNLIKELY = 0.7
-- LIKELY = 0.3
-- VERY LIKELY = 0.1
-
-Difficulty modified value:
-1 - ((1-BASE_VALUE) / problem_solution_difficulty)
-
-Result - Doubling difficulty makes success 1/2 as likely; halving difficulty makes success twice as likely.""",
-        "type": "float",
-        "default": 2,
-        "min": 1,
-    },
+    s.difficulty,
     {
         "name": "advanced_divider",
         "label": "Large Language Model Settings",

@@ -462,10 +462,25 @@ Can include descriptions of genre, characters, specific items and locations that
         min=1,
     )
 
-    # TODO (PR) this is different than problem_solution_difficulty, is this getting used?
-    difficulty: Difficulty = Field(
+    difficulty: Difficulty = SettingField(
+        label="Problem Difficulty",
         default=Difficulty.NORMAL,
         description="""The difficulty factor applied to the AI’s estimation of how likely a user’s solution is to solve the problem. This affects required dice rolls.""",
+        type="select",
+        options=[
+            {
+                "value": "easy",
+                "label": "Easy",
+            },
+            {
+                "value": "normal",
+                "label": "Normal",
+            },
+            {
+                "value": "hard",
+                "label": "Hard",
+            },
+        ],
     )
 
     # Energy Management

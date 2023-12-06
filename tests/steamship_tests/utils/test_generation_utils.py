@@ -1,3 +1,4 @@
+import toml
 from steamship import Block, File, Steamship, Tag
 from steamship.agents.schema import AgentContext
 from steamship.data.tags.tag_constants import ChatTag, RoleTag, TagKind, TagValueKey
@@ -160,7 +161,8 @@ def create_test_game_state(context: AgentContext) -> GameState:
 
 
 def run_onboarding(context: AgentContext):
-    agent = OnboardingAgent(tools=[])
+    secrets = toml.load("../../src/.steamship/secrets.toml")
+    agent = OnboardingAgent(tools=[], openai_api_key=secrets["openai_api_key"])
     try:
         agent.run(context)
     except RunNextAgentException:

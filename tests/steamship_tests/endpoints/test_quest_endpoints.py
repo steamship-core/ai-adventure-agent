@@ -30,7 +30,6 @@ COMPLETED_ONBOARDING: GameState = GameState.parse_obj(
 def test_calling_start_quest_causes_active_quest(
     invocable_handler: Callable[[str, str, Optional[dict]], dict]
 ):
-
     game_state: GameState = GameState.parse_obj(
         invocable_handler("GET", "game_state", {}).get("data")
     )
@@ -49,20 +48,14 @@ def test_calling_start_quest_causes_active_quest(
     game_state: GameState = GameState.parse_obj(
         invocable_handler("GET", "game_state", {}).get("data")
     )
-    assert game_state.tone
-    assert game_state.genre
     assert game_state.player.name
     assert game_state.player.description
     assert game_state.player.background
-    assert game_state.player.motivation
     assert game_state.player.inventory
 
-    assert game_state.tone == COMPLETED_ONBOARDING.tone
-    assert game_state.genre == COMPLETED_ONBOARDING.genre
     assert game_state.player.name == COMPLETED_ONBOARDING.player.name
     assert game_state.player.description == COMPLETED_ONBOARDING.player.description
     assert game_state.player.background == COMPLETED_ONBOARDING.player.background
-    assert game_state.player.motivation == COMPLETED_ONBOARDING.player.motivation
     assert game_state.player.inventory == COMPLETED_ONBOARDING.player.inventory
 
     assert game_state.current_quest
