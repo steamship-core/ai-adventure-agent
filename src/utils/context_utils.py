@@ -142,6 +142,9 @@ def get_audio_narration_generator(
         config = {}
         if plugin_handle == "elevenlabs":
             config["voice_id"] = server_settings.narration_voice_id
+            if server_settings.narration_multilingual:
+                config["model_id"] = "eleven_multilingual_v2"
+
         generator = context.client.use_plugin(plugin_handle, config=config)
         context.metadata[_NARRATION_GENERATOR_KEY] = generator
 

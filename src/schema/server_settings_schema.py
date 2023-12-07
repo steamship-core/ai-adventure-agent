@@ -161,7 +161,7 @@ IMAGE_OPTIONS = [
     s.quest_background_image_negative_prompt,
 ]
 
-VOICE_OPTIONS = [s.narration_voice]
+VOICE_OPTIONS = [s.narration_multilingual, s.narration_voice]
 
 MUSIC_OPTIONS = [
     s.generate_music,
