@@ -503,7 +503,7 @@ Can include descriptions of genre, characters, specific items and locations that
     narration_multilingual: Optional[bool] = SettingField(
         default=False,
         label="Narration includes non-English?",
-        description="Set to true if the story include non-English content?",
+        description="Set to true if the story include non-English content",
         type="boolean",
         required=False,
     )
