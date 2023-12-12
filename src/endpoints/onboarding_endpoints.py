@@ -92,13 +92,30 @@ class OnboardingMixin(PackageMixin):
         save_game_state(game_state, context)
 
     @post("/complete_onboarding")
-    def complete_onboarding(self, **kwargs) -> bool:
+    def complete_onboarding(self, **kwargs) -> bool:  # noqa: C901
         """Attempts to complete onboarding."""
         start = time.perf_counter()
         try:
             context = self.agent_service.build_default_context()
             game_state = get_game_state(context)
 
+            # These fields are required for the game to continue. If we're calling complete_onboarding and they're not
+            # set, we should fail early.
+            if not game_state.player.name:
+                raise SteamshipError(
+                    "Unable to complete onboarding: player name was None"
+                )
+            if not game_state.player.description:
+                raise SteamshipError(
+                    "Unable to complete onboarding: player description was None"
+                )
+            if not game_state.player.background:
+                raise SteamshipError(
+                    "Unable to complete onboarding: player background was None"
+                )
+
+            # These fields must pass validation for the game to continue without later problems.
+            # If they don't pass validation, then we should fail early.
             # TODO: streamline for mass validation ?
             moderation_start = time.perf_counter()
             if not _is_allowed_by_moderation(
