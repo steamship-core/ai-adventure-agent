@@ -117,6 +117,11 @@ DEFAULT_THEMES = [
         "imageSample": "/image_samples/pixel_art_3.png",
     },
     {
+        "value": "stable_diffusion_xl_no_loras",
+        "label": "Stable Diffusion XL",
+        "imageSample": "/image_samples/stable_diffusion_xl_no_loras.png",
+    },
+    {
         "value": "dall_e_2_standard",
         "label": "DALL-E 2",
         "imageSample": "/image_samples/dall_e_2_standard.png",
@@ -139,7 +144,7 @@ DEFAULT_THEMES = [
 ]
 
 
-def SettingField(
+def SettingField(  # noqa: N802
     default: Optional[Any],
     label: str,
     description: str,
@@ -152,7 +157,12 @@ def SettingField(
     list_schema: Optional[List[Dict]] = None,  # how to represent this?
     requires_approval: Optional[bool] = None,
     required_text: Optional[str] = None,
-    preview_output_type: Optional[str] = None,
+    preview_output_type: Optional[
+        str
+    ] = None,  # TODO: This should eventually just be `supports_preview: bool`
+    suggest_output_type: Optional[
+        str
+    ] = None,  # TODO: This should eventually just be `supports_suggestion: bool`
     approval_requested_field: Optional[str] = None,
     variables_permitted: Optional[Dict[str, str]] = None,
     onboarding_title: Optional[str] = None,
@@ -173,7 +183,7 @@ def SettingField(
     # TODO can probably make a best-guess on label based on name, but that'd have to happen in post-process.
     # TODO can also probably make a best-guess on type based on variable type
 
-    meta_setting = dict(
+    meta_setting = dict(  # noqa: C408
         label=label,
         description=description,
         type=type,  # todo probably.value when this is an enum
@@ -187,6 +197,7 @@ def SettingField(
         requiresApproval=requires_approval,
         requiredText=required_text,
         previewOutputType=preview_output_type,
+        suggestOutputType=suggest_output_type,
         approvalRequestedField=approval_requested_field,
         variablesPermitted=variables_permitted,
         onboardingTitle=onboarding_title,
@@ -240,6 +251,7 @@ class ServerSettings(BaseModel):
         description="Select an image to represent this adventure.",
         type="image",
         required=True,
+        suggest_output_type="image",
         onboarding_title="Please upload or generate a title image.",
         onboarding_subtitle="This is like your movie poster. It will advertise your adventure to others.",
     )
@@ -251,6 +263,7 @@ class ServerSettings(BaseModel):
         description="A catchy one-liner to help your adventure stand out in the discover page",
         type="text",
         required=True,
+        suggest_output_type="short_description",
         onboarding_title="Please write a one-sentence description of your adventure.",
         onboarding_subtitle="This will help players understand what adventure they're about to play.",
     )
@@ -261,6 +274,7 @@ class ServerSettings(BaseModel):
         description="A longer description of this adventure. Go into detail!",
         type="textarea",
         required=True,
+        suggest_output_type="description",
         onboarding_title="Please write a more detailed description of your adventure.",
         onboarding_subtitle="The more detail you provide in your description, the more engaging your AI generated adventure will be.",
     )
@@ -294,6 +308,10 @@ class ServerSettings(BaseModel):
                 "label": "GPT 3.5 Turbo",
             },
             {
+                "value": "gpt-4-1106-preview",
+                "label": "GPT 4 turbo preview",
+            },
+            {
                 "value": "gpt-4",
                 "label": "GPT 4",
             },
@@ -325,6 +343,7 @@ class ServerSettings(BaseModel):
         description="What name will others see this adventure by?",
         type="text",
         required=True,
+        suggest_output_type="name",
         onboarding_title="What is the name of your adventure?",
         onboarding_subtitle="A short and catchy name will help your adventure stand out.",
     )
@@ -336,6 +355,7 @@ class ServerSettings(BaseModel):
         description="What is the writing style of your story? E.g.: Written with drama and heavy intellectual dialogue, like Aaron Sorkin's West Wing.",
         type="text",
         required=True,
+        suggest_output_type="narrative_tone",
         onboarding_title="What is the writing style you want to see?",
         onboarding_subtitle="References to specific and well known styles or storytellers will work best.",
     )
@@ -343,6 +363,7 @@ class ServerSettings(BaseModel):
     adventure_background: Optional[str] = SettingField(
         default="A fantasy world",
         label="Adventure Background",
+        suggest_output_type="adventure_background",
         description="""Description of the background setting in which the adventure will take place.
 
 Can include descriptions of genre, characters, specific items and locations that exist in the world, references to real-world things, etc.""",
@@ -355,13 +376,23 @@ Can include descriptions of genre, characters, specific items and locations that
         description="What is the genre of your story? E.g.: children’s book, young adult novel, fanfic, high literature.",
         type="text",
         required=True,
+        suggest_output_type="narrative_voice",
         onboarding_title="What is the genre of your adventure?",
         onboarding_subtitle="Selecting a short, evocative genre name will help generate a good adventure.",
+    )
+
+    generate_music: Optional[bool] = SettingField(
+        default=False,
+        label="Generate Music",
+        description="Should this adventure generate music?",
+        type="boolean",
+        required=False,
     )
 
     adventure_goal: str = SettingField(
         default="To rid the world of evil",
         label="Adventure Goal",
+        suggest_output_type="adventure_goal",
         description="What is the ultimate goal / motivation of this adventure?",
         type="longtext",
     )
@@ -372,6 +403,7 @@ Can include descriptions of genre, characters, specific items and locations that
         description="Optional. If you wish for your adventure to have a fixed set of quests, define them here.",
         type="list",
         listof="object",
+        suggest_output_type="fixed_quest_arc",
         onboarding_title="Create a series of quests for your adventure.",
         onboarding_subtitle="Adventures are comprised of a series of quests. Auto-generate a few you like -- you can edit them later!",
         list_schema=[
@@ -430,10 +462,25 @@ Can include descriptions of genre, characters, specific items and locations that
         min=1,
     )
 
-    # TODO (PR) this is different than problem_solution_difficulty, is this getting used?
-    difficulty: Difficulty = Field(
+    difficulty: Difficulty = SettingField(
+        label="Problem Difficulty",
         default=Difficulty.NORMAL,
         description="""The difficulty factor applied to the AI’s estimation of how likely a user’s solution is to solve the problem. This affects required dice rolls.""",
+        type="select",
+        options=[
+            {
+                "value": "easy",
+                "label": "Easy",
+            },
+            {
+                "value": "normal",
+                "label": "Normal",
+            },
+            {
+                "value": "hard",
+                "label": "Hard",
+            },
+        ],
     )
 
     # Energy Management
@@ -453,6 +500,14 @@ Can include descriptions of genre, characters, specific items and locations that
     )
 
     # Narration settings
+    narration_multilingual: Optional[bool] = SettingField(
+        default=False,
+        label="Narration includes non-English",
+        description="Set to true if the story include non-English content",
+        type="boolean",
+        required=False,
+    )
+
     narration_voice: AvailableVoice = SettingField(
         default=AvailableVoice.DOROTHY,
         label="Narration Voice",
@@ -760,6 +815,16 @@ Can include descriptions of genre, characters, specific items and locations that
     generation_task_id: Optional[str] = Field(
         None,
         description="The ID of the generation task which represents the terminus of generating the agent's own configuration.",
+    )
+
+    adventure_image_theme: Optional[str] = SettingField(
+        # VALIDATED
+        label="Adventure Image Theme",
+        description="Use a pre-made theme or add more in the **Image Themes** tab.",
+        type="select",
+        options=DEFAULT_THEMES,
+        default="stable_diffusion_xl_no_loras",
+        include_dynamic_options="image-themes",
     )
 
     camp_image_theme: str = SettingField(

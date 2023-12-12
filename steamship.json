@@ -1,7 +1,7 @@
 {
 	"type": "package",
 	"handle": "ai-adventure",
-	"version": "2.1.7",
+	"version": "2.2.9-rc.3",
 	"description": "",
 	"author": "",
 	"entrypoint": "Unused",
@@ -23,6 +23,11 @@
 			"type": "string",
 			"description": "[Optional] ElevenLabs voice ID (default: Adam)",
 			"default": "pNInz6obpgDQGcFmaJgB"
+		},
+		"openai_api_key": {
+			"type": "string",
+			"description": "An openAI API key to use. If left default, will use Steamship's API key.",
+			"default": ""
 		}
 	},
 	"steamshipRegistry": {

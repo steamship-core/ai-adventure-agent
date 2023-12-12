@@ -17,6 +17,7 @@ GENERAL_OPTIONS = [
     s.description,
     s.tags,
     s.image,
+    s.adventure_image_theme,
     {
         "name": "adventure_player_singular_noun",
         "label": "Noun for a 'Player'",
@@ -56,26 +57,7 @@ STORY_OPTIONS = [
     s.min_problems_per_quest,
     s.problems_per_quest_scale,
     s.max_additional_problems_per_quest,
-    {
-        # TODO: Validate float
-        "name": "problem_solution_difficulty",
-        "label": "Problem difficulty scale factor",
-        "description": """The difficulty scale factor applied to the LLM’s estimation of how likely a user’s solution is to solve the problem.  User’s random number between (0,1) must exceed the modified value to succeed.
-
-Base Values:
-- VERY UNLIKELY=0.9
-- UNLIKELY = 0.7
-- LIKELY = 0.3
-- VERY LIKELY = 0.1
-
-Difficulty modified value:
-1 - ((1-BASE_VALUE) / problem_solution_difficulty)
-
-Result - Doubling difficulty makes success 1/2 as likely; halving difficulty makes success twice as likely.""",
-        "type": "float",
-        "default": 2,
-        "min": 1,
-    },
+    s.difficulty,
     {
         "name": "advanced_divider",
         "label": "Large Language Model Settings",
@@ -179,9 +161,10 @@ IMAGE_OPTIONS = [
     s.quest_background_image_negative_prompt,
 ]
 
-VOICE_OPTIONS = [s.narration_voice]
+VOICE_OPTIONS = [s.narration_multilingual, s.narration_voice]
 
 MUSIC_OPTIONS = [
+    s.generate_music,
     s.scene_music_generation_prompt,
     s.camp_music_generation_prompt,
     s.music_duration,
@@ -210,12 +193,12 @@ SCHEMA = [
         "href": "general-settings",
         "settings": GENERAL_OPTIONS,
     },
-    {
-        "title": "Auto Generate",
-        "description": "Generate an entire game from scratch.",
-        "href": "magic-mode",
-        "settings": MAGIC_MODE_OPTIONS,
-    },
+    # {
+    #     "title": "Auto Generate",
+    #     "description": "Generate an entire game from scratch.",
+    #     "href": "magic-mode",
+    #     "settings": MAGIC_MODE_OPTIONS,
+    # },
     {
         "spacer": True,
         "title": "Game",

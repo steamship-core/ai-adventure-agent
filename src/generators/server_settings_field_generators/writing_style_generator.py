@@ -38,7 +38,7 @@ Examples of good outputs:
 
 {description}
 
-# Genre and writing style
+# Genre and writing style (only a single line answer!)
 
 {narrative_voice}, """
 
@@ -67,5 +67,6 @@ Examples of good outputs:
             streaming=True,
             append_output_to_file=True,
             make_output_public=True,
+            options={"stop": ["\n"]},
         )
         return self.task_to_str_block(task)

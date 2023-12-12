@@ -137,6 +137,27 @@ class DalleImageGenerator(ImageGenerator):
         task.wait()
         return task
 
+    def request_character_image_generation(
+        self, name: str, description: str, context: AgentContext
+    ) -> Task:
+        server_settings = get_server_settings(context)
+        task = self.generate(
+            context=context,
+            theme_name=server_settings.profile_image_theme,
+            prompt=server_settings.profile_image_prompt,
+            template_vars={
+                "name": name,
+                "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
+                "description": description,
+            },
+            image_size="1024x1792",
+            tags=[],  # no tags, as this is strictly for in-editor usage.
+        )
+
+        task.wait()
+        return task
+
     def request_scene_image_generation(
         self, description: str, context: AgentContext
     ) -> Task:
@@ -194,7 +215,7 @@ class DalleImageGenerator(ImageGenerator):
 
         task = self.generate(
             context=context,
-            theme_name=server_settings.camp_image_theme,
+            theme_name=server_settings.adventure_image_theme,
             prompt="Cinematic, 8k, movie advertising image, {narrative_voice}, Movie Title: {name}",
             template_vars={
                 "narrative_voice": server_settings.narrative_voice,

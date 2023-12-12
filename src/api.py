@@ -9,15 +9,9 @@ from pydantic_yaml import parse_yaml_raw_as
 from steamship import Steamship, SteamshipError
 from steamship.agents.llms.openai import ChatOpenAI
 from steamship.agents.logging import AgentLogging
-from steamship.agents.mixins.transports.slack import (
-    SlackTransport,
-    SlackTransportConfig,
-)
+from steamship.agents.mixins.transports.slack import SlackTransport
 from steamship.agents.mixins.transports.steamship_widget import SteamshipWidgetTransport
-from steamship.agents.mixins.transports.telegram import (
-    TelegramTransport,
-    TelegramTransportConfig,
-)
+from steamship.agents.mixins.transports.telegram import TelegramTransport
 from steamship.agents.schema import Agent, AgentContext, Tool
 from steamship.data import TagKind
 from steamship.data.block import Block, StreamState
@@ -125,6 +119,10 @@ class AdventureGameService(AgentService):
             "pNInz6obpgDQGcFmaJgB",
             description="[Optional] ElevenLabs voice ID (default: Adam)",
         )
+        openai_api_key: str = Field(
+            "",
+            description="An openAI API key to use. If left default, will use Steamship's API key.",
+        )
 
     config: BasicAgentServiceConfig
     """The configuration block that users who create an instance of this agent will provide."""
@@ -147,26 +145,6 @@ class AdventureGameService(AgentService):
         self.add_mixin(
             SteamshipWidgetTransport(
                 client=self.client,
-                agent_service=cast(AgentService, self),
-            )
-        )
-
-        # Support Slack
-        self.add_mixin(
-            SlackTransport(
-                client=self.client,
-                config=SlackTransportConfig(),
-                agent_service=cast(AgentService, self),
-            )
-        )
-
-        # Support Telegram
-        self.add_mixin(
-            TelegramTransport(
-                client=self.client,
-                config=TelegramTransportConfig(
-                    bot_token=self.config.telegram_bot_token
-                ),
                 agent_service=cast(AgentService, self),
             )
         )
@@ -198,7 +176,11 @@ class AdventureGameService(AgentService):
         )
 
         self.add_mixin(
-            OnboardingMixin(client=self.client, agent_service=cast(AgentService, self))
+            OnboardingMixin(
+                client=self.client,
+                agent_service=cast(AgentService, self),
+                openai_api_key=self.config.openai_api_key,
+            )
         )
 
         self.add_mixin(
@@ -209,7 +191,10 @@ class AdventureGameService(AgentService):
         function_capable_llm = ChatOpenAI(self.client)
 
         self.onboarding_agent = OnboardingAgent(
-            client=self.client, tools=[], llm=function_capable_llm
+            client=self.client,
+            tools=[],
+            llm=function_capable_llm,
+            openai_api_key=self.config.openai_api_key,
         )
         self.quest_agent = QuestAgent(tools=[], llm=function_capable_llm)
         self.camp_agent = CampAgent(llm=function_capable_llm)

@@ -1,7 +1,9 @@
 import json
-from typing import Final, List
+import logging
+import time
+from typing import Final, List, Optional
 
-from steamship import SteamshipError, Tag, Task
+from steamship import PluginInstance, SteamshipError, Tag, Task
 from steamship.agents.schema import AgentContext
 from steamship.data import TagValueKey
 
@@ -23,6 +25,8 @@ from utils.tags import (
 class StableDiffusionWithLorasImageGenerator(ImageGenerator):
     PLUGIN_HANDLE: Final[str] = "fal-sd-lora-image-generator"
 
+    plugin_instance: Optional[PluginInstance] = None
+
     def get_theme(self, theme_name: str, context) -> StableDiffusionTheme:
         theme = get_theme(theme_name, context)
         if theme.is_dalle:
@@ -31,6 +35,13 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             )
         d = theme.dict()
         return StableDiffusionTheme.parse_obj(d)
+
+    def _get_plugin_instance(self, context: AgentContext):
+        if self.plugin_instance is None:
+            self.plugin_instance = context.client.use_plugin(
+                StableDiffusionWithLorasImageGenerator.PLUGIN_HANDLE
+            )
+        return self.plugin_instance
 
     def generate(
         self,
@@ -42,10 +53,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
         image_size: str,
         tags: List[Tag],
     ) -> Task:
-        # TODO(doug): cache plugin instance by client workspace
-        sd = context.client.use_plugin(
-            StableDiffusionWithLorasImageGenerator.PLUGIN_HANDLE
-        )
+        sd = self._get_plugin_instance(context)
 
         theme = self.get_theme(theme_name, context)
         prompt = theme.make_prompt(prompt, template_vars)
@@ -67,7 +75,8 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             "negative_prompt": negative_prompt,
         }
 
-        return sd.generate(
+        start = time.perf_counter()
+        task = sd.generate(
             text=prompt,
             tags=tags,
             streaming=True,
@@ -76,6 +85,10 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             make_output_public=True,
             options=options,
         )
+        logging.debug(f"Innermost generate start task: {time.perf_counter()-start}")
+        task.wait(retry_delay_s=0.1)
+        logging.debug(f"Innermost generate after wait: {time.perf_counter() - start}")
+        return task
 
     def request_item_image_generation(self, item: Item, context: AgentContext) -> Task:
         game_state = get_game_state(context)
@@ -105,8 +118,6 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             image_size="square_hd",
             tags=tags,
         )
-
-        task.wait()
         return task
 
     def request_profile_image_generation(self, context: AgentContext) -> Task:
@@ -141,8 +152,26 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             image_size="portrait_4_3",
             tags=tags,
         )
+        return task
 
-        task.wait()
+    def request_character_image_generation(
+        self, name: str, description: str, context: AgentContext
+    ) -> Task:
+        server_settings = get_server_settings(context)
+        task = self.generate(
+            context=context,
+            theme_name=server_settings.profile_image_theme,
+            prompt=server_settings.profile_image_prompt,
+            negative_prompt=server_settings.profile_image_negative_prompt,
+            template_vars={
+                "name": name,
+                "tone": server_settings.narrative_tone,
+                "genre": server_settings.narrative_voice,
+                "description": description,
+            },
+            image_size="portrait_4_3",
+            tags=[],  # no tags, as this shouldn't be used in chathistory for anything else (at the moment)
+        )
         return task
 
     def request_scene_image_generation(
@@ -170,8 +199,6 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             image_size="landscape_16_9",
             tags=tags,
         )
-
-        task.wait()
         return task
 
     def request_camp_image_generation(self, context: AgentContext) -> Task:
@@ -181,7 +208,6 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             Tag(kind=TagKindExtensions.STORY_CONTEXT, name=StoryContextTag.CAMP),
             Tag(kind=TagKindExtensions.CAMP, name=CampTag.IMAGE),
         ]
-
         task = self.generate(
             context=context,
             theme_name=server_settings.camp_image_theme,
@@ -194,7 +220,6 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
             image_size="landscape_16_9",
             tags=tags,
         )
-        task.wait()
         return task
 
     def request_adventure_image_generation(self, context: AgentContext) -> Task:
@@ -204,7 +229,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
 
         task = self.generate(
             context=context,
-            theme_name=server_settings.camp_image_theme,
+            theme_name=server_settings.adventure_image_theme,
             prompt="Cinematic, 8k, movie advertising image, {narrative_voice}, Movie Title: {name}",
             negative_prompt="",
             template_vars={
@@ -213,8 +238,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
                 "tone": server_settings.narrative_tone,
                 "genre": server_settings.narrative_voice,
             },
-            image_size="portrait_4_3",
+            image_size="landscape_16_9",
             tags=tags,
         )
-        task.wait()
         return task
