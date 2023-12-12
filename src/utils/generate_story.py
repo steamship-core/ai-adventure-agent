@@ -30,7 +30,7 @@ class StoryGenerator:
         summary = self.ask_gpt_min(f"Come up with a one sentence summary of this story:\n\n{description}")
 
         print("Getting quests...", file=sys.stderr)
-        quests = self.ask_gpt_min(f"Format your result as a full, valid, json array, containing objects with keys \"name\", \"location\", and \"description\".  Come up with five chapter names for this story, without prepending chapter numbers:\n\n{description}")
+        quests = self.ask_gpt_min(f"Format your result as a full, valid, json array, containing objects with keys \"name\", \"location\", and \"description\".  Come up with five chapter names for this unpublished \"{media_name}\" story, without prepending chapter numbers:\n\n{description}")
         print(quests, file=sys.stderr)
         quests = json.loads(quests)
         for quest in quests:
