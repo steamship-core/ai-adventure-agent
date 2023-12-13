@@ -164,7 +164,7 @@ def generate_quest_item(
     quest_name: str, player: HumanCharacter, context: AgentContext
 ) -> (str, str):
     """Generates a found item from a quest, returning a tuple of its name and description"""
-    prompt = f"What item did {player.name} find during that story? It should fit the setting of the story and help {player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
+    prompt = f"What item did {player.name} find during that story? It should fit the setting of the story and help {player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>. Both name and description should be written entirely and exclusively with emojis."
     block = do_token_trimmed_generation(
         context,
         prompt,
@@ -252,18 +252,18 @@ def generate_quest_arc(
     prompt = (
         f"Please list {server_settings.quests_per_arc} quests of increasing difficulty that {player.name} will go in to achieve their overall "
         f"goal of {server_settings.adventure_goal}. They should fit the setting of the story. Responses should only be in the "
-        f"form of: QUEST GOAL: <goal> QUEST LOCATION: <location name>\n"
-        f"Example (for a quest game for a dog):\n"
-        f"QUEST GOAL: find a treat QUEST LOCATION: Dog Park\n"
-        f"QUEST GOAL: make a friend QUEST LOCATION: Main Street\n"
-        f"QUEST GOAL: get bacon from the butcher QUEST LOCATION: Butcher Shop\n"
-        f"QUEST GOAL: learn a new trick QUEST LOCATION: Trainer's Office\n"
-        f"QUEST GOAL: fetch the newspaper QUEST LOCATION: Owner's House\n"
-        f"QUEST GOAL: prevent a robbery QUEST LOCATION: Owner's Store\n"
-        f"QUEST GOAL: impress the teacher during a show and tell QUEST LOCATION: Owner's Kid's School\n"
-        f"QUEST GOAL: steal some turkey QUEST LOCATION: Thanksgiving Dinner at Grandma's\n"
-        f"QUEST GOAL: get your nails trimmed QUEST LOCATION: Dog Wash\n"
-        f"QUEST GOAL: win an award QUEST LOCATION: Westminister Dog Show\n"
+        f"form of: QUEST GOAL: <goal> QUEST LOCATION: <location name>\n. Goal and location should be described ONLY using emojis."
+        # f"Example (for a quest game for a dog):\n"
+        # f"QUEST GOAL: find a treat QUEST LOCATION: Dog Park\n"
+        # f"QUEST GOAL: make a friend QUEST LOCATION: Main Street\n"
+        # f"QUEST GOAL: get bacon from the butcher QUEST LOCATION: Butcher Shop\n"
+        # f"QUEST GOAL: learn a new trick QUEST LOCATION: Trainer's Office\n"
+        # f"QUEST GOAL: fetch the newspaper QUEST LOCATION: Owner's House\n"
+        # f"QUEST GOAL: prevent a robbery QUEST LOCATION: Owner's Store\n"
+        # f"QUEST GOAL: impress the teacher during a show and tell QUEST LOCATION: Owner's Kid's School\n"
+        # f"QUEST GOAL: steal some turkey QUEST LOCATION: Thanksgiving Dinner at Grandma's\n"
+        # f"QUEST GOAL: get your nails trimmed QUEST LOCATION: Dog Wash\n"
+        # f"QUEST GOAL: win an award QUEST LOCATION: Westminister Dog Show\n"
     )
     result: List[QuestDescription] = []
     while len(result) != server_settings.quests_per_arc:
@@ -462,10 +462,11 @@ def generate_action_choices(context: AgentContext) -> Block:
     prompt = (
         f"Generate a multiple choice set of three options for the user to select {game_state.player.name}'s next "
         f"action. The actions should be relevant to the story and the current challenge "
-        f"facing {game_state.player.name}. The generated actions should match the tone and narrative voice of the "
-        f"existing story.\n"
+        f"facing {game_state.player.name}. The generated actions should be written ONLY in emojis."
+        # f"facing {game_state.player.name}. The generated actions should match the tone and narrative voice of the "
+        # f"existing story.\n"
         f"Action choices should be returned as a simple JSON list (and NOT a JSON object).\n"
-        f'Example: ["pet the dog", "launch missiles", "dance the Macarena"]'
+        f'Example: ["🔥", "🧊", "🗡🐉️"]'
     )
 
     block = do_token_trimmed_generation(

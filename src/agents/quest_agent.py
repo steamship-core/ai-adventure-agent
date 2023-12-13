@@ -157,21 +157,22 @@ class QuestAgent(InterruptiblePythonAgent):
                         QuestIdTag(quest_id=quest.name),
                     ],
                 )
-                num_paragraphs = randint(1, 1)  # noqa: S311
+                # num_paragraphs = randint(1, 1)  # noqa: S311
                 prompt = (
-                    f"Generate the introduction to the quest in {num_paragraphs} short paragraph(s). "
+                    f"Generate the introduction to the quest ONLY using emojis"
                     f"DO NOT present {game_state.player.name} with a challenge or obstacle in this description. "
                     f"Just set the scene. "
-                    f"{game_state.player.name} MUST NOT achieve their goal in the generated paragraphs. "
-                    f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
-                    f"'{server_settings.narrative_voice}'."
+                    f"{game_state.player.name} MUST NOT achieve their goal in the generated emojis. "
+                    # f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
+                    # f"'{server_settings.narrative_voice}'."
                 )
             else:
                 # here as a fallback
-                num_paragraphs = randint(1, 1)  # noqa: S311
+                # num_paragraphs = randint(1, 1)  # noqa: S311
                 prompt = (
                     f"{game_state.player.name} is embarking on a quest. Describe the first few things they do "
-                    f"in {num_paragraphs} short paragraph(s)."
+                    # f"in {num_paragraphs} short paragraph(s)."
+                    f"ONLY using emojis."
                 )
             block = send_story_generation(
                 prompt=prompt,
@@ -199,7 +200,8 @@ class QuestAgent(InterruptiblePythonAgent):
         if len(quest.user_problem_solutions) != quest.num_problems_to_encounter:
             quest.user_problem_solutions.append(
                 await_ask(
-                    f"What does {player.name} do next?",
+                    # f"What does {player.name} do next?",
+                    f"{player.name} 🤔❓",
                     context,
                     key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
                 )
@@ -216,7 +218,8 @@ class QuestAgent(InterruptiblePythonAgent):
                     quest.user_problem_solutions.pop()
                     quest.user_problem_solutions.append(
                         await_ask(
-                            f"What does {player.name} do next?",
+                            # f"What does {player.name} do next?",
+                            f"{player.name} 🤔❓",
                             context=context,
                             key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
                         )
@@ -249,7 +252,8 @@ class QuestAgent(InterruptiblePythonAgent):
                     quest.user_problem_solutions.pop()
                     quest.user_problem_solutions.append(
                         await_ask(
-                            f"What does {player.name} do next?",
+                            # f"What does {player.name} do next?",
+                            f"{player.name} 🤔❓",
                             context=context,
                             key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
                             prompt_prologue=prologue_msg,
@@ -262,7 +266,8 @@ class QuestAgent(InterruptiblePythonAgent):
                 )
                 quest.user_problem_solutions.append(
                     await_ask(
-                        f"What does {player.name} do next?",
+                        # f"What does {player.name} do next?",
+                        f"{player.name} 🤔❓",
                         context,
                         key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
                     )
@@ -274,17 +279,17 @@ class QuestAgent(InterruptiblePythonAgent):
 
             if quest_description is not None:
                 prompt = (
-                    f"Complete the story of the {player.name}'s current quest in 3 or fewer paragraphs. {player.name} should achieve "
+                    f"Complete the story of the {player.name}'s current quest ONLY using emojis. {player.name} should achieve "
                     f"the goal of '{quest_description.goal}', but NOT their overall goal of {server_settings.adventure_goal}. "
-                    f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
-                    f"'{server_settings.narrative_voice}'."
+                    # f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
+                    # f"'{server_settings.narrative_voice}'."
                 )
             else:
                 prompt = (
-                    f"Complete the story of the {player.name}'s current quest in 3 or fewer paragraphs. {player.name} should not yet "
+                    f"Complete the story of the {player.name}'s current quest ONLY using emojis. {player.name} should not yet "
                     f"achieve their overall goal of '{server_settings.adventure_goal}'. "
-                    f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
-                    f"'{server_settings.narrative_voice}'."
+                    # f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
+                    # f"'{server_settings.narrative_voice}'."
                 )
             story_end_block = send_story_generation(
                 prompt,
@@ -310,37 +315,43 @@ class QuestAgent(InterruptiblePythonAgent):
     ):
         if len(quest.user_problem_solutions) == quest.num_problems_to_encounter - 1:
             # if last problem, try to make it make sense for wrapping things up
-            num_paragraphs = randint(1, 2)  # noqa: S311
+            # num_paragraphs = randint(1, 2)  # noqa: S311
             server_settings = get_server_settings(context=context)
             prompt = (
-                f"Continue telling the story, in a tone of '{server_settings.narrative_tone}' with a narrative voice of "
-                f"{server_settings.narrative_voice}, of {game_state.player.name}'s quest. Write about them encountering a "
-                f"challenge that prevents them from completing their current quest.\n"
-                f"DO NOT use the word 'challenge' directly.\n"
-                f"DO NOT mention any sort of ordering of challenges (examples: 'first' or 'next').\n"
-                f"DO NOT solve the challenge for {game_state.player.name}.\n"
-                f"The story should allow {game_state.player.name} to decide how to attempt to complete their "
-                f"quest. The story MUST continue the current story arc of the quest.\n"
-                f"Write exactly {num_paragraphs} short paragraph(s) in the tone of {server_settings.narrative_tone} "
-                f"with {server_settings.narrative_voice}."
+                # f"Continue telling the story, in a tone of '{server_settings.narrative_tone}' with a narrative voice of "
+                # f"{server_settings.narrative_voice}, of {game_state.player.name}'s quest. Write about them encountering a "
+                # f"challenge that prevents them from completing their current quest.\n"
+                # f"DO NOT use the word 'challenge' directly.\n"
+                # f"DO NOT mention any sort of ordering of challenges (examples: 'first' or 'next').\n"
+                # f"DO NOT solve the challenge for {game_state.player.name}.\n"
+                # f"The story should allow {game_state.player.name} to decide how to attempt to complete their "
+                # f"quest. The story MUST continue the current story arc of the quest.\n"
+                # f"Write exactly {num_paragraphs} short paragraph(s) in the tone of {server_settings.narrative_tone} "
+                # f"with {server_settings.narrative_voice}."
+                f"Continue telling the story of {game_state.player.name}'s quest. Using ONLY emojis present a challenge "
+                f"they must overcome on their quest. You should only describe the problem using emojis. Do not tell "
+                f"{game_state.player.name} how to solve it, or ask them a question. Use ONLY emojis."
             )
         else:
-            num_paragraphs = randint(1, 2)  # noqa: S311
+            # num_paragraphs = randint(1, 2)  # noqa: S311
             server_settings = get_server_settings(context=context)
             prompt = (
-                f"Tell the story using a tone of '{server_settings.narrative_tone}' with a narrative voice of "
-                f"{server_settings.narrative_voice} of {game_state.player.name} encountering a challenge on their "
-                f"current quest ({quest_description.location}, {quest_description.goal}).\n"
-                f"The challenge MUST NOT repeat (or be equivalent to) a prior challenge faced by "
-                f"{game_state.player.name}.\n"
-                f"DO NOT introduce more than one problem.\n"
-                f"DO NOT use the words 'challenge' or 'problem' directly.\n"
-                f"DO NOT mention any sort of ordering of challenges (examples: 'first' or 'next').\n"
-                f"DO NOT solve the challenge for {game_state.player.name}.\n"
-                f"The story MUST continue the current story arc of the quest. The story SHOULD allow "
-                f"{game_state.player.name} to decide how to attempt to solve the challenge.\n"
-                f"Write exactly {num_paragraphs} short paragraph(s) in the tone of {server_settings.narrative_tone} "
-                f"with {server_settings.narrative_voice}."
+                # f"Tell the story using a tone of '{server_settings.narrative_tone}' with a narrative voice of "
+                # f"{server_settings.narrative_voice} of {game_state.player.name} encountering a challenge on their "
+                # f"current quest ({quest_description.location}, {quest_description.goal}).\n"
+                # f"The challenge MUST NOT repeat (or be equivalent to) a prior challenge faced by "
+                # f"{game_state.player.name}.\n"
+                # f"DO NOT introduce more than one problem.\n"
+                # f"DO NOT use the words 'challenge' or 'problem' directly.\n"
+                # f"DO NOT mention any sort of ordering of challenges (examples: 'first' or 'next').\n"
+                # f"DO NOT solve the challenge for {game_state.player.name}.\n"
+                # f"The story MUST continue the current story arc of the quest. The story SHOULD allow "
+                # f"{game_state.player.name} to decide how to attempt to solve the challenge.\n"
+                # f"Write exactly {num_paragraphs} short paragraph(s) in the tone of {server_settings.narrative_tone} "
+                # f"with {server_settings.narrative_voice}."
+                f"Tell the story of {game_state.player.name}'s quest. Using ONLY emojis present a challenge "
+                f"they must overcome on their quest. You should only describe the problem using emojis. Do not tell "
+                f"{game_state.player.name} how to solve it, or ask them a question. Use ONLY emojis."
             )
         problem_block = send_story_generation(
             prompt=prompt,
@@ -388,7 +399,7 @@ class QuestAgent(InterruptiblePythonAgent):
             required_roll = likelihood_map[Likelihood.UNKNOWN]
 
         # Add minor randomness, but don't drop below 0.05 (2 on d20) or go above 0.95 (20 on d20)
-        required_roll_mod = 0.05 * (randint(-2, 2))
+        required_roll_mod = 0.05 * (randint(-2, 2))  # noqa: S311
         required_roll = min(0.95, max(0.05, required_roll + required_roll_mod))
         # make sure we don't get weird floating point near values
         required_roll = round(required_roll, 2)
@@ -415,14 +426,14 @@ class QuestAgent(InterruptiblePythonAgent):
         quest: Quest,
         quest_goal: str,
     ):
-        num_paragraphs = randint(1, 2)  # noqa: S311
-        server_settings = get_server_settings(context=context)
+        # num_paragraphs = randint(1, 2)  # noqa: S311
+        # server_settings = get_server_settings(context=context)
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it totally works.\n"
-            f"Describe what happens in {num_paragraphs} short paragraphs. As part of the description, DO NOT have "
+            f"Describe what happens ONLY using emojis. As part of the description, DO NOT have "
             f"{game_state.player.name} completing the quest goal of {quest_goal}. "
-            f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
-            f"{server_settings.narrative_voice}."
+            # f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
+            # f"{server_settings.narrative_voice}."
         )
         solution_block = send_story_generation(
             prompt=prompt,
@@ -434,13 +445,13 @@ class QuestAgent(InterruptiblePythonAgent):
     def describe_failure(
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
-        num_paragraphs = randint(1, 2)  # noqa: S311
-        server_settings = get_server_settings(context=context)
+        # num_paragraphs = randint(1, 2)  # noqa: S311
+        # server_settings = get_server_settings(context=context)
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it fails.\n"
-            f"Describe what happens in {num_paragraphs} short paragraphs. "
-            f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
-            f"{server_settings.narrative_voice}."
+            f"Describe what happens ONLY using emojis. "
+            # f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
+            # f"{server_settings.narrative_voice}."
         )
         solution_block = send_story_generation(
             prompt=prompt,
