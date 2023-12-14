@@ -226,9 +226,7 @@ class QuestAgent(InterruptiblePythonAgent):
                         )
                 else:
                     # If it wasn't an attempt to solve the problem, generate some more text and try again.
-                    context.chat_history.append_assistant_message(
-                        "That was not an attempt to solve the problem."
-                    )
+                    self.describe_non_solution(game_state, context, quest)
                     quest.user_problem_solutions.pop()
                     quest.user_problem_solutions.append(
                         await_ask(
@@ -364,7 +362,7 @@ class QuestAgent(InterruptiblePythonAgent):
             context=context,
         )
         updated_problem_block = await_streamed_block(problem_block, context)
-
+        quest.current_problem = updated_problem_block.text
         if image_gen := get_quest_background_image_generator(context):
             image_gen.request_scene_image_generation(
                 description=updated_problem_block.text, context=context
@@ -379,8 +377,9 @@ class QuestAgent(InterruptiblePythonAgent):
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
         prompt = (
+            f"{game_state.player.name}'s current problem is: \n{quest.current_problem}\n"
             f"{game_state.player.name} decides to {quest.user_problem_solutions[-1]}. "
-            f"Is this an attempt to solve the problem, or just an intermediate investigative action? "
+            f'Is "{quest.user_problem_solutions[-1]}" an attempt to solve the current problem, or just an intermediate investigative action? '
             f"Respond with YES if this is an attempt to solve the problem, or NO if it is not."
         )
         is_solution_attempt_response = generate_is_solution_attempt(
@@ -388,6 +387,7 @@ class QuestAgent(InterruptiblePythonAgent):
             quest_name=quest.name,
             context=context,
         )
+        logging.error(f"Is solution attempt: {is_solution_attempt_response.text}")
         return is_solution_attempt_response.text.upper() == "YES"
 
     def evaluate_solution(
@@ -470,6 +470,25 @@ class QuestAgent(InterruptiblePythonAgent):
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it fails.\n"
             f"Describe what happens in {num_paragraphs} short paragraphs. "
+            f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
+            f"{server_settings.narrative_voice}."
+        )
+        solution_block = send_story_generation(
+            prompt=prompt,
+            quest_name=quest.name,
+            context=context,
+        )
+        await_streamed_block(solution_block, context)
+
+    def describe_non_solution(
+        self, game_state: GameState, context: AgentContext, quest: Quest
+    ):
+        server_settings = get_server_settings(context=context)
+        prompt = (
+            f"{game_state.player.name} doesn't yet try to solve the problem. Instead, they {quest.user_problem_solutions[-1]}.\n"
+            f"Describe what happens in one short paragraph. "
+            f"Include a summary of the current problem {game_state.player.name} is trying to solve, which is: \n"
+            f"{quest.current_problem}\n"
             f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
             f"{server_settings.narrative_voice}."
         )
