@@ -28,6 +28,7 @@ from utils.context_utils import (
 )
 from utils.generation_utils import (
     await_streamed_block,
+    generate_is_solution_attempt,
     generate_likelihood_estimation,
     generate_quest_arc,
     send_story_generation,
@@ -206,13 +207,28 @@ class QuestAgent(InterruptiblePythonAgent):
             )
             save_game_state(game_state, context)
             try:
-                if self.evaluate_solution(game_state, context, quest):
-                    # TODO: tag last user message as solution
-                    self.generate_solution(
-                        game_state, context, quest, quest_description.goal
-                    )
+                # Was this an attempt to solve the problem, or some other action?
+                if self.is_solution_attempt(game_state, context, quest):
+                    if self.evaluate_solution(game_state, context, quest):
+                        # TODO: tag last user message as solution
+                        self.generate_solution(
+                            game_state, context, quest, quest_description.goal
+                        )
+                    else:
+                        self.describe_failure(game_state, context, quest)
+                        quest.user_problem_solutions.pop()
+                        quest.user_problem_solutions.append(
+                            await_ask(
+                                f"What does {player.name} do next?",
+                                context=context,
+                                key_suffix=f"{quest.name} solution {len(quest.user_problem_solutions)}",
+                            )
+                        )
                 else:
-                    self.describe_failure(game_state, context, quest)
+                    # If it wasn't an attempt to solve the problem, generate some more text and try again.
+                    context.chat_history.append_assistant_message(
+                        "That was not an attempt to solve the problem."
+                    )
                     quest.user_problem_solutions.pop()
                     quest.user_problem_solutions.append(
                         await_ask(
@@ -358,6 +374,21 @@ class QuestAgent(InterruptiblePythonAgent):
                 music_gen.request_scene_music_generation(
                     description=updated_problem_block.text, context=context
                 )
+
+    def is_solution_attempt(
+        self, game_state: GameState, context: AgentContext, quest: Quest
+    ):
+        prompt = (
+            f"{game_state.player.name} decides to {quest.user_problem_solutions[-1]}. "
+            f"Is this an attempt to solve the problem, or just an intermediate investigative action? "
+            f"Respond with YES if this is an attempt to solve the problem, or NO if it is not."
+        )
+        is_solution_attempt_response = generate_is_solution_attempt(
+            prompt=prompt,
+            quest_name=quest.name,
+            context=context,
+        )
+        return is_solution_attempt_response.text.upper() == "YES"
 
     def evaluate_solution(
         self, game_state: GameState, context: AgentContext, quest: Quest
