@@ -378,7 +378,10 @@ class QuestAgent(InterruptiblePythonAgent):
             quest_name=quest.name,
             context=context,
         )
-        likelihood = json.loads(likelihood_block.text)
+        try:
+            likelihood = json.loads(likelihood_block.text)
+        except Exception as e:
+            raise Exception(likelihood_block.text)
         likelihood_text = likelihood["likelihood"].upper()
         likelihood_map = LIKELIHOOD_MAP.get(server_settings.difficulty)
         if "VERY UNLIKELY" in likelihood_text:
