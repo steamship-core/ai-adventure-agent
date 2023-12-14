@@ -58,6 +58,7 @@ STORY_OPTIONS = [
     s.problems_per_quest_scale,
     s.max_additional_problems_per_quest,
     s.difficulty,
+    s.allowed_failures_per_quest,
     {
         "name": "advanced_divider",
         "label": "Large Language Model Settings",
