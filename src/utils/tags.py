@@ -96,6 +96,7 @@ class QuestTag(str, Enum):
     ITEM_GENERATION_PROMPT = "item_generation_prompt"
     LIKELIHOOD_EVALUATION = "likelihood_evaluation"
     DICE_ROLL = "dice_roll"
+    IS_SOLUTION_ATTEMPT = "is_solution_attempt"
 
 
 class ItemTag(str, Enum):
