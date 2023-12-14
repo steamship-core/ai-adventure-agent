@@ -367,14 +367,19 @@ class QuestAgent(InterruptiblePythonAgent):
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}. "
             f"How likely is this to succeed? "
             f"Please consider their abilities and whether any referenced objects are nearby or in their inventory. "
-            f"ONLY RESPOND WITH ONE OF [VERY UNLIKELY, UNLIKELY, LIKELY, VERY LIKELY]"
+            f"If one of the items in the user's inventory could help with the action, name it in the response. "
+            f"ONLY RESPOND IN THE FORM OF A JSON OBJECT WITH THE KEYS \"likelihood\" AND \"item_used\", "
+            f"WHERE \"likelihood\" IS ONE OF [VERY UNLIKELY, UNLIKELY, LIKELY, VERY LIKELY], AND "
+            f"\"item_used\" IS NULL, OR THE NAME OF AN ITEM IN {game_state.player.name}'s INVENTORY IF IT IS LIKELY "
+            f"TO HELP WITH THE ACTION."
         )
         likelihood_block = generate_likelihood_estimation(
             prompt=prompt,
             quest_name=quest.name,
             context=context,
         )
-        likelihood_text = likelihood_block.text.upper()
+        likelihood = json.loads(likelihood_block.text)
+        likelihood_text = likelihood["likelihood"].upper()
         likelihood_map = LIKELIHOOD_MAP.get(server_settings.difficulty)
         if "VERY UNLIKELY" in likelihood_text:
             required_roll = likelihood_map[Likelihood.VERY_UNLIKELY]
@@ -395,14 +400,15 @@ class QuestAgent(InterruptiblePythonAgent):
 
         roll = random()  # noqa: S311
         succeeded = roll > required_roll
-        dice_roll_message = json.dumps(
-            {
-                "required": required_roll,
-                "rolled": roll,
-                "success": succeeded,
-                "mod": required_roll_mod,
-            }
-        )
+        roll_result = {
+            "required": required_roll,
+            "rolled": roll,
+            "success": succeeded,
+            "mod": required_roll_mod,
+        }
+        if item_used := likelihood["item_used"]:
+            roll_result["item_used"] = item_used
+        dice_roll_message = json.dumps(roll_result)
         context.chat_history.append_system_message(
             dice_roll_message, tags=self.tags(QuestTag.DICE_ROLL, quest)
         )
