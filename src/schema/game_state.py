@@ -66,7 +66,7 @@ class GameState(BaseModel):
 
     failed_rolls: Optional[int] = Field(
         default=0,
-        description="The number of die rolls that have failed for this quest."
+        description="The number of die rolls that have failed for this quest.",
     )
 
     in_conversation_with: Optional[str] = Field(
@@ -108,6 +108,8 @@ class GameState(BaseModel):
             self.player.update_from_web(other.player)
         if other.preferences:
             self.preferences.update_from_web(other.preferences)
+        if other.quests is not None and len(other.quests):
+            self.quests = other.quests
 
     def is_onboarding_complete(self) -> bool:
         """Return True if the player onboarding has been completed.
