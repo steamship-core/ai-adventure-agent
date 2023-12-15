@@ -168,6 +168,7 @@ def SettingField(  # noqa: N802
     onboarding_title: Optional[str] = None,
     onboarding_subtitle: Optional[str] = None,
     min: Optional[Union[int, float]] = None,
+    max: Optional[Union[int, float]] = None,
     **kwargs,
 ) -> Any:
     """
@@ -203,6 +204,7 @@ def SettingField(  # noqa: N802
         onboardingTitle=onboarding_title,
         onboardingSubtitle=onboarding_subtitle,
         min=min,
+        max=max,
     )
 
     keep_nones_names = set(
@@ -324,12 +326,16 @@ class ServerSettings(BaseModel):
         label="Story LLM Temperature",
         description="Temperature (creativity-factor) for the narrative generation. 0=Robot, 1=Bonkers, 0.4=Default",
         type="float",
+        min=0,
+        max=1,
     )
     default_story_max_tokens: int = SettingField(
         default=512,
         label="Story LLM Max Tokens",
-        description="Maximum number of tokens permitted during generation. 256=Default",
+        description="Maximum number of tokens permitted during generation.",
         type="int",
+        min=0,
+        max=2048,
     )
 
     # Narration Generation Settings
@@ -426,6 +432,12 @@ Can include descriptions of genre, characters, specific items and locations that
                 "description": "Optional description of the quest's desired characteristics.",
                 "type": "longtext",
             },
+            {
+                "name": "other_information",
+                "label": "Other Information",
+                "description": "Other information or instructions for the story of this quest, which will not be shown to the user.",
+                "type": "longtext",
+            },
         ],
         required=True,
     )
@@ -436,6 +448,8 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Quests per Arc",
         description="If you don't have a pre-defined list of quests, this is how many will be generated",
         type="int",
+        min=1,
+        max=10,
     )
 
     min_problems_per_quest: int = SettingField(
@@ -444,6 +458,7 @@ Can include descriptions of genre, characters, specific items and locations that
         description="What is the minimum number of problems a player must solve to complete a quest?",
         type="int",
         min=1,
+        max=10,
     )
 
     problems_per_quest_scale: float = SettingField(
@@ -452,6 +467,7 @@ Can include descriptions of genre, characters, specific items and locations that
         description="A number between 0 and 1. The higher this is, the more additional problems a user will have to solve above the minimum.",
         type="float",
         min=0,
+        max=1,
     )
 
     max_additional_problems_per_quest: int = SettingField(
@@ -460,6 +476,7 @@ Can include descriptions of genre, characters, specific items and locations that
         description="The maximum additional problems per quest that can be randomly added above and beyond the minimum required number.",
         type="int",
         min=1,
+        max=5,
     )
 
     difficulty: Difficulty = SettingField(
