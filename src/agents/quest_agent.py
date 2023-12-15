@@ -222,6 +222,10 @@ class QuestAgent(InterruptiblePythonAgent):
                     )
                 else:
                     self.describe_failure(game_state, context, quest)
+                    game_state.failed_rolls += 1
+                    if game_state.failed_rolls > server_settings.allowed_failures_per_quest >= 0:
+                        blocks = EndQuestTool().run([], context, failed=True)
+                        raise FinishActionException(FinishAction(output=blocks))
                     quest.user_problem_solutions.pop()
                     quest.user_problem_solutions.append(
                         await_ask(

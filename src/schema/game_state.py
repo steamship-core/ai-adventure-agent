@@ -64,6 +64,11 @@ class GameState(BaseModel):
         description="The current quest-id that the character is on. This is used for game logic.",
     )
 
+    failed_rolls: Optional[int] = Field(
+        default=0,
+        description="The number of die rolls that have failed for this quest."
+    )
+
     in_conversation_with: Optional[str] = Field(
         None,
         description="The name of the NPC that the user is currently in conversation with.",
