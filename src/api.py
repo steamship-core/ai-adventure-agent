@@ -291,6 +291,14 @@ class GameREPL(AgentREPL):
 
         # Determine the responder, which may have been custom-supplied on the agent.
         responder = getattr(self.agent_instance, self.method or "prompt")
+        # Send first empty string
+        self.print_object_or_objects(
+            responder(prompt="", context_id=self.context_id, **kwargs)
+        )
+        # Skip camp agent and go on a quest
+        self.print_object_or_objects(
+            responder(prompt="Go on a quest", context_id=self.context_id, **kwargs)
+        )
         while True:
             input_text = input(colored(text="Input: ", color="blue"))  # noqa: F821
             output = responder(prompt=input_text, context_id=self.context_id, **kwargs)

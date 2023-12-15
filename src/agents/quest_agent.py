@@ -11,8 +11,8 @@ from steamship.agents.schema import Action, AgentContext
 from steamship.agents.schema.action import FinishAction
 
 from generators.generator_context_utils import (
-    get_camp_image_generator,
     get_music_generator,
+    get_quest_background_image_generator,
 )
 from schema.game_state import GameState
 from schema.quest import Quest, QuestDescription
@@ -144,11 +144,20 @@ class QuestAgent(InterruptiblePythonAgent):
                     quest_description.description
                     and quest_description.description.strip()
                 ):
-                    optional_desc = f"\n\nAuthor's notes for this quest are: {quest_description.description}"
+                    optional_desc += f"\n{quest_description.description}"
+                if (
+                    quest_description.other_information
+                    and quest_description.other_information.strip()
+                ):
+                    optional_desc += f"\n{quest_description.other_information}"
 
+                if len(optional_desc.strip()) > 0:
+                    optional_desc = (
+                        "\n\nAuthor's notes for this quest are:" + optional_desc
+                    )
                 context.chat_history.append_system_message(
                     text=f"{game_state.player.name} is embarking on a quest to {quest_description.goal} "
-                    f"at {quest_description.location}.{optional_desc}",
+                    f"at {quest_description.location}. \n {optional_desc}",
                     tags=[
                         Tag(
                             kind=TagKindExtensions.INSTRUCTIONS,
@@ -349,7 +358,7 @@ class QuestAgent(InterruptiblePythonAgent):
         )
         updated_problem_block = await_streamed_block(problem_block, context)
 
-        if image_gen := get_camp_image_generator(context):
+        if image_gen := get_quest_background_image_generator(context):
             image_gen.request_scene_image_generation(
                 description=updated_problem_block.text, context=context
             )

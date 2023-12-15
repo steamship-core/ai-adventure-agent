@@ -14,6 +14,11 @@ class QuestDescription(BaseModel):
 
     description: Optional[str] = Field(None, description="A description of the quest")
 
+    other_information: Optional[str] = Field(
+        None,
+        description="Other information or instructions for the story of this quest, which will not be shown to the user.",
+    )
+
 
 class Quest(BaseModel):
     """Information about a quest."""
