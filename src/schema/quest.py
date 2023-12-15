@@ -82,6 +82,10 @@ class Quest(BaseModel):
     completed_timestamp: Optional[str] = Field(
         None, description="The timestamp at which the quest was completed"
     )
+    completed_success: Optional[bool] = Field(
+        None,
+        description="Whether the quest was completeed successfully (True) or unsuccessfully (False)",
+    )
 
     # TODO(dougreid): cleanup
     social_media_summary: Optional[str] = Field(

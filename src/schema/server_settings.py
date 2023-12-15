@@ -900,6 +900,13 @@ Can include descriptions of genre, characters, specific items and locations that
         type="int",
     )
 
+    allowed_failures_per_quest: Optional[int] = SettingField(
+        default=-1,
+        label="Allowed Failures per Quest",
+        description="If >= 0, the number of times the player is allowed to fail a die roll before they fail the quest.  If negative, quests don't fail due to failing too many die rolls.",
+        type="int",
+    )
+
     @property
     def narration_voice_id(self) -> str:
         return _SUPPORTED_ELEVEN_VOICES.get(self.narration_voice.value).get("id")
