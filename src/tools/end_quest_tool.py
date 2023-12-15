@@ -62,10 +62,7 @@ class EndQuestTool(Tool):
         return msg
 
     def end_quest(
-        self,
-        game_state: GameState,
-        context: AgentContext,
-        failed: bool
+        self, game_state: GameState, context: AgentContext, failed: bool = False
     ) -> str:
         quest = get_current_quest(context)
 
@@ -80,7 +77,9 @@ class EndQuestTool(Tool):
 
         if not failed:
             # Let's do some things to tidy up.
-            item_name, item_description = generate_quest_item(quest.name, player, context)
+            item_name, item_description = generate_quest_item(
+                quest.name, player, context
+            )
 
             item = Item()
             item.name = item_name
@@ -94,12 +93,16 @@ class EndQuestTool(Tool):
             player.inventory.append(item)
             context.chat_history.append_system_message(
                 text=player.inventory_description(),
-                tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INVENTORY)],
+                tags=[
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INVENTORY)
+                ],
             )
             save_game_state(game_state, context)
 
             if image_gen := get_item_image_generator(context):
-                task = image_gen.request_item_image_generation(item=item, context=context)
+                task = image_gen.request_item_image_generation(
+                    item=item, context=context
+                )
                 item_image_block = task.wait().blocks[0]
                 context.chat_history.file.refresh()
                 item.picture_url = item_image_block.raw_data_url
@@ -134,7 +137,11 @@ class EndQuestTool(Tool):
         # included in this.
         save_game_state(game_state, context)
 
-        tag = AgentStatusMessageTag.QUEST_FAILED if failed else AgentStatusMessageTag.QUEST_COMPLETE
+        tag = (
+            AgentStatusMessageTag.QUEST_FAILED
+            if failed
+            else AgentStatusMessageTag.QUEST_COMPLETE
+        )
         send_agent_status_message(tag, context=context)
 
         return ""

@@ -214,6 +214,15 @@ class QuestAgent(InterruptiblePythonAgent):
                 )
             )
             save_game_state(game_state, context)
+
+            # Special hack for debugging - allow us to insta-win or insta-lose.
+            if quest.user_problem_solutions[-1] == "/win":
+                blocks = EndQuestTool().run([], context)
+                return FinishAction(output=blocks)
+            elif quest.user_problem_solutions[-1] == "/lose":
+                blocks = EndQuestTool().run([], context, failed=True)
+                return FinishAction(output=blocks)
+
             try:
                 if self.evaluate_solution(game_state, context, quest):
                     # TODO: tag last user message as solution
@@ -223,7 +232,11 @@ class QuestAgent(InterruptiblePythonAgent):
                 else:
                     self.describe_failure(game_state, context, quest)
                     game_state.failed_rolls += 1
-                    if game_state.failed_rolls > server_settings.allowed_failures_per_quest >= 0:
+                    if (
+                        game_state.failed_rolls
+                        > server_settings.allowed_failures_per_quest
+                        >= 0
+                    ):
                         blocks = EndQuestTool().run([], context, failed=True)
                         raise FinishActionException(FinishAction(output=blocks))
                     quest.user_problem_solutions.pop()

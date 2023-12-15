@@ -883,11 +883,11 @@ Can include descriptions of genre, characters, specific items and locations that
         type="int",
     )
 
-    allowed_failures_per_quest = SettingField(
+    allowed_failures_per_quest: Optional[int] = SettingField(
         default=-1,
         label="Allowed Failures per Quest",
         description="If >= 0, the number of times the player is allowed to fail a die roll before they fail the quest.  If negative, quests don't fail due to failing too many die rolls.",
-        type="int"
+        type="int",
     )
 
     @property
