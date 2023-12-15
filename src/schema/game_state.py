@@ -84,6 +84,10 @@ class GameState(BaseModel):
         description="The key of the last question asked to the user via context_utils.await_ask.",
     )
 
+    onboarding_agent_has_completed: Optional[bool] = Field(
+        False, description="Whether the onboarding agent has finished its work"
+    )
+
     profile_image_url: Optional[str] = Field(
         default=None, description="The URL for the character image"
     )
@@ -120,6 +124,7 @@ class GameState(BaseModel):
             self.player is not None
             and self.player.is_onboarding_complete()
             and self.chat_history_for_onboarding_complete
+            and self.onboarding_agent_has_completed
         )
 
     def image_generation_requested(self) -> bool:
