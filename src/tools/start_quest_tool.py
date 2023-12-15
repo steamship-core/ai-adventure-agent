@@ -102,7 +102,9 @@ class StartQuestTool(Tool):
 
         quest.name = f"{uuid.uuid4()}"
 
-        print(f"Current quest name is: {quest.name}")
+        print(
+            f"Current quest name: {quest.name}. Current quest idx: {len(game_state.quests) - 1}."
+        )
         game_state.current_quest = quest.name
 
         # This saves it in a way that is both persistent (KV Store) and updates the context
