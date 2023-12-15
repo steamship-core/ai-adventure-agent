@@ -144,11 +144,20 @@ class QuestAgent(InterruptiblePythonAgent):
                     quest_description.description
                     and quest_description.description.strip()
                 ):
-                    optional_desc = f"\n\nAuthor's notes for this quest are: {quest_description.description}"
+                    optional_desc += f"\n{quest_description.description}"
+                if (
+                    quest_description.other_information
+                    and quest_description.other_information.strip()
+                ):
+                    optional_desc += f"\n{quest_description.other_information}"
 
+                if len(optional_desc.strip()) > 0:
+                    optional_desc = (
+                        "\n\nAuthor's notes for this quest are:" + optional_desc
+                    )
                 context.chat_history.append_system_message(
                     text=f"{game_state.player.name} is embarking on a quest to {quest_description.goal} "
-                    f"at {quest_description.location}.{optional_desc}",
+                    f"at {quest_description.location}. \n {optional_desc}",
                     tags=[
                         Tag(
                             kind=TagKindExtensions.INSTRUCTIONS,

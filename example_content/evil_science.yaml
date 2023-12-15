@@ -21,3 +21,8 @@ profile_image_prompt: cartoon profile picture, focus on head, of a character nam
 camp_music_generation_prompt: smooth jazz, elevator music, appropriate for office
 scene_music_generation_prompt: techno background music for doing science
 adventure_player_singular_noun: Scientist
+fixed_quest_arc:
+  - goal: Find a secret chemical
+    location: The underground lab
+    description: You must find the secret chemical, in the underground lab
+    other_information: ALL STORY CONTENT SHOULD BE IN THE FORM OF A RHYME.
