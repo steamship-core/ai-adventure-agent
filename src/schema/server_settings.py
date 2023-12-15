@@ -426,6 +426,12 @@ Can include descriptions of genre, characters, specific items and locations that
                 "description": "Optional description of the quest's desired characteristics.",
                 "type": "longtext",
             },
+            {
+                "name": "other_information",
+                "label": "Other Information",
+                "description": "Other information or instructions for the story of this quest, which will not be shown to the user.",
+                "type": "longtext",
+            },
         ],
         required=True,
     )
