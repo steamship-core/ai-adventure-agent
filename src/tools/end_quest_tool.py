@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from typing import Any, List, Union
 
 from steamship import Block, Tag, Task
@@ -65,6 +66,10 @@ class EndQuestTool(Tool):
         self, game_state: GameState, context: AgentContext, failed: bool = False
     ) -> str:
         quest = get_current_quest(context)
+
+        # Mark the completion status & time of the quest.
+        quest.completed_success = not failed
+        quest.completed_timestamp = datetime.now(timezone.utc).isoformat()
 
         if not quest:
             return self.log_error(
