@@ -335,7 +335,7 @@ class ServerSettings(BaseModel):
         description="Maximum number of tokens permitted during generation.",
         type="int",
         min=0,
-        max=512,
+        max=2048,
     )
 
     # Narration Generation Settings
