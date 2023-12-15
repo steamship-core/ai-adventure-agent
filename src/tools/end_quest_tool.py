@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from typing import Any, List, Union
 
 from steamship import Block, Tag, Task
@@ -62,11 +63,13 @@ class EndQuestTool(Tool):
         return msg
 
     def end_quest(
-        self,
-        game_state: GameState,
-        context: AgentContext,
+        self, game_state: GameState, context: AgentContext, failed: bool = False
     ) -> str:
         quest = get_current_quest(context)
+
+        # Mark the completion status & time of the quest.
+        quest.completed_success = not failed
+        quest.completed_timestamp = datetime.now(timezone.utc).isoformat()
 
         if not quest:
             return self.log_error(
@@ -77,44 +80,51 @@ class EndQuestTool(Tool):
 
         player = game_state.player
 
-        # Let's do some things to tidy up.
-        item_name, item_description = generate_quest_item(quest.name, player, context)
+        if not failed:
+            # Let's do some things to tidy up.
+            item_name, item_description = generate_quest_item(
+                quest.name, player, context
+            )
 
-        item = Item()
-        item.name = item_name
-        item.description = item_description
+            item = Item()
+            item.name = item_name
+            item.description = item_description
 
-        if item.name:
-            quest.new_items = [item]
+            if item.name:
+                quest.new_items = [item]
 
-        if not player.inventory:
-            player.inventory = []
-        player.inventory.append(item)
-        context.chat_history.append_system_message(
-            text=player.inventory_description(),
-            tags=[Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INVENTORY)],
-        )
-        save_game_state(game_state, context)
+            if not player.inventory:
+                player.inventory = []
+            player.inventory.append(item)
+            context.chat_history.append_system_message(
+                text=player.inventory_description(),
+                tags=[
+                    Tag(kind=TagKindExtensions.CHARACTER, name=CharacterTag.INVENTORY)
+                ],
+            )
+            save_game_state(game_state, context)
 
-        if image_gen := get_item_image_generator(context):
-            task = image_gen.request_item_image_generation(item=item, context=context)
-            item_image_block = task.wait().blocks[0]
-            context.chat_history.file.refresh()
-            item.picture_url = item_image_block.raw_data_url
-            save_game_state(game_state=game_state, context=context)
+            if image_gen := get_item_image_generator(context):
+                task = image_gen.request_item_image_generation(
+                    item=item, context=context
+                )
+                item_image_block = task.wait().blocks[0]
+                context.chat_history.file.refresh()
+                item.picture_url = item_image_block.raw_data_url
+                save_game_state(game_state=game_state, context=context)
 
-        # Going on a quest increases the player's rank
-        player.rank += quest.rank_delta
+            # Going on a quest increases the player's rank
+            player.rank += quest.rank_delta
 
-        # Going on a quest results in gold
-        player.gold += quest.gold_delta
+            # Going on a quest results in gold
+            player.gold += quest.gold_delta
 
         # Going on a quest expends energy
         player.energy -= quest.energy_delta
         if player.energy < 0:
             player.energy = 0
 
-        summary_block = generate_quest_summary(quest.name, context)
+        summary_block = generate_quest_summary(quest.name, context, failed=failed)
         summary_block = await_streamed_block(summary_block, context)
         quest.text_summary = summary_block.text
 
@@ -126,18 +136,24 @@ class EndQuestTool(Tool):
 
         # Finally.. close the quest.
         game_state.current_quest = None
+        game_state.failed_rolls = 0
 
         # TODO: Verify that python's pass-by-reference means all the above modifications are automatically
         # included in this.
         save_game_state(game_state, context)
 
-        send_agent_status_message(AgentStatusMessageTag.QUEST_COMPLETE, context=context)
+        tag = (
+            AgentStatusMessageTag.QUEST_FAILED
+            if failed
+            else AgentStatusMessageTag.QUEST_COMPLETE
+        )
+        send_agent_status_message(tag, context=context)
 
         return ""
 
     def run(
-        self, tool_input: List[Block], context: AgentContext
+        self, tool_input: List[Block], context: AgentContext, failed: bool = False
     ) -> Union[List[Block], Task[Any]]:
         game_state = get_game_state(context)
-        self.end_quest(game_state, context)
+        self.end_quest(game_state, context, failed)
         return []

@@ -36,6 +36,9 @@ class AgentStatusMessageTag(str, Enum):
     # The quest is complete
     QUEST_COMPLETE = "quest-complete"
 
+    # The quest has failed
+    QUEST_FAILED = "quest-failed"
+
 
 class SceneTag(str, Enum):
     # A scene has started

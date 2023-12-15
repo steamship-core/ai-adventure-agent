@@ -26,12 +26,20 @@ from utils.tags import CharacterTag, InstructionsTag, StoryContextTag, TagKindEx
 
 
 def _is_allowed_by_moderation(user_input: str, openai_api_key: str) -> bool:
-    start = time.perf_counter()
-    openai.api_key = openai_api_key
-    moderation = openai.Moderation.create(input=user_input)
-    result = moderation["results"][0]["flagged"]
-    logging.debug(f"One moderation: {time.perf_counter() - start}")
-    return not result
+    if not user_input:
+        return True
+    try:
+        start = time.perf_counter()
+        openai.api_key = openai_api_key
+        moderation = openai.Moderation.create(input=user_input)
+        result = moderation["results"][0]["flagged"]
+        logging.debug(f"One moderation: {time.perf_counter() - start}")
+        return not result
+    except BaseException as ex:
+        logging.error(
+            f"Got exception running _is_allowed_by_moderation: {ex}. User input was {user_input}. Returning true"
+        )
+        return True
 
 
 class OnboardingAgent(InterruptiblePythonAgent):
@@ -210,6 +218,7 @@ class OnboardingAgent(InterruptiblePythonAgent):
             )
             game_state.chat_history_for_onboarding_complete = True
 
+        game_state.onboarding_agent_has_completed = True
         save_game_state(game_state, context)
 
         raise RunNextAgentException(

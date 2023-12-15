@@ -77,6 +77,18 @@ class StartQuestTool(Tool):
 
         if not game_state.quests:
             game_state.quests = []
+
+        # If the last quest was a FAILURE then we will remove it from the list of quests. "Starting a Quest" in this case
+        # means "Restarting that quest".
+        # TODO(future): If we permit non-sequential playing of quests, we'll need to have an ID which means start
+        # /which/ quest and possibly also an indicator of the user's intention to restart/retry a quest as opposed to
+        # start from scratch.
+        if game_state.quests and game_state.quests[-1].completed_success is False:
+            # The last quest failed. Let's pop it from the list so that the quest we're starting will replace it.
+            # At the moment, there's an implicit alignment between indices of `quests` and `quest_arcs` which is
+            # why this action of popping this failed quest is identical to restarting the prior quest.
+            game_state.quests.pop()
+
         game_state.quests.append(quest)
 
         quest_difficulty_base = 1
@@ -90,7 +102,9 @@ class StartQuestTool(Tool):
 
         quest.name = f"{uuid.uuid4()}"
 
-        print(f"Current quest name is: {quest.name}")
+        print(
+            f"Current quest name: {quest.name}. Current quest idx: {len(game_state.quests) - 1}."
+        )
         game_state.current_quest = quest.name
 
         # This saves it in a way that is both persistent (KV Store) and updates the context

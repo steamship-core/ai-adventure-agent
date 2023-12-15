@@ -1,0 +1,74 @@
+name: The Odyssey
+tags:
+  - historical
+  - adventure
+image: https://api.steamship.com/api/v1/block/8C201DAE-21B3-4DC7-B1ED-A49F3FE3ABBC/raw
+characters:
+  - name: Odysseus
+    image: https://api.steamship.com/api/v1/block/13F80DB0-629A-4489-B5CD-3929CE5F3E6B/raw
+    tagline: Hero of the Trojan War
+    background: Known for his cunning and resourcefulness, Odysseus is the
+      protagonist who embarks on a long journey home after the Trojan War.
+    description: A mature, bearded man with sharp eyes and a strong physique,
+      dressed in ancient Greek warrior attire.
+description: In 'The Odyssey,' undertake the epic journey of Odysseus as he
+  faces numerous trials and tribulations in his quest to return home to Ithaca
+  after the Trojan War. Encounter mythical creatures, divine interventions, and
+  treacherous seas in this classic adventure.
+adventure_goal: To return home to Ithaca and reunite with your wife, Penelope,
+  and son, Telemachus.
+adventure_name: The Odyssey
+narrative_tone: As written by Homer, with a focus on heroism, divine
+  intervention, and the human struggle. The story is told in third-person
+  omniscient, with a tone that is both epic and dramatic.
+fixed_quest_arc:
+  - goal: Escape the island of the Cyclops
+    location: Island of the Cyclops
+    description: After being trapped in the cave of the Cyclops, Polyphemus, you
+      must devise a plan to escape and sail away from the island.
+    challenges:
+      - name: The Blinding of Polyphemus
+        description: The players must find a way to blind Polyphemus, the Cyclops, to prevent him from seeing them escape. 
+          After observing Polyphemus, the players learn that he has a routine that involves sitting by the fire each night, 
+          drinking his fill of milk or wine.
+      - name: The Riddle of the Sheep
+        description: Devise a method to escape the cave without being detected by the 
+          blinded Polyphemus, who blocks the only exit. Polyphemus, now blinded, guards 
+          the entrance of the cave, feeling each sheep as they leave to graze to ensure 
+          no one escapes. The players must come up with a creative solution to bypass him.
+      - name: The Curse of Poseidon
+        description: Overcome a supernatural obstacle set by Poseidon, who seeks to 
+          avenge the blinding of his son, Polyphemus. As the players set sail away from 
+          the island, they find themselves facing the wrath of Poseidon. The sea god sends 
+          a terrible storm, creates monstrous sea creatures, or even alters the sea itself 
+          to prevent their escape.
+narration_voice: oswald
+narrative_voice: Epic poetry; heroic, dramatic, and adventurous.
+adventure_public: true
+camp_image_theme: stable_diffusion_xl_no_loras
+item_image_theme: stable_diffusion_xl_no_loras
+camp_image_prompt: "{tone} {genre} exterior of an ancient Greek island"
+item_image_prompt: Ancient Greek artifact with a description of {description}
+short_description: Embark on an epic adventure!
+profile_image_theme: stable_diffusion_xl_no_loras
+adventure_background: >-
+  The story takes place in various locations across the Mediterranean, each with
+  its own unique challenges and mythical creatures. The journey is long and
+  perilous, testing Odysseus' cunning, bravery, and endurance.
+
+  Each quest in this adventure builds upon the prior quests. The story starts with Odysseus trapped on the island of the Cyclops, and each subsequent quest brings him one step closer to home.
+adventure_description: In 'The Odyssey,' undertake the epic journey of Odysseus
+  as he faces numerous trials and tribulations in his quest to return home to
+  Ithaca after the Trojan War. Encounter mythical creatures, divine
+  interventions, and treacherous seas in this classic adventure.
+quest_background_theme: stable_diffusion_xl_no_loras
+default_story_max_tokens: 768
+adventure_short_description: Embark on an epic adventure!
+camp_music_generation_prompt: Epic, heroic orchestral score that evokes a sense of adventure and danger
+quest_background_image_prompt: "Ancient Greek painting of a background scene for
+  a quest set in various mythical locations. The scene being depicted is:
+  {description}"
+scene_music_generation_prompt: Epic, heroic orchestral score that evokes a sense of adventure and danger
+adventure_player_singular_noun: Hero
+adventure_image: https://api.steamship.com/api/v1/block/8C201DAE-21B3-4DC7-B1ED-A49F3FE3ABBC/raw
+
