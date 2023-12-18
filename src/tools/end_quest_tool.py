@@ -62,7 +62,7 @@ class EndQuestTool(Tool):
         )
         return msg
 
-    def end_quest(
+    def end_quest(  # noqa: C901
         self, game_state: GameState, context: AgentContext, failed: bool = False
     ) -> str:
         quest = get_current_quest(context)
@@ -82,20 +82,55 @@ class EndQuestTool(Tool):
 
         if not failed:
             # Let's do some things to tidy up.
-            item_name, item_description = generate_quest_item(
-                quest.name, player, context
-            )
 
-            item = Item()
-            item.name = item_name
-            item.description = item_description
+            # matching description (hopefully)
+            quest_description = game_state.quest_arc[len(game_state.quests) - 1]
 
-            if item.name:
-                quest.new_items = [item]
+            new_items = []
+
+            if (
+                quest_description
+                and quest_description.items
+                and len(quest_description.items) > 0
+            ):
+                for prescribed_item in quest_description.items:
+                    item = Item()
+                    item.name = prescribed_item.name
+                    item.description = prescribed_item.description
+                    if item.name:
+                        new_items.append(item)
+
+                    if image_gen := get_item_image_generator(context):
+                        task = image_gen.request_item_image_generation(
+                            item=item, context=context
+                        )
+                        item_image_block = task.wait().blocks[0]
+                        context.chat_history.file.refresh()
+                        item.picture_url = item_image_block.raw_data_url
+            else:
+                item_name, item_description = generate_quest_item(
+                    quest.name, player, context
+                )
+
+                item = Item()
+                item.name = item_name
+                item.description = item_description
+
+                if item.name:
+                    new_items.append(item)
+
+                if image_gen := get_item_image_generator(context):
+                    task = image_gen.request_item_image_generation(
+                        item=item, context=context
+                    )
+                    item_image_block = task.wait().blocks[0]
+                    context.chat_history.file.refresh()
+                    item.picture_url = item_image_block.raw_data_url
 
             if not player.inventory:
                 player.inventory = []
-            player.inventory.append(item)
+
+            player.inventory.extend(new_items)
             context.chat_history.append_system_message(
                 text=player.inventory_description(),
                 tags=[
@@ -103,15 +138,6 @@ class EndQuestTool(Tool):
                 ],
             )
             save_game_state(game_state, context)
-
-            if image_gen := get_item_image_generator(context):
-                task = image_gen.request_item_image_generation(
-                    item=item, context=context
-                )
-                item_image_block = task.wait().blocks[0]
-                context.chat_history.file.refresh()
-                item.picture_url = item_image_block.raw_data_url
-                save_game_state(game_state=game_state, context=context)
 
             # Going on a quest increases the player's rank
             player.rank += quest.rank_delta

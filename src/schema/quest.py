@@ -5,8 +5,6 @@ from pydantic import BaseModel, Field
 
 from schema.characters import Item
 
-# from schema.server_settings import SettingField
-
 
 class QuestChallengeDescription(BaseModel):
     class Config:
@@ -20,6 +18,21 @@ class QuestChallengeDescription(BaseModel):
     description: Optional[str] = Field(
         default="",
         description="Description of the challenge",
+    )
+
+
+class QuestItemDescription(BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+
+    name: Optional[str] = Field(
+        default="",
+        description="Short name for the item",
+    )
+
+    description: Optional[str] = Field(
+        default="",
+        description="Description of the item",
     )
 
 
@@ -62,6 +75,10 @@ class QuestDescription(BaseModel):
     challenges: Optional[List[QuestChallengeDescription]] = Field(
         default=[],
         description="An ordered list of challenges that will be encountered on this quest.",
+    )
+
+    items: Optional[List[QuestItemDescription]] = Field(
+        default=None, description="The items that should be gained on this quest."
     )
 
 
