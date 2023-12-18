@@ -139,7 +139,6 @@ def generate_likelihood_estimation(
     return block
 
 
-
 def generate_is_solution_attempt(
     prompt: str, quest_name: str, context: AgentContext
 ) -> Optional[Block]:
@@ -177,7 +176,9 @@ def generate_is_solution_attempt(
     return block
 
 
-def generate_quest_summary(quest_name: str, context: AgentContext, failed: bool = False) -> Optional[Block]:
+def generate_quest_summary(
+    quest_name: str, context: AgentContext, failed: bool = False
+) -> Optional[Block]:
     """Generates and sends a quest summary to the player."""
     prompt = "Please summarize the above quest in one to two sentences."
     if failed:
