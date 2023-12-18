@@ -458,7 +458,7 @@ Can include descriptions of genre, characters, specific items and locations that
                         "type": "longtext",
                     },
                 ],
-            }
+            },
         ],
         required=True,
     )
@@ -914,8 +914,8 @@ Can include descriptions of genre, characters, specific items and locations that
 
     music_duration: int = SettingField(
         default=10,
-        le=30,
-        ge=0,
+        max=30,
+        min=0,
         label="Music Duration",
         description="Duration of music to generate. Default=10. Max=30. IMPORTANT: Values less than 15 are safest because generation takes so long.",
         type="int",
@@ -926,6 +926,8 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Allowed Failures per Quest",
         description="If >= 0, the number of times the player is allowed to fail a die roll before they fail the quest.  If negative, quests don't fail due to failing too many die rolls.",
         type="int",
+        max=10,
+        min=-1,
     )
 
     @property
