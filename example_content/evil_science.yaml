@@ -23,3 +23,5 @@ fixed_quest_arc:
     location: The underground lab
     description: You must find the secret chemical, in the underground lab
     other_information: ALL STORY CONTENT SHOULD BE IN THE FORM OF A RHYME.
+# default_story_model: gpt-4-1106-preview
+# allowed_failures_per_quest: 0

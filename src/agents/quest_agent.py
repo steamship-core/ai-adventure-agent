@@ -448,7 +448,7 @@ class QuestAgent(InterruptiblePythonAgent):
             quest_name=quest.name,
             context=context,
         )
-        logging.error(f"Is solution attempt: {is_solution_attempt_response.text}")
+        logging.debug(f"Is solution attempt: {is_solution_attempt_response.text}")
         return is_solution_attempt_response.text.upper() == "YES"
 
     def evaluate_solution(
@@ -547,7 +547,7 @@ class QuestAgent(InterruptiblePythonAgent):
         server_settings = get_server_settings(context=context)
         prompt = (
             f"{game_state.player.name} doesn't yet try to solve the problem. Instead, they {quest.user_problem_solutions[-1]}.\n"
-            f"Describe what happens in one short paragraph. "
+            f"Describe what happens in one short paragraph that does NOT solve the current problem below. "
             f"Include a summary of the current problem {game_state.player.name} is trying to solve, which is: \n"
             f"{quest.current_problem}\n"
             f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
