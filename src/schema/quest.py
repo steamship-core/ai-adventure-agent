@@ -101,6 +101,11 @@ class Quest(BaseModel):
     user_problem_solutions: Optional[List[str]] = Field(
         default_factory=list, description="The user's solutions to the problems."
     )
+
+    current_problem: Optional[str] = Field(
+        default=None, description="The current problem in the quest"
+    )
+
     sent_outro: Optional[bool] = Field(
         False, description="Whether the outro of the quest was sent to the user."
     )
