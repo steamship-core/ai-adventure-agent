@@ -448,13 +448,34 @@ Can include descriptions of genre, characters, specific items and locations that
                     {
                         "name": "name",
                         "label": "Name",
-                        "description": "Name of the challenge.",
+                        "description": "Name of the problem.",
                         "type": "text",
                     },
                     {
                         "name": "description",
                         "label": "Description",
-                        "description": "Describe the challenge.",
+                        "description": "Describe the problem.",
+                        "type": "longtext",
+                    },
+                ],
+            },
+            {
+                "name": "items",
+                "label": "Items",
+                "description": "Optional item(s) that will be earned on this quest",
+                "type": "list",
+                "listof": "object",
+                "listSchema": [
+                    {
+                        "name": "name",
+                        "label": "Name",
+                        "description": "Name of the item.",
+                        "type": "text",
+                    },
+                    {
+                        "name": "description",
+                        "label": "Description",
+                        "description": "Describe the item.",
                         "type": "longtext",
                     },
                 ],
