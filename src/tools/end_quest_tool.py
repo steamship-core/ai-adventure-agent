@@ -130,6 +130,7 @@ class EndQuestTool(Tool):
             if not player.inventory:
                 player.inventory = []
 
+            quest.new_items = new_items
             player.inventory.extend(new_items)
             context.chat_history.append_system_message(
                 text=player.inventory_description(),
