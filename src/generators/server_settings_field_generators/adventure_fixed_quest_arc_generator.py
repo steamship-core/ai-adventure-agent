@@ -8,6 +8,7 @@ from steamship.agents.schema import AgentContext
 from generators.server_settings_field_generator import ServerSettingsFieldGenerator
 from generators.utils import safe_format
 from schema.quest import QuestDescription
+from utils.context_utils import get_quest_arc_generator
 
 
 class AdventureFixedQuestArcGenerator(ServerSettingsFieldGenerator):
@@ -54,6 +55,11 @@ Narrative arcs for the story pitch above:"""
         context: AgentContext,
         generation_config: Optional[dict] = None,
     ) -> Block:
+
+        # NOTE: We use a specific generator for this because it's important it's gpt-4
+        # otherwise the prompts have been a bit too shaky.
+        generator = get_quest_arc_generator(context)
+
         prompt = self.prompt
 
         task = generator.generate(
