@@ -300,7 +300,7 @@ class ServerSettings(BaseModel):
 
     # Language Generation Settings - Story telling
     default_story_model: str = SettingField(
-        default="gpt-3.5-turbo",
+        default="gpt-4-1106-preview",
         label="Story LLM Model",
         description="Model used to generate story text.",
         type="select",
@@ -448,17 +448,38 @@ Can include descriptions of genre, characters, specific items and locations that
                     {
                         "name": "name",
                         "label": "Name",
-                        "description": "Name of the challenge.",
+                        "description": "Name of the problem.",
                         "type": "text",
                     },
                     {
                         "name": "description",
                         "label": "Description",
-                        "description": "Describe the challenge.",
+                        "description": "Describe the problem.",
                         "type": "longtext",
                     },
                 ],
-            }
+            },
+            {
+                "name": "items",
+                "label": "Items",
+                "description": "Optional item(s) that will be earned on this quest",
+                "type": "list",
+                "listof": "object",
+                "listSchema": [
+                    {
+                        "name": "name",
+                        "label": "Name",
+                        "description": "Name of the item.",
+                        "type": "text",
+                    },
+                    {
+                        "name": "description",
+                        "label": "Description",
+                        "description": "Describe the item.",
+                        "type": "longtext",
+                    },
+                ],
+            },
         ],
         required=True,
     )
@@ -914,8 +935,8 @@ Can include descriptions of genre, characters, specific items and locations that
 
     music_duration: int = SettingField(
         default=10,
-        le=30,
-        ge=0,
+        max=30,
+        min=0,
         label="Music Duration",
         description="Duration of music to generate. Default=10. Max=30. IMPORTANT: Values less than 15 are safest because generation takes so long.",
         type="int",
@@ -926,6 +947,8 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Allowed Failures per Quest",
         description="If >= 0, the number of times the player is allowed to fail a die roll before they fail the quest.  If negative, quests don't fail due to failing too many die rolls.",
         type="int",
+        max=10,
+        min=-1,
     )
 
     @property

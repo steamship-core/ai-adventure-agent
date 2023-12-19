@@ -139,7 +139,46 @@ def generate_likelihood_estimation(
     return block
 
 
-def generate_quest_summary(quest_name: str, context: AgentContext, failed: bool = False) -> Optional[Block]:
+def generate_is_solution_attempt(
+    prompt: str, quest_name: str, context: AgentContext
+) -> Optional[Block]:
+    """Decides whether input is an attempt to solve the problem."""
+    block = do_token_trimmed_generation(
+        context,
+        prompt,
+        prompt_tags=[
+            Tag(kind=TagKindExtensions.QUEST, name=QuestTag.IS_SOLUTION_ATTEMPT),
+            QuestIdTag(quest_name),
+        ],
+        output_tags=[],
+        filter=UnionFilter(
+            [
+                TagFilter(
+                    tag_types=[
+                        (TagKindExtensions.CHARACTER, CharacterTag.NAME),
+                        (TagKindExtensions.CHARACTER, CharacterTag.MOTIVATION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.DESCRIPTION),
+                        (TagKindExtensions.CHARACTER, CharacterTag.BACKGROUND),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.TONE),
+                        (TagKindExtensions.STORY_CONTEXT, StoryContextTag.BACKGROUND),
+                        (TagKindExtensions.QUEST, QuestTag.QUEST_SUMMARY),
+                    ]
+                ),
+                QuestNameFilter(quest_name=quest_name),
+                LastInventoryFilter(),
+            ]
+        ),
+        generation_for="Is a solution attempt",
+        stop_tokens=["\n"],
+        new_file=True,
+        streaming=False,
+    )
+    return block
+
+
+def generate_quest_summary(
+    quest_name: str, context: AgentContext, failed: bool = False
+) -> Optional[Block]:
     """Generates and sends a quest summary to the player."""
     prompt = "Please summarize the above quest in one to two sentences."
     if failed:
@@ -457,7 +496,6 @@ def await_streamed_block(block: Block, context: AgentContext) -> Block:
 
 
 def generate_action_choices(context: AgentContext) -> Block:
-
     game_state = get_game_state(context)
     quest_name = game_state.current_quest
 
