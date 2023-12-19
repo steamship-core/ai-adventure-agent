@@ -425,15 +425,20 @@ class QuestAgent(InterruptiblePythonAgent):
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
         server_settings = get_server_settings(context)
+        if game_state.player.inventory:
+            inventory = '\n'.join([f"- {i.name}" for i in game_state.player.inventory])
+            inventory_prompt = f", OR ONE OF THE BELOW ITEMS, IF IT IS LIKELY TO HELP WITH THE ACTION:\n{inventory}"
+        else:
+            inventory_prompt = ""
+
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}. "
             f"How likely is this to succeed? "
             f"Please consider their abilities and whether any referenced objects are nearby or in their inventory. "
             f"If one of the items in the user's inventory could help with the action, name it in the response. "
-            f"ONLY RESPOND IN THE FORM OF A JSON OBJECT WITH THE KEYS \"likelihood\" AND \"item_used\", "
-            f"WHERE \"likelihood\" IS ONE OF [VERY UNLIKELY, UNLIKELY, LIKELY, VERY LIKELY], AND "
-            f"\"item_used\" IS NULL, OR THE NAME OF AN ITEM IN {game_state.player.name}'s INVENTORY IF IT IS LIKELY "
-            f"TO HELP WITH THE ACTION."
+            f"ONLY RESPOND IN THE FORM OF A JSON OBJECT WITHOUT LINE BREAKS, WITH THE KEYS \"likelihood\" AND "
+            f"\"item_used\", WHERE \"likelihood\" IS ONE OF [VERY UNLIKELY, UNLIKELY, LIKELY, VERY LIKELY], AND "
+            f"\"item_used\" IS NULL{inventory_prompt}"
         )
         likelihood_block = generate_likelihood_estimation(
             prompt=prompt,
