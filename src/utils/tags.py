@@ -36,6 +36,9 @@ class AgentStatusMessageTag(str, Enum):
     # The quest is complete
     QUEST_COMPLETE = "quest-complete"
 
+    # The quest has failed
+    QUEST_FAILED = "quest-failed"
+
 
 class SceneTag(str, Enum):
     # A scene has started
@@ -93,6 +96,7 @@ class QuestTag(str, Enum):
     ITEM_GENERATION_PROMPT = "item_generation_prompt"
     LIKELIHOOD_EVALUATION = "likelihood_evaluation"
     DICE_ROLL = "dice_roll"
+    IS_SOLUTION_ATTEMPT = "is_solution_attempt"
 
 
 class ItemTag(str, Enum):

@@ -1,6 +1,7 @@
 import json
 import logging
 import pathlib
+import textwrap
 import time
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
@@ -342,9 +343,14 @@ class GameREPL(AgentREPL):
                 sorted({f"[{tag.kind},{tag.name}]" for tag in block.tags})
             )
             if block.is_text():
-                print(f"{tag_texts} {block.text}\n")
+                output = f"{tag_texts} {block.text}\n"
             else:
-                print(f"{tag_texts} {block.raw_data_url}")
+                output = f"{tag_texts} {block.raw_data_url}"
+            print(
+                textwrap.fill(
+                    output, subsequent_indent="  ", break_long_words=False, width=150
+                )
+            )
 
 
 if __name__ == "__main__":

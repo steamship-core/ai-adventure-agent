@@ -64,6 +64,11 @@ class GameState(BaseModel):
         description="The current quest-id that the character is on. This is used for game logic.",
     )
 
+    failed_rolls: Optional[int] = Field(
+        default=0,
+        description="The number of die rolls that have failed for this quest.",
+    )
+
     in_conversation_with: Optional[str] = Field(
         None,
         description="The name of the NPC that the user is currently in conversation with.",
@@ -77,6 +82,10 @@ class GameState(BaseModel):
     await_ask_key: Optional[str] = Field(
         None,
         description="The key of the last question asked to the user via context_utils.await_ask.",
+    )
+
+    onboarding_agent_has_completed: Optional[bool] = Field(
+        False, description="Whether the onboarding agent has finished its work"
     )
 
     profile_image_url: Optional[str] = Field(
@@ -103,6 +112,8 @@ class GameState(BaseModel):
             self.player.update_from_web(other.player)
         if other.preferences:
             self.preferences.update_from_web(other.preferences)
+        if other.quests is not None and len(other.quests):
+            self.quests = other.quests
 
     def is_onboarding_complete(self) -> bool:
         """Return True if the player onboarding has been completed.
@@ -113,6 +124,7 @@ class GameState(BaseModel):
             self.player is not None
             and self.player.is_onboarding_complete()
             and self.chat_history_for_onboarding_complete
+            and self.onboarding_agent_has_completed
         )
 
     def image_generation_requested(self) -> bool:

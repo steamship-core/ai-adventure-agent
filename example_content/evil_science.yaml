@@ -9,14 +9,11 @@ adventure_background: >-
   underpays its employees and works them very hard, with the promise that they
   will be part of the elite once they've achieved world domination.
 
-  The office building for Science Ventures is very bland, however.  It is a very standard office builidng in Reston, Virginia, that no one notices from the outside.
+  The office building for Science Ventures is very bland, however.  It is a very standard office building in Reston, Virginia, that no one notices from the outside.
 
   The CEO of Science Ventures is Meredith Martin, whose lack of empathy is famous.  Her ruthlessness is both her strength and weakness, as she does not care about the employees wellbeing.
 
   The main character's boss is Michael Stern, a clueless middle manager who does not understand the science.
-camp_image_theme: dall_e_3_vivid_standard
-item_image_theme: dall_e_3_vivid_standard
-profile_image_theme: dall_e_3_vivid_standard
 profile_image_prompt: cartoon profile picture, focus on head, of a character named '{name}' with a description of '{description}'
 camp_music_generation_prompt: smooth jazz, elevator music, appropriate for office
 scene_music_generation_prompt: techno background music for doing science
@@ -26,3 +23,5 @@ fixed_quest_arc:
     location: The underground lab
     description: You must find the secret chemical, in the underground lab
     other_information: ALL STORY CONTENT SHOULD BE IN THE FORM OF A RHYME.
+# default_story_model: gpt-4-1106-preview
+# allowed_failures_per_quest: 0
