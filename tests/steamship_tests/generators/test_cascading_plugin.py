@@ -32,4 +32,4 @@ def test_cascade_with_failures():
     instance_2.throw = True
     with pytest.raises(ExhaustedPluginsException) as e:
         pi.generate(text="Fifth Call")
-        assert e.exceptions.keys() == set(list("Instance1", "Instance2"))
+    assert e.value.exceptions.keys() == set(["Instance1", "Instance2"])
