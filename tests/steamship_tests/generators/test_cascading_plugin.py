@@ -33,3 +33,6 @@ def test_cascade_with_failures():
     with pytest.raises(ExhaustedPluginsException) as e:
         pi.generate(text="Fifth Call")
     assert e.value.exceptions.keys() == set(["Instance1", "Instance2"])
+    # Test that we can still generate after that
+    instance_1.throw = False
+    assert pi.generate(text="Sixth Call") == Block(text="Instance1_3")

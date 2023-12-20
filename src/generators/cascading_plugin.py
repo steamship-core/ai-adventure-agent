@@ -29,6 +29,9 @@ class CascadingPlugin(PluginInstance):
         self._instance_provider_ix += 1
         self._cached_instance = None
         if self._instance_provider_ix >= len(self.instance_providers):
+            # Don't make it so that this will never succeed again, let it recover on a basic heuristic.
+            # TODO this / current_instance could be smarter to try the preferred ones on a backoff
+            self._instance_provider_ix = 0
             raise ExhaustedPluginsException(self._exception_map)
 
     def _current_instance(self) -> PluginInstance:
