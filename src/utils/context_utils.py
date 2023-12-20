@@ -105,7 +105,7 @@ def get_story_text_generator(
                 if backup_model_name == model_name:
                     continue
                 provider = lambda: context.client.use_plugin(
-                    "replicate-llm",
+                    "gpt-4",
                     config={
                         "model": backup_model_name,
                         "max_tokens": server_settings.default_story_max_tokens,
