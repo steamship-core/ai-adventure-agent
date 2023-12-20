@@ -101,7 +101,9 @@ def get_story_text_generator(
             providers = [
                 lambda: generator
             ]
-            for backup_model_name in replicate_models:
+            for backup_model_name in open_ai_models:
+                if backup_model_name == model_name:
+                    continue
                 provider = lambda: context.client.use_plugin(
                     "replicate-llm",
                     config={
