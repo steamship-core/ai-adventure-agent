@@ -457,9 +457,11 @@ class QuestAgent(InterruptiblePythonAgent):
         server_settings = get_server_settings(context)
         if game_state.player.inventory:
             inventory = '\n'.join([f"- {i.name}" for i in game_state.player.inventory])
+            item_id_map = {i.name: i.id for i in game_state.player.inventory}
             inventory_prompt = f", OR ONE OF THE BELOW ITEMS, IF IT IS LIKELY TO HELP WITH THE ACTION:\n{inventory}"
         else:
             inventory_prompt = ""
+            item_id_map = {}
 
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}. "
@@ -508,6 +510,8 @@ class QuestAgent(InterruptiblePythonAgent):
         }
         if item_used := likelihood["item_used"]:
             roll_result["item_used"] = item_used
+            if item_id := item_id_map.get(item_used):
+                roll_result["item_used_id"] = item_id
         dice_roll_message = json.dumps(roll_result)
         context.chat_history.append_system_message(
             dice_roll_message, tags=self.tags(QuestTag.DICE_ROLL, quest)
