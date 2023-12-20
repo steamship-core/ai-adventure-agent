@@ -27,6 +27,7 @@ from steamship.agents.schema import ChatHistory, ChatLLM, FinishAction
 from steamship.agents.schema.agent import AgentContext
 from steamship.utils.kv_store import KeyValueStore
 
+from generators.cascading_plugin import CascadingPlugin
 from schema.game_state import GameState
 from schema.image_theme import DEFAULT_THEME, PREMADE_THEMES, ImageTheme
 from schema.server_settings import ServerSettings
@@ -95,6 +96,22 @@ def get_story_text_generator(
                 "temperature": server_settings.default_story_temperature,
             },
         )
+
+        if server_settings.allow_backup_story_models:
+            providers = [
+                lambda: generator
+            ]
+            for backup_model_name in replicate_models:
+                provider = lambda: context.client.use_plugin(
+                    "replicate-llm",
+                    config={
+                        "model": backup_model_name,
+                        "max_tokens": server_settings.default_story_max_tokens,
+                        "temperature": server_settings.default_story_temperature
+                    }
+                )
+                providers.append(provider)
+            generator = CascadingPlugin(instance_providers=providers)
 
         context.metadata[_STORY_GENERATOR_KEY] = generator
 
