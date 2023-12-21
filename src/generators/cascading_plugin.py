@@ -67,12 +67,7 @@ class CascadingPlugin(PluginInstance):
                 self._advance_instance()
 
     def train(self, *args, **kwargs):
-        while True:
-            try:
-                return self._current_instance().train(*args, **kwargs)
-            except Exception as e:
-                self._exception_map[self._current_instance().plugin_id] = e
-                self._advance_instance()
+        raise NotImplementedError("The `train` endpoint is not implemented for CascadingPlugin")
 
     def refresh_init_status(self, *args, **kwargs):
         while True:
