@@ -319,6 +319,14 @@ class ServerSettings(BaseModel):
             },
         ],
     )
+
+    allow_backup_story_models: bool = SettingField(
+        default=False,
+        label="Allow backup story models",
+        description="If the primary model for stories is unavailable, allow falling back to other models.",
+        type="boolean"
+    )
+
     default_story_temperature: float = SettingField(
         # NEEDS WORK:
         # TODO: Add a post-processing step to coerce this to a float.
