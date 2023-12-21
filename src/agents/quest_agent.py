@@ -180,9 +180,8 @@ class QuestAgent(InterruptiblePythonAgent):
                         QuestIdTag(quest_id=quest.name),
                     ],
                 )
-                num_paragraphs = randint(1, 1)  # noqa: S311
                 prompt = (
-                    f"Generate the introduction to the quest in {num_paragraphs} short paragraph(s). "
+                    f"Generate the introduction to the quest in one short paragraph. "
                     f"DO NOT present {game_state.player.name} with a challenge or obstacle in this description. "
                     f"Just set the scene. "
                     f"{game_state.player.name} MUST NOT achieve their goal in the generated paragraphs. "
@@ -190,11 +189,9 @@ class QuestAgent(InterruptiblePythonAgent):
                     f"'{server_settings.narrative_voice}'."
                 )
             else:
-                # here as a fallback
-                num_paragraphs = randint(1, 1)  # noqa: S311
                 prompt = (
                     f"{game_state.player.name} is embarking on a quest. Describe the first few things they do "
-                    f"in {num_paragraphs} short paragraph(s)."
+                    f"in one short paragraph."
                 )
             block = send_story_generation(
                 prompt=prompt,
@@ -323,14 +320,14 @@ class QuestAgent(InterruptiblePythonAgent):
 
             if quest_description is not None:
                 prompt = (
-                    f"Complete the story of the {player.name}'s current quest in 3 or fewer paragraphs. {player.name} should achieve "
+                    f"Complete the story of the {player.name}'s current quest in one long paragraph. {player.name} should achieve "
                     f"the goal of '{quest_description.goal}', but NOT their overall goal of {server_settings.adventure_goal}. "
                     f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
                     f"'{server_settings.narrative_voice}'."
                 )
             else:
                 prompt = (
-                    f"Complete the story of the {player.name}'s current quest in 3 or fewer paragraphs. {player.name} should not yet "
+                    f"Complete the story of the {player.name}'s current quest in one long paragraph. {player.name} should not yet "
                     f"achieve their overall goal of '{server_settings.adventure_goal}'. "
                     f"Tell the story using a tone of '{server_settings.narrative_tone}' and with a narrative voice of "
                     f"'{server_settings.narrative_voice}'."
@@ -366,7 +363,6 @@ class QuestAgent(InterruptiblePythonAgent):
                 and solved_challenges < total_challenges
             ):
                 current_challenge = quest.challenges[solved_challenges]
-                num_paragraphs = randint(1, 2)  # noqa: S311
                 server_settings = get_server_settings(context=context)
                 prompt = (
                     f"Tell the story using a tone of '{server_settings.narrative_tone}' with a narrative voice of "
@@ -376,7 +372,7 @@ class QuestAgent(InterruptiblePythonAgent):
                     f"DO NOT solve the challenge for {game_state.player.name}.\n"
                     f"The story MUST continue the current story arc of the quest. The story SHOULD allow "
                     f"{game_state.player.name} to decide how to attempt to solve the challenge.\n"
-                    f"Write exactly {num_paragraphs} short paragraph(s) in the tone of {server_settings.narrative_tone} "
+                    f"Write exactly one paragraph in the tone of {server_settings.narrative_tone} "
                     f"with {server_settings.narrative_voice}."
                 )
             else:
@@ -385,7 +381,6 @@ class QuestAgent(InterruptiblePythonAgent):
                 )
         elif len(quest.user_problem_solutions) == quest.num_problems_to_encounter - 1:
             # if last problem, try to make it make sense for wrapping things up
-            num_paragraphs = randint(1, 2)  # noqa: S311
             server_settings = get_server_settings(context=context)
             prompt = (
                 f"Continue telling the story, in a tone of '{server_settings.narrative_tone}' with a narrative voice of "
@@ -396,11 +391,10 @@ class QuestAgent(InterruptiblePythonAgent):
                 f"DO NOT solve the challenge for {game_state.player.name}.\n"
                 f"The story should allow {game_state.player.name} to decide how to attempt to complete their "
                 f"quest. The story MUST continue the current story arc of the quest.\n"
-                f"Write exactly {num_paragraphs} short paragraph(s) in the tone of {server_settings.narrative_tone} "
+                f"Write exactly one paragraph in the tone of {server_settings.narrative_tone} "
                 f"with {server_settings.narrative_voice}."
             )
         else:
-            num_paragraphs = randint(1, 2)  # noqa: S311
             server_settings = get_server_settings(context=context)
             prompt = (
                 f"Tell the story using a tone of '{server_settings.narrative_tone}' with a narrative voice of "
@@ -414,9 +408,11 @@ class QuestAgent(InterruptiblePythonAgent):
                 f"DO NOT solve the challenge for {game_state.player.name}.\n"
                 f"The story MUST continue the current story arc of the quest. The story SHOULD allow "
                 f"{game_state.player.name} to decide how to attempt to solve the challenge.\n"
-                f"Write exactly {num_paragraphs} short paragraph(s) in the tone of {server_settings.narrative_tone} "
+                f"Write exactly one paragraph in the tone of {server_settings.narrative_tone} "
                 f"with {server_settings.narrative_voice}."
             )
+
+        num_paragraphs = randint(1, 2)  # noqa: S311
         problem_block = send_story_generation(
             prompt=prompt,
             quest_name=quest.name,
@@ -424,6 +420,22 @@ class QuestAgent(InterruptiblePythonAgent):
         )
         updated_problem_block = await_streamed_block(problem_block, context)
         quest.current_problem = updated_problem_block.text
+
+        if num_paragraphs > 1:
+            # replace "Tell the" with "Continue telling the" and re-prompt
+            if prompt.startswith("Tell the story"):
+                new_prompt = prompt.removeprefix("Tell the story")
+                prompt = f"Continue telling the story{new_prompt}"
+            problem_block = send_story_generation(
+                prompt=prompt,
+                quest_name=quest.name,
+                context=context,
+            )
+            updated_problem_block = await_streamed_block(problem_block, context)
+            quest.current_problem = (
+                f"{quest.current_problem}\n{updated_problem_block.text}"
+            )
+
         if image_gen := get_quest_background_image_generator(context):
             image_gen.request_scene_image_generation(
                 description=updated_problem_block.text, context=context
@@ -511,7 +523,7 @@ class QuestAgent(InterruptiblePythonAgent):
         server_settings = get_server_settings(context=context)
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it totally works.\n"
-            f"Describe what happens in {num_paragraphs} short paragraphs. As part of the description, DO NOT have "
+            f"Describe what happens in one paragraph. As part of the description, DO NOT have "
             f"{game_state.player.name} completing the quest goal of {quest_goal}. "
             f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
             f"{server_settings.narrative_voice}."
@@ -522,6 +534,20 @@ class QuestAgent(InterruptiblePythonAgent):
             context=context,
         )
         await_streamed_block(solution_block, context)
+        if num_paragraphs > 1:
+            prompt = (
+                f"Continue the story of {game_state.player.name} solving the problem by: {quest.user_problem_solutions[-1]}.\n"
+                f"Describe what happens in one paragraph. As part of the description, DO NOT have "
+                f"{game_state.player.name} completing the quest goal of {quest_goal}. "
+                f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
+                f"{server_settings.narrative_voice}."
+            )
+            solution_block = send_story_generation(
+                prompt=prompt,
+                quest_name=quest.name,
+                context=context,
+            )
+            await_streamed_block(solution_block, context)
 
     def describe_failure(
         self, game_state: GameState, context: AgentContext, quest: Quest
@@ -530,7 +556,7 @@ class QuestAgent(InterruptiblePythonAgent):
         server_settings = get_server_settings(context=context)
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}, and it fails.\n"
-            f"Describe what happens in {num_paragraphs} short paragraphs. "
+            f"Describe what happens in one short paragraph. "
             f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
             f"{server_settings.narrative_voice}."
         )
@@ -540,6 +566,19 @@ class QuestAgent(InterruptiblePythonAgent):
             context=context,
         )
         await_streamed_block(solution_block, context)
+        if num_paragraphs > 1:
+            prompt = (
+                f"Continue telling the story of {game_state.player.name} failing to solve the problem by: {quest.user_problem_solutions[-1]}.\n"
+                f"Describe what happens in one short paragraph. "
+                f"Tell the story using a tone of {server_settings.narrative_tone} and with a narrative voice of "
+                f"{server_settings.narrative_voice}."
+            )
+            solution_block = send_story_generation(
+                prompt=prompt,
+                quest_name=quest.name,
+                context=context,
+            )
+            await_streamed_block(solution_block, context)
 
     def describe_non_solution(
         self, game_state: GameState, context: AgentContext, quest: Quest

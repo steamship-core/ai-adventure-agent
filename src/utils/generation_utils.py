@@ -97,7 +97,7 @@ def send_story_generation(
             ]
         ),
         generation_for="Quest Content",
-        # stop_tokens=["\n"],
+        stop_tokens=["\n"],
     )
     return block
 
