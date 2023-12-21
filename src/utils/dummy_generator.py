@@ -41,4 +41,5 @@ class DummyGenerator(MusicGenerator, ImageGenerator):
         return self.dummy_generation()
 
     def request_character_image_generation(self, name: str, description: str, context: AgentContext) -> Task:
-        pass
+        return self.dummy_generation()
+

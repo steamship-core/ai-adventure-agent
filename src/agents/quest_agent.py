@@ -455,18 +455,33 @@ class QuestAgent(InterruptiblePythonAgent):
         self, game_state: GameState, context: AgentContext, quest: Quest
     ):
         server_settings = get_server_settings(context)
+        if game_state.player.inventory:
+            inventory = '\n'.join([f"- {i.name}" for i in game_state.player.inventory])
+            item_id_map = {i.name: i.id for i in game_state.player.inventory}
+            inventory_prompt = f", OR ONE OF THE BELOW ITEMS, IF IT IS LIKELY TO HELP WITH THE ACTION:\n{inventory}"
+        else:
+            inventory_prompt = ""
+            item_id_map = {}
+
         prompt = (
             f"{game_state.player.name} tries to solve the problem by: {quest.user_problem_solutions[-1]}. "
             f"How likely is this to succeed? "
             f"Please consider their abilities and whether any referenced objects are nearby or in their inventory. "
-            f"ONLY RESPOND WITH ONE OF [VERY UNLIKELY, UNLIKELY, LIKELY, VERY LIKELY]"
+            f"If one of the items in the user's inventory could help with the action, name it in the response. "
+            f"ONLY RESPOND IN THE FORM OF A JSON OBJECT WITHOUT LINE BREAKS, WITH THE KEYS \"likelihood\" AND "
+            f"\"item_used\", WHERE \"likelihood\" IS ONE OF [VERY UNLIKELY, UNLIKELY, LIKELY, VERY LIKELY], AND "
+            f"\"item_used\" IS NULL{inventory_prompt}"
         )
         likelihood_block = generate_likelihood_estimation(
             prompt=prompt,
             quest_name=quest.name,
             context=context,
         )
-        likelihood_text = likelihood_block.text.upper()
+        try:
+            likelihood = json.loads(likelihood_block.text)
+        except Exception as e:
+            raise Exception(likelihood_block.text)
+        likelihood_text = likelihood["likelihood"].upper()
         likelihood_map = LIKELIHOOD_MAP.get(server_settings.difficulty)
         if "VERY UNLIKELY" in likelihood_text:
             required_roll = likelihood_map[Likelihood.VERY_UNLIKELY]
@@ -487,14 +502,17 @@ class QuestAgent(InterruptiblePythonAgent):
 
         roll = random()  # noqa: S311
         succeeded = roll > required_roll
-        dice_roll_message = json.dumps(
-            {
-                "required": required_roll,
-                "rolled": roll,
-                "success": succeeded,
-                "mod": required_roll_mod,
-            }
-        )
+        roll_result = {
+            "required": required_roll,
+            "rolled": roll,
+            "success": succeeded,
+            "mod": required_roll_mod,
+        }
+        if item_used := likelihood["item_used"]:
+            roll_result["item_used"] = item_used
+            if item_id := item_id_map.get(item_used):
+                roll_result["item_used_id"] = item_id
+        dice_roll_message = json.dumps(roll_result)
         context.chat_history.append_system_message(
             dice_roll_message, tags=self.tags(QuestTag.DICE_ROLL, quest)
         )
