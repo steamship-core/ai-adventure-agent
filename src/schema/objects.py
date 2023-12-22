@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 class Item(BaseModel):
     name: Optional[str]
     description: Optional[str]
+    visual_description: Optional[str]
     id: str = Field(default_factory=lambda: str(uuid4()))
 
     is_one_time_use: Optional[bool]

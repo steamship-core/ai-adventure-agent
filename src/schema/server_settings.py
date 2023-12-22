@@ -324,7 +324,7 @@ class ServerSettings(BaseModel):
         default=False,
         label="Allow backup story models",
         description="If the primary model for stories is unavailable, allow falling back to other models.",
-        type="boolean"
+        type="boolean",
     )
 
     default_story_temperature: float = SettingField(
@@ -661,10 +661,11 @@ Can include descriptions of genre, characters, specific items and locations that
         label="Item Image Prompt",
         description="The prompt used to generate item images.",
         type="longtext",
-        default="game sprite for an {name}, {description}",
+        default="game sprite for an {name}, {visual_description}",
         variables_permitted={
             "name": "The name of the item.",
             "description": "Description of the item.",
+            "visual_description": "A purely visual description of the item.",
             "tone": "Description of the tone of the adventure.",
             "genre": "Description of the genre of the adventure.",
         },
