@@ -94,6 +94,7 @@ class DalleImageGenerator(ImageGenerator):
                 "tone": server_settings.narrative_tone,
                 "name": item.name,
                 "description": item.description,
+                "visual_description": item.visual_description,
             },
             image_size="1024x1024",
             tags=tags,

@@ -66,6 +66,7 @@ STORY_OPTIONS = [
         "type": "divider",
     },
     s.default_story_model,
+    s.allow_backup_story_models,
     s.default_story_temperature,
     s.default_story_max_tokens,
 ]

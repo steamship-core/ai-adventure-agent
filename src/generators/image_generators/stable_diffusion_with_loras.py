@@ -114,6 +114,7 @@ class StableDiffusionWithLorasImageGenerator(ImageGenerator):
                 "name": item.name,
                 "genre": server_settings.narrative_voice,
                 "description": item.description,
+                "visual_description": item.visual_description,
             },
             image_size="square_hd",
             tags=tags,

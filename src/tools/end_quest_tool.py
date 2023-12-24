@@ -108,13 +108,16 @@ class EndQuestTool(Tool):
                         context.chat_history.file.refresh()
                         item.picture_url = item_image_block.raw_data_url
             else:
-                item_name, item_description = generate_quest_item(
-                    quest.name, player, context
-                )
+                (
+                    item_name,
+                    item_description,
+                    item_visual_description,
+                ) = generate_quest_item(quest.name, player, context)
 
                 item = Item()
                 item.name = item_name
                 item.description = item_description
+                item.visual_description = item_visual_description
 
                 if item.name:
                     new_items.append(item)

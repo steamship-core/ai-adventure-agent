@@ -10,6 +10,7 @@ While at the same time not committing to any huge abstraction overhead: this is 
 functions whose mechanics can change under the hood as we discover better ways to do things, and the game developer
 doesn't need to know.
 """
+import json
 import logging
 import time
 from typing import List, Optional, Tuple
@@ -97,7 +98,7 @@ def send_story_generation(
             ]
         ),
         generation_for="Quest Content",
-        # stop_tokens=["\n"],
+        stop_tokens=["\n"],
     )
     return block
 
@@ -203,9 +204,19 @@ def generate_quest_summary(
 
 def generate_quest_item(
     quest_name: str, player: HumanCharacter, context: AgentContext
-) -> (str, str):
+) -> (str, str, str):
     """Generates a found item from a quest, returning a tuple of its name and description"""
-    prompt = f"What item did {player.name} find during that story? It should fit the setting of the story and help {player.name} achieve their goal. Please respond only with ITEM NAME: <name> ITEM DESCRIPTION: <description>"
+    prompt = (
+        f"What item did {player.name} find during that story? It should fit the setting of the story and "
+        f"help {player.name} achieve their goal. Please respond only with valid JSON that includes the following "
+        f"fields: 'name', 'description', 'visualDescription'\n"
+        f"Example:\n"
+        '{"name": "Loaf of Italian Bread", '
+        '"description": "A freshly baked, fluffy loaf of Italian bread, with a golden crust and a soft, airy interior. Ideal for heroically hiding a seasoned meatball from the sharp edge of a sous-chef\'s knife. The bread\'s cavernous insides provided the perfect escape tunnel for Mr. Meatball to avoid becoming part of the next culinary creation.", '
+        '"visualDescription": "A freshly baked, fluffy loaf of Italian bread, with a golden crust and a soft, airy interior."'
+        "}\n"
+        "Return ONLY JSON."
+    )
     block = do_token_trimmed_generation(
         context,
         prompt,
@@ -223,14 +234,11 @@ def generate_quest_item(
         generation_for="Quest Item",
         streaming=False,
     )
-    parts = block.text.split("ITEM DESCRIPTION:")
-    if len(parts) == 2:
-        name = parts[0].replace("ITEM NAME:", "").strip()
-        description = parts[1].strip()
-    else:
-        name = block.text.strip()
-        description = ""
-    return name, description
+
+    json_block_text = block.text
+    tidy_json = json_block_text.replace("```json", "").replace("```", "")
+    item_json = json.loads(tidy_json.strip())
+    return item_json["name"], item_json["description"], item_json["visualDescription"]
 
 
 def generate_merchant_inventory(
