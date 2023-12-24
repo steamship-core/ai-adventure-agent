@@ -39,6 +39,13 @@ GENERAL_OPTIONS = [
         "type": "boolean",
         "default": False,
     },
+    {
+        "name": "skip_character_selection",
+        "label": "Skip character selection?",
+        "description": "If true, bypasses character selection completely, using either the first pre-made character or a stock on-the-fly character.",
+        "type": "boolean",
+        "default": False,
+    },
 ]
 
 MAGIC_MODE_OPTIONS = [s.source_story_text]
