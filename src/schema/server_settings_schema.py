@@ -32,20 +32,6 @@ GENERAL_OPTIONS = [
         "type": "text",
         "default": "Adventure",
     },
-    {
-        "name": "forbid_custom_characters",
-        "label": "Forbid custom characters?",
-        "description": "If true, and a pre-made character exist, hides the option to play as a custom character",
-        "type": "boolean",
-        "default": False,
-    },
-    {
-        "name": "skip_character_selection",
-        "label": "Skip character selection?",
-        "description": "If true, bypasses character selection completely, using either the first pre-made character or a stock on-the-fly character.",
-        "type": "boolean",
-        "default": False,
-    },
 ]
 
 MAGIC_MODE_OPTIONS = [s.source_story_text]
@@ -137,6 +123,20 @@ CHARACTER_OPTIONS = [
                 "suggestOutputType": "background",
             },
         ],
+    },
+    {
+        "name": "forbid_custom_characters",
+        "label": "Forbid custom characters?",
+        "description": "If true, and a pre-made character exist, hides the option to play as a custom character",
+        "type": "boolean",
+        "default": False,
+    },
+    {
+        "name": "skip_character_selection",
+        "label": "Skip character selection?",
+        "description": "If true, bypasses character selection completely, using either the first pre-made character or a stock on-the-fly character.",
+        "type": "boolean",
+        "default": False,
     },
 ]
 
