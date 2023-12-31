@@ -327,7 +327,7 @@ class ServerSettings(BaseModel):
         type="boolean",
     )
 
-    auto_start_first_quest: bool = SettingField(
+    auto_start_first_quest: Optional[bool] = SettingField(
         default=False,
         label="Auto-start the first quest after onboarding?",
         description="If true, immediately starts the first quest when a new game is created.",
