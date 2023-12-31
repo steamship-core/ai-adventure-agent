@@ -13,6 +13,7 @@ from generators.generator_context_utils import (
 )
 from schema.characters import HumanCharacter
 from schema.game_state import GameState
+from tools.start_quest_tool import StartQuestTool
 from utils.context_utils import (
     RunNextAgentException,
     await_ask,
@@ -219,7 +220,14 @@ class OnboardingAgent(InterruptiblePythonAgent):
             game_state.chat_history_for_onboarding_complete = True
 
         game_state.onboarding_agent_has_completed = True
-        save_game_state(game_state, context)
+
+        if server_settings.auto_start_first_quest:
+            # We should run the start_quest action.
+            quest_tool = StartQuestTool()
+            # This will save the game state.
+            quest_tool.start_quest(game_state, context)
+        else:
+            save_game_state(game_state, context)
 
         raise RunNextAgentException(
             action=FinishAction(

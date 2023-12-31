@@ -25,6 +25,13 @@ GENERAL_OPTIONS = [
         "type": "text",
         "default": "Player",
     },
+    {
+        "name": "adventure_singular_noun",
+        "label": "Noun for 'Adventure'",
+        "description": "The singular noun used to refer the game itself (Adventure, Quiz, Character, etc.)",
+        "type": "text",
+        "default": "Adventure",
+    },
 ]
 
 MAGIC_MODE_OPTIONS = [s.source_story_text]
@@ -69,6 +76,7 @@ STORY_OPTIONS = [
     s.allow_backup_story_models,
     s.default_story_temperature,
     s.default_story_max_tokens,
+    s.auto_start_first_quest,
 ]
 
 CHARACTER_OPTIONS = [
@@ -116,6 +124,20 @@ CHARACTER_OPTIONS = [
                 "suggestOutputType": "background",
             },
         ],
+    },
+    {
+        "name": "forbid_custom_characters",
+        "label": "Forbid custom characters?",
+        "description": "If true, and a pre-made character exist, hides the option to play as a custom character",
+        "type": "boolean",
+        "default": False,
+    },
+    {
+        "name": "skip_character_selection",
+        "label": "Skip character selection?",
+        "description": "If true, bypasses character selection completely, using either the first pre-made character or a stock on-the-fly character.",
+        "type": "boolean",
+        "default": False,
     },
 ]
 
