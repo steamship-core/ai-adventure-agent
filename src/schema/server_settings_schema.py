@@ -138,6 +138,13 @@ CHARACTER_OPTIONS = [
         "type": "boolean",
         "default": False,
     },
+    {
+        "name": "auto_start_first_quest",
+        "label": "Auto-start the first quest?",
+        "description": "If true, immediately starts the first quest when a new game is created.",
+        "type": "boolean",
+        "default": False,
+    },
 ]
 
 
