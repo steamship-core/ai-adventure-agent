@@ -76,6 +76,13 @@ STORY_OPTIONS = [
     s.allow_backup_story_models,
     s.default_story_temperature,
     s.default_story_max_tokens,
+    {
+        "name": "auto_start_first_quest",
+        "label": "Auto-start the first quest?",
+        "description": "If true, immediately starts the first quest when a new game is created.",
+        "type": "boolean",
+        "default": False,
+    },
 ]
 
 CHARACTER_OPTIONS = [
@@ -135,13 +142,6 @@ CHARACTER_OPTIONS = [
         "name": "skip_character_selection",
         "label": "Skip character selection?",
         "description": "If true, bypasses character selection completely, using either the first pre-made character or a stock on-the-fly character.",
-        "type": "boolean",
-        "default": False,
-    },
-    {
-        "name": "auto_start_first_quest",
-        "label": "Auto-start the first quest?",
-        "description": "If true, immediately starts the first quest when a new game is created.",
         "type": "boolean",
         "default": False,
     },
