@@ -15,7 +15,7 @@ In the accompanying [web interface](https://github.com/steamship-core/ai-adventu
 
 We're working actively on making this extensible enough for anyone to create their own amazing quest.
 
-If you find yourself reading this.. join our [Discord](https://steamship.com/discord) to say hello.
+Email us!  support [at] steamship [dot] com.
 
 ## You might not need this Repository
 
